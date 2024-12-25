@@ -1,0 +1,81 @@
+.wrapper {
+    display: flex;
+    width: 100%;
+    align-items: stretch;
+}
+
+.sidebar {
+    min-width: 280px;
+    max-width: 280px;
+    min-height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 100;
+    transition: margin-left 0.3s ease-in-out;
+    display: flex;
+    flex-direction: column;
+    height: 100vh; /* Ensure full height */
+}
+
+.sidebar .nav-link {
+    padding: 0.75rem 1rem;
+    font-size: 1.1rem;
+    border-radius: 0.25rem;
+    transition: background-color 0.2s;
+}
+
+.sidebar .nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.sidebar .nav-link i {
+    margin-right: 0.5rem;
+}
+
+.sidebar hr {
+    margin: 1rem 0;
+    opacity: 0.25;
+}
+
+/* Style for the logout section */
+.sidebar .border-top {
+    margin-top: auto;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.sidebar .border-top .nav-link {
+    padding: 0.75rem 0;
+}
+
+.mt-auto {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.mt-auto .nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.content {
+    margin-left: 280px;
+    width: calc(100% - 280px);
+    min-height: 100vh;
+    padding: 20px;
+    transition: margin-left 0.3s ease-in-out;
+}
+
+@media (max-width: 768px) {
+    .sidebar {
+        margin-left: -280px;
+    }
+    .sidebar.active {
+        margin-left: 0;
+    }
+    .content {
+        margin-left: 0;
+        width: 100%;
+    }
+    .content.pushed {
+        margin-left: 280px;
+    }
+}
