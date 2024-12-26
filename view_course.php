@@ -20,14 +20,20 @@ $course = $stmt->get_result()->fetch_assoc();
 $stmt = $conn->prepare("
     SELECT 
         COALESCE(AVG(up.progress_percentage), 0) as overall_progress,
-        COALESCE(SUM(up.score), 0) as total_score,
+        SUM(up.score) as total_score,  -- Changed from MAX to SUM
         COUNT(DISTINCT q.id) as total_quizzes,
-        COUNT(DISTINCT up.quiz_id) as completed_quizzes
+        COUNT(DISTINCT up.quiz_id) as completed_quizzes,
+        (
+            SELECT COUNT(*)
+            FROM questions qs
+            JOIN quizzes qz ON qs.quiz_id = qz.id
+            WHERE qz.course_id = ?
+        ) as total_questions
     FROM quizzes q
     LEFT JOIN user_progress up ON q.id = up.quiz_id AND up.user_id = ?
     WHERE q.course_id = ?
 ");
-$stmt->bind_param("ii", $user_id, $course_id);
+$stmt->bind_param("iii", $course_id, $user_id, $course_id);
 $stmt->execute();
 $progress = $stmt->get_result()->fetch_assoc();
 
@@ -94,9 +100,9 @@ if ($progress['total_quizzes'] == 0) {
                                                 <?php endif; ?>
                                             </div>
                                             <a href="take_quiz.php?id=<?php echo $quiz['id']; ?>" 
-                                               class="btn btn-primary action-button">
+                                               class="btn btn-primary action-button <?php echo ($quiz_progress && $quiz_progress['progress_percentage'] == 100) ? 'disabled' : ''; ?>">
                                                 <?php if ($quiz_progress && $quiz_progress['progress_percentage'] == 100): ?>
-                                                    <i class="bi bi-arrow-repeat"></i> Retake Quiz
+                                                    <i class="bi bi-check-circle"></i> Completed
                                                 <?php else: ?>
                                                     <i class="bi bi-play-fill"></i> Start Quiz
                                                 <?php endif; ?>
