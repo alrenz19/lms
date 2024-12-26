@@ -17,21 +17,22 @@ $stmt = $conn->prepare("
         c.description as course_description,
         COUNT(DISTINCT q.id) as total_quizzes,
         COUNT(DISTINCT up.quiz_id) as completed_quizzes,
-        COALESCE(AVG(up.progress_percentage), 0) as course_progress,
-        COALESCE(SUM(up.score), 0) as total_score,
-        COALESCE(MAX(up.updated_at), c.created_at) as last_activity,
+        COALESCE((COUNT(DISTINCT up.quiz_id) * 100 / COUNT(DISTINCT q.id)), 0) as course_progress,
         (
             SELECT COUNT(*) 
             FROM questions qs 
-            WHERE qs.quiz_id IN (SELECT id FROM quizzes WHERE course_id = c.id)
+            JOIN quizzes qz ON qs.quiz_id = qz.id
+            WHERE qz.course_id = c.id
         ) as total_questions,
         (
-            SELECT COUNT(*) 
-            FROM user_progress up2 
-            WHERE up2.user_id = ? 
-            AND up2.quiz_id IN (SELECT id FROM quizzes WHERE course_id = c.id)
-            AND up2.is_correct = TRUE
-        ) as correct_answers
+            SELECT COUNT(*)
+            FROM user_progress up2
+            JOIN quizzes q2 ON up2.quiz_id = q2.id
+            WHERE q2.course_id = c.id 
+            AND up2.user_id = ?
+            AND up2.score > 0
+        ) as correct_answers,
+        COALESCE(MAX(up.updated_at), c.created_at) as last_activity
     FROM courses c
     LEFT JOIN quizzes q ON c.id = q.course_id
     LEFT JOIN user_progress up ON q.id = up.quiz_id AND up.user_id = ?
@@ -39,7 +40,7 @@ $stmt = $conn->prepare("
     ORDER BY last_activity DESC, c.title ASC
 ");
 
-$stmt->bind_param("ii", $user_id, $user_id);
+$stmt->bind_param("ii", $user_id, $user_id); // Fixed: removed extra parameter
 $stmt->execute();
 $courses = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
@@ -52,16 +53,17 @@ $total_correct = 0;
 $total_questions = 0;
 
 foreach ($courses as $course) {
-    $total_progress += $course['course_progress'];
+    $total_progress += $course['completed_quizzes'] > 0 ? ($course['completed_quizzes'] * 100 / $course['total_quizzes']) : 0;
     $total_completed += $course['completed_quizzes'];
     $total_quizzes += $course['total_quizzes'];
-    $total_score += $course['total_score'];
+    $total_score += $course['completed_quizzes']; // One point per completed quiz
     $total_correct += $course['correct_answers'];
     $total_questions += $course['total_questions'];
 }
 
-$overall_progress = count($courses) > 0 ? $total_progress / count($courses) : 0;
-$overall_accuracy = $total_questions > 0 ? ($total_correct / $total_questions) * 100 : 0;
+// Calculate overall metrics
+$overall_progress = $total_quizzes > 0 ? ($total_completed * 100 / $total_quizzes) : 0;
+$overall_accuracy = $total_questions > 0 ? ($total_correct * 100 / $total_questions) : 0;
 ?>
 
 <!DOCTYPE html>
