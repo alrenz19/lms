@@ -28,7 +28,7 @@ $progress_query = "
         c.title as course_title,
         COUNT(DISTINCT q.id) as total_quizzes,
         COUNT(DISTINCT up.quiz_id) as completed_quizzes,
-        COALESCE(AVG(up.progress_percentage), 0) as course_progress
+        COALESCE((COUNT(DISTINCT up.quiz_id) * 100 / COUNT(DISTINCT q.id)), 0) as course_progress
     FROM courses c
     LEFT JOIN quizzes q ON c.id = q.course_id
     LEFT JOIN user_progress up ON q.id = up.quiz_id AND up.user_id = ?
@@ -121,20 +121,6 @@ if ($course_count > 0) {
                         $search_placeholder = "Search your courses...";
                         include 'includes/search_bar.php'; 
                         ?>
-                        <div class="col-md-4">
-                            <div class="stats-card dashboard-card">
-                                <div class="card-body text-center">
-                                    <i class="bi bi-book-half stats-icon"></i>
-                                    <h3>My Progress</h3>
-                                    <div class="progress mt-3" style="height: 15px;">
-                                        <div class="progress-bar" role="progressbar" 
-                                             style="width: <?php echo $overall_progress; ?>%">
-                                            <?php echo round($overall_progress); ?>%
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                     <div class="row">
                         <div class="col-md-12">
