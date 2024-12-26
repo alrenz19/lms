@@ -18,18 +18,29 @@ $progress_query = "
         u.email,
         c.id as course_id,
         c.title as course_title,
-        COUNT(DISTINCT q.id) as total_quizzes,
+        (
+            SELECT COUNT(*)
+            FROM quizzes
+            WHERE course_id = c.id
+        ) as total_quizzes,
         COUNT(DISTINCT up.quiz_id) as completed_quizzes,
-        COALESCE(AVG(up.progress_percentage), 0) as course_progress,
-        COALESCE(SUM(up.score), 0) as total_score,
+        (
+            CASE 
+                WHEN (SELECT COUNT(*) FROM quizzes WHERE course_id = c.id) > 0 
+                THEN (COUNT(DISTINCT up.quiz_id) * 100.0 / (SELECT COUNT(*) FROM quizzes WHERE course_id = c.id))
+                ELSE 0 
+            END
+        ) as course_progress,
         MAX(up.updated_at) as last_activity
     FROM users u
-    CROSS JOIN courses c
+    LEFT JOIN (
+        SELECT * FROM courses
+    ) c ON 1=1
     LEFT JOIN quizzes q ON c.id = q.course_id
     LEFT JOIN user_progress up ON q.id = up.quiz_id AND u.id = up.user_id
     WHERE u.role = 'user'
     GROUP BY u.id, c.id
-    ORDER BY u.username, c.title";
+    ORDER BY u.username ASC, c.title ASC";
 
 $progress_data = $conn->query($progress_query)->fetch_all(MYSQLI_ASSOC);
 
@@ -48,7 +59,6 @@ foreach ($progress_data as $row) {
         'progress' => $row['course_progress'],
         'completed_quizzes' => $row['completed_quizzes'],
         'total_quizzes' => $row['total_quizzes'],
-        'total_score' => $row['total_score'],
         'last_activity' => $row['last_activity']
     ];
 }
@@ -143,10 +153,6 @@ foreach ($progress_data as $row) {
                                                         <small>
                                                             <i class="bi bi-check-circle-fill text-success"></i>
                                                             <?php echo $course_data['completed_quizzes']; ?>/<?php echo $course_data['total_quizzes']; ?>
-                                                        </small>
-                                                        <small>
-                                                            <i class="bi bi-star-fill text-warning"></i>
-                                                            <?php echo $course_data['total_score']; ?>
                                                         </small>
                                                     </div>
                                                     <?php if ($course_data['last_activity']): ?>
