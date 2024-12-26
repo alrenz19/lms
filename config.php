@@ -2,7 +2,12 @@
 // Remove session_start() from here since it's called in individual files
 
 // Load environment variables
-$env = parse_ini_file('.env');
+$env_file = '.env';
+if (file_exists($env_file)) {
+    $env = parse_ini_file($env_file);
+} else {
+    die("Error: .env file not found.");
+}
 
 // Database configuration
 $db_host = $env['DB_HOST'] ?? 'localhost';
