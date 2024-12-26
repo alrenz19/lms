@@ -1,3 +1,4 @@
+-- Active: 1734766014060@@127.0.0.1@3306@db_lms
 CREATE DATABASE IF NOT EXISTS db_lms;
 USE db_lms;
 
