@@ -7,7 +7,7 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
-$course_id = $_GET['id'] ?? 0;
+$course_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 $user_id = $_SESSION['user_id'];
 
 // Get course details
@@ -15,6 +15,12 @@ $stmt = $conn->prepare("SELECT * FROM courses WHERE id = ?");
 $stmt->bind_param("i", $course_id);
 $stmt->execute();
 $course = $stmt->get_result()->fetch_assoc();
+
+// Redirect if course doesn't exist
+if (!$course) {
+    header("Location: dashboard.php");
+    exit;
+}
 
 // Get user progress for all quizzes in this course
 $stmt = $conn->prepare("
@@ -68,9 +74,11 @@ if ($progress['total_quizzes'] == 0) {
                         <div class="admin-card mb-4">
                             <div class="d-flex justify-content-between align-items-center mb-4">
                                 <h2><i class="bi bi-book"></i> <?php echo htmlspecialchars($course['title']); ?></h2>
-                                <a href="dashboard.php" class="btn btn-outline-primary">
-                                    <i class="bi bi-arrow-left"></i> Back to Dashboard
-                                </a>
+                                <div>
+                                    <a href="dashboard.php" class="btn btn-outline-primary">
+                                        <i class="bi bi-arrow-left"></i> Back to Dashboard
+                                    </a>
+                                </div>
                             </div>
                             <p class="lead mb-4"><?php echo htmlspecialchars($course['description']); ?></p>
                         </div>
@@ -80,38 +88,58 @@ if ($progress['total_quizzes'] == 0) {
                             <h3 class="mb-4"><i class="bi bi-question-circle"></i> Available Quizzes</h3>
                             <div class="course-list">
                                 <?php
-                                $result = $conn->query("SELECT * FROM quizzes WHERE course_id = $course_id");
-                                while ($quiz = $result->fetch_assoc()): ?>
+                                // Use prepared statement for quiz query
+                                $stmt = $conn->prepare("
+                                    SELECT q.*, up.completed, up.progress_percentage, up.score 
+                                    FROM quizzes q 
+                                    LEFT JOIN user_progress up ON up.quiz_id = q.id AND up.user_id = ? 
+                                    WHERE q.course_id = ?
+                                ");
+                                $stmt->bind_param("ii", $user_id, $course_id);
+                                $stmt->execute();
+                                $quiz_result = $stmt->get_result();
+                                
+                                while ($quiz = $quiz_result->fetch_assoc()): ?>
                                     <div class="course-item">
                                         <div class="d-flex justify-content-between align-items-center">
                                             <div>
                                                 <h5 class="mb-0"><?php echo htmlspecialchars($quiz['title']); ?></h5>
-                                                <?php
-                                                // Get quiz progress
-                                                $stmt = $conn->prepare("SELECT progress_percentage FROM user_progress WHERE user_id = ? AND quiz_id = ?");
-                                                $stmt->bind_param("ii", $user_id, $quiz['id']);
-                                                $stmt->execute();
-                                                $quiz_progress = $stmt->get_result()->fetch_assoc();
-                                                if ($quiz_progress): ?>
+                                                <?php if ($quiz['completed']): ?>
                                                     <div class="progress mt-2" style="height: 5px; width: 200px;">
-                                                        <div class="progress-bar" role="progressbar" 
-                                                             style="width: <?php echo $quiz_progress['progress_percentage']; ?>%"></div>
+                                                        <div class="progress-bar <?php echo $quiz['completed'] ? 'bg-success' : ''; ?>" 
+                                                             role="progressbar" 
+                                                             style="width: <?php echo $quiz['progress_percentage']; ?>%">
+                                                        </div>
                                                     </div>
+                                                    <small class="text-muted">
+                                                        Score: <?php echo $quiz['score']; ?> points
+                                                        <?php if ($quiz['completed']): ?>
+                                                            <span class="badge bg-success ms-2">Completed</span>
+                                                        <?php endif; ?>
+                                                    </small>
                                                 <?php endif; ?>
                                             </div>
-                                            <a href="take_quiz.php?id=<?php echo $quiz['id']; ?>" 
-                                               class="btn btn-primary action-button <?php echo ($quiz_progress && $quiz_progress['progress_percentage'] == 100) ? 'disabled' : ''; ?>">
-                                                <?php if ($quiz_progress && $quiz_progress['progress_percentage'] == 100): ?>
-                                                    <i class="bi bi-check-circle"></i> Completed
-                                                <?php else: ?>
-                                                    <i class="bi bi-play-fill"></i> Start Quiz
-                                                <?php endif; ?>
-                                            </a>
+                                            <?php if ($quiz['completed']): ?>
+                                                <div>
+                                                    <a href="quiz_review.php?id=<?php echo $quiz['id']; ?>" 
+                                                       class="btn btn-info action-button">
+                                                        <i class="bi bi-eye"></i> Review Quiz
+                                                    </a>
+                                                </div>
+                                            <?php else: ?>
+                                                <div>
+                                                    <a href="take_quiz.php?id=<?php echo $quiz['id']; ?>" 
+                                                       class="btn btn-primary action-button">
+                                                        <i class="bi bi-play-fill"></i> Start Quiz
+                                                    </a>
+                                                </div>
+                                            <?php endif; ?>
                                         </div>
                                     </div>
                                 <?php endwhile; ?>
                             </div>
                         </div>
+
                     </div>
 
                     <!-- Progress Sidebar -->
@@ -119,12 +147,6 @@ if ($progress['total_quizzes'] == 0) {
                         <div class="stats-card dashboard-card">
                             <div class="card-body">
                                 <h4 class="text-white mb-4">Your Progress</h4>
-                                <div class="progress mb-4" style="height: 20px;">
-                                    <div class="progress-bar" role="progressbar" 
-                                         style="width: <?php echo round($progress['overall_progress']); ?>%">
-                                        <?php echo round($progress['overall_progress']); ?>%
-                                    </div>
-                                </div>
                                 <div class="text-white">
                                     <div class="d-flex align-items-center mb-3">
                                         <i class="bi bi-check-circle-fill me-2"></i>

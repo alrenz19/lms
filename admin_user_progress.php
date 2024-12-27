@@ -7,61 +7,50 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
     exit;
 }
 
-// Get all courses
-$courses = $conn->query("SELECT id, title FROM courses")->fetch_all(MYSQLI_ASSOC);
-
-// Get user progress data
-$progress_query = "
+// Update the main query to remove avg_progress
+$query = "
     SELECT 
         u.id as user_id,
         u.username,
+        u.full_name,
         u.email,
-        c.id as course_id,
-        c.title as course_title,
         (
-            SELECT COUNT(*)
-            FROM quizzes
-            WHERE course_id = c.id
-        ) as total_quizzes,
-        COUNT(DISTINCT up.quiz_id) as completed_quizzes,
-        (
-            CASE 
-                WHEN (SELECT COUNT(*) FROM quizzes WHERE course_id = c.id) > 0 
-                THEN (COUNT(DISTINCT up.quiz_id) * 100.0 / (SELECT COUNT(*) FROM quizzes WHERE course_id = c.id))
-                ELSE 0 
-            END
-        ) as course_progress,
-        MAX(up.updated_at) as last_activity
+            SELECT COUNT(DISTINCT c.id)
+            FROM courses c
+            WHERE (
+                SELECT COUNT(q.id)
+                FROM quizzes q
+                WHERE q.course_id = c.id
+            ) = (
+                SELECT COUNT(DISTINCT up2.quiz_id)
+                FROM user_progress up2
+                WHERE up2.user_id = u.id
+                AND up2.quiz_id IN (
+                    SELECT q2.id 
+                    FROM quizzes q2 
+                    WHERE q2.course_id = c.id
+                )
+            )
+            AND (
+                SELECT COUNT(q.id)
+                FROM quizzes q
+                WHERE q.course_id = c.id
+            ) > 0
+        ) as completed_courses,
+        MAX(up.updated_at) as last_completion
     FROM users u
-    LEFT JOIN (
-        SELECT * FROM courses
-    ) c ON 1=1
-    LEFT JOIN quizzes q ON c.id = q.course_id
-    LEFT JOIN user_progress up ON q.id = up.quiz_id AND u.id = up.user_id
+    LEFT JOIN user_progress up ON u.id = up.user_id
     WHERE u.role = 'user'
-    GROUP BY u.id, c.id
-    ORDER BY u.username ASC, c.title ASC";
+    GROUP BY u.id
+    ORDER BY u.full_name";
 
-$progress_data = $conn->query($progress_query)->fetch_all(MYSQLI_ASSOC);
+$result = $conn->query($query);
 
-// Organize data by user
-$users_progress = [];
-foreach ($progress_data as $row) {
-    if (!isset($users_progress[$row['user_id']])) {
-        $users_progress[$row['user_id']] = [
-            'username' => $row['username'],
-            'email' => $row['email'],
-            'courses' => []
-        ];
-    }
-    $users_progress[$row['user_id']]['courses'][$row['course_id']] = [
-        'title' => $row['course_title'],
-        'progress' => $row['course_progress'],
-        'completed_quizzes' => $row['completed_quizzes'],
-        'total_quizzes' => $row['total_quizzes'],
-        'last_activity' => $row['last_activity']
-    ];
-}
+// Add this query to get total courses
+$courses_query = "SELECT COUNT(*) as total FROM courses";
+$courses_result = $conn->query($courses_query);
+$total_courses = $courses_result->fetch_assoc()['total'];
+
 ?>
 
 <!DOCTYPE html>
@@ -99,7 +88,7 @@ foreach ($progress_data as $row) {
                                 <div class="card-body text-center">
                                     <i class="bi bi-people-fill stats-icon"></i>
                                     <h3>Active Students</h3>
-                                    <h2><?php echo count($users_progress); ?></h2>
+                                    <h2><?php echo $result->num_rows; ?></h2>
                                 </div>
                             </div>
                         </div>
@@ -108,7 +97,7 @@ foreach ($progress_data as $row) {
                                 <div class="card-body text-center">
                                     <i class="bi bi-book-fill stats-icon"></i>
                                     <h3>Total Courses</h3>
-                                    <h2><?php echo count($courses); ?></h2>
+                                    <h2><?php echo $total_courses; ?></h2>
                                 </div>
                             </div>
                         </div>
@@ -119,59 +108,32 @@ foreach ($progress_data as $row) {
                         <table class="table table-hover">
                             <thead class="table-light">
                                 <tr>
-                                    <th>Student</th>
-                                    <?php foreach ($courses as $course): ?>
-                                        <th><?php echo htmlspecialchars($course['title']); ?></th>
-                                    <?php endforeach; ?>
+                                    <th>User</th>
+                                    <th>Email</th>
+                                    <th>Completed Courses</th>
+                                    <th>Last Completion</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php foreach ($users_progress as $user_id => $user): ?>
-                                    <tr>
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <i class="bi bi-person-circle me-2 text-primary"></i>
-                                                <div>
-                                                    <strong><?php echo htmlspecialchars($user['username']); ?></strong>
-                                                    <br>
-                                                    <small class="text-muted"><?php echo htmlspecialchars($user['email']); ?></small>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <?php foreach ($courses as $course): ?>
-                                            <td>
-                                                <?php if (isset($user['courses'][$course['id']])): ?>
-                                                    <?php $course_data = $user['courses'][$course['id']]; ?>
-                                                    <div class="progress mb-2" style="height: 15px;">
-                                                        <div class="progress-bar <?php echo $course_data['progress'] >= 100 ? 'bg-success' : 'bg-primary'; ?>" 
-                                                             role="progressbar" 
-                                                             style="width: <?php echo round($course_data['progress']); ?>%">
-                                                            <?php echo round($course_data['progress']); ?>%
-                                                        </div>
-                                                    </div>
-                                                    <div class="d-flex justify-content-between">
-                                                        <small>
-                                                            <i class="bi bi-check-circle-fill text-success"></i>
-                                                            <?php echo $course_data['completed_quizzes']; ?>/<?php echo $course_data['total_quizzes']; ?>
-                                                        </small>
-                                                    </div>
-                                                    <?php if ($course_data['last_activity']): ?>
-                                                        <div class="text-end">
-                                                            <small class="text-muted">
-                                                                <i class="bi bi-clock"></i>
-                                                                <?php echo date('M j, Y', strtotime($course_data['last_activity'])); ?>
-                                                            </small>
-                                                        </div>
-                                                    <?php endif; ?>
-                                                <?php else: ?>
-                                                    <div class="text-center text-muted">
-                                                        <i class="bi bi-dash-circle"></i> Not started
-                                                    </div>
-                                                <?php endif; ?>
-                                            </td>
-                                        <?php endforeach; ?>
-                                    </tr>
-                                <?php endforeach; ?>
+                                <?php while ($row = $result->fetch_assoc()): ?>
+                                <tr>
+                                    <td>
+                                        <div>
+                                            <strong><?php echo htmlspecialchars($row['full_name']); ?></strong>
+                                            <small class="text-muted d-block">@<?php echo htmlspecialchars($row['username']); ?></small>
+                                        </div>
+                                    </td>
+                                    <td><?php echo htmlspecialchars($row['email']); ?></td>
+                                    <td><?php echo $row['completed_courses']; ?></td>
+                                    <td><?php 
+                                        if ($row['last_completion']) {
+                                            echo date('M j, Y g:i A', strtotime($row['last_completion']));
+                                        } else {
+                                            echo 'No activity';
+                                        }
+                                    ?></td>
+                                </tr>
+                                <?php endwhile; ?>
                             </tbody>
                         </table>
                     </div>

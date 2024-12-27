@@ -1,0 +1,57 @@
+-- Clear all data with proper order
+SET FOREIGN_KEY_CHECKS = 0;
+TRUNCATE TABLE user_progress;
+TRUNCATE TABLE questions;
+TRUNCATE TABLE quizzes;
+TRUNCATE TABLE courses;
+TRUNCATE TABLE users;
+SET FOREIGN_KEY_CHECKS = 1;
+
+ALTER TABLE user_progress ADD INDEX idx_user_quiz (user_id, quiz_id);
+ALTER TABLE quizzes ADD INDEX idx_course (course_id);
+ALTER TABLE courses MODIFY COLUMN title VARCHAR(255) NOT NULL;
+ALTER TABLE courses MODIFY COLUMN description TEXT NOT NULL;
+
+-- Modify password field to store hashed passwords
+ALTER TABLE users MODIFY COLUMN password VARCHAR(255) NOT NULL;
+
+-- Add indexes for security
+CREATE INDEX idx_username ON users(username);
+CREATE INDEX idx_email ON users(email);
+
+-- Add additional security-related columns
+ALTER TABLE users 
+ADD COLUMN failed_attempts INT DEFAULT 0,
+ADD COLUMN last_failed_attempt TIMESTAMP NULL,
+ADD COLUMN account_locked BOOLEAN DEFAULT FALSE;
+
+-- Single, correct admin user insertion with all required fields
+INSERT INTO users (username, full_name, password, email, role) VALUES 
+('admin', 'System Administrator', 'admin123', 'admin@lms.com', 'admin');
+
+-- Insert sample course for testing
+INSERT INTO courses (title, description, created_by) VALUES
+('Sample Course', 'This is a sample course', 1);
+
+ALTER TABLE user_progress 
+ADD COLUMN IF NOT EXISTS is_correct BOOLEAN DEFAULT FALSE;
+
+-- Update foreign key constraints
+ALTER TABLE questions DROP FOREIGN KEY questions_ibfk_1;
+ALTER TABLE questions ADD CONSTRAINT questions_ibfk_1 
+    FOREIGN KEY (quiz_id) REFERENCES quizzes(id) 
+    ON DELETE CASCADE;
+
+ALTER TABLE user_progress DROP FOREIGN KEY user_progress_ibfk_3;
+ALTER TABLE user_progress ADD CONSTRAINT user_progress_ibfk_3 
+    FOREIGN KEY (quiz_id) REFERENCES quizzes(id) 
+    ON DELETE CASCADE;
+
+-- Add completion_date column to user_progress table
+ALTER TABLE user_progress 
+ADD COLUMN completion_date TIMESTAMP NULL DEFAULT NULL;
+
+-- Update completion_date for completed quizzes
+UPDATE user_progress 
+SET completion_date = updated_at 
+WHERE completed = TRUE;

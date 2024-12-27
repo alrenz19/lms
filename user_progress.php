@@ -44,26 +44,7 @@ $stmt->bind_param("ii", $user_id, $user_id); // Fixed: removed extra parameter
 $stmt->execute();
 $courses = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
-// Calculate overall statistics
-$total_progress = 0;
-$total_completed = 0;
-$total_quizzes = 0;
-$total_score = 0;
-$total_correct = 0;
-$total_questions = 0;
-
-foreach ($courses as $course) {
-    $total_progress += $course['completed_quizzes'] > 0 ? ($course['completed_quizzes'] * 100 / $course['total_quizzes']) : 0;
-    $total_completed += $course['completed_quizzes'];
-    $total_quizzes += $course['total_quizzes'];
-    $total_score += $course['completed_quizzes']; // One point per completed quiz
-    $total_correct += $course['correct_answers'];
-    $total_questions += $course['total_questions'];
-}
-
-// Calculate overall metrics
-$overall_progress = $total_quizzes > 0 ? ($total_completed * 100 / $total_quizzes) : 0;
-$overall_accuracy = $total_questions > 0 ? ($total_correct * 100 / $total_questions) : 0;
+// Remove overall statistics calculation
 ?>
 
 <!DOCTYPE html>
@@ -91,42 +72,6 @@ $overall_accuracy = $total_questions > 0 ? ($total_correct * 100 / $total_questi
                         $search_placeholder = "Search courses...";
                         include 'includes/search_bar.php'; 
                         ?>
-                    </div>
-                </div>
-
-                <!-- Overall Progress Card -->
-                <div class="stats-card dashboard-card mb-4">
-                    <div class="card-body">
-                        <div class="row align-items-center">
-                            <div class="col-md-6">
-                                <h3 class="text-white mb-4">Overall Progress</h3>
-                                <div class="progress mb-3" style="height: 25px;">
-                                    <div class="progress-bar" role="progressbar" 
-                                         style="width: <?php echo round($overall_progress); ?>%">
-                                        <?php echo round($overall_progress); ?>%
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="row text-center text-white">
-                                    <div class="col-4">
-                                        <i class="bi bi-bullseye stats-icon"></i>
-                                        <h4><?php echo round($overall_accuracy); ?>%</h4>
-                                        <small>Accuracy</small>
-                                    </div>
-                                    <div class="col-4">
-                                        <i class="bi bi-check-circle stats-icon"></i>
-                                        <h4><?php echo $total_completed; ?>/<?php echo $total_quizzes; ?></h4>
-                                        <small>Quizzes</small>
-                                    </div>
-                                    <div class="col-4">
-                                        <i class="bi bi-star stats-icon"></i>
-                                        <h4><?php echo $total_score; ?></h4>
-                                        <small>Total Score</small>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
 

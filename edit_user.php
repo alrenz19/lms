@@ -11,20 +11,23 @@ $user_id = $_GET['id'] ?? 0;
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $username = $conn->real_escape_string($_POST['username']);
+    $full_name = $conn->real_escape_string($_POST['full_name']); // Add full_name
     $email = $conn->real_escape_string($_POST['email']);
     $role = $conn->real_escape_string($_POST['role']);
     
-    $sql = "UPDATE users SET username = ?, email = ?, role = ? WHERE id = ?";
+    $sql = "UPDATE users SET username = ?, full_name = ?, email = ?, role = ? WHERE id = ?";
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("sssi", $username, $email, $role, $user_id);
+    $stmt->bind_param("ssssi", $username, $full_name, $email, $role, $user_id);
     $stmt->execute();
     
     if (!empty($_POST['password'])) {
-        $password = $_POST['password']; // Store password as plain text
-        $conn->query("UPDATE users SET password = '$password' WHERE id = $user_id");
+        $hashed_password = password_hash($_POST['password'], PASSWORD_DEFAULT);
+        $stmt = $conn->prepare("UPDATE users SET password = ? WHERE id = ?");
+        $stmt->bind_param("si", $hashed_password, $user_id);
+        $stmt->execute();
     }
     
-    header("Location: manage_users.php");
+    header("Location: manage_users.php?success=updated");
     exit;
 }
 
@@ -65,12 +68,17 @@ $user = $result->fetch_assoc();
                                        value="<?php echo htmlspecialchars($user['username']); ?>" required>
                             </div>
                             <div class="col-md-6 mb-4">
+                                <label for="full_name" class="form-label">Full Name</label>
+                                <input type="text" class="form-control" id="full_name" name="full_name" 
+                                       value="<?php echo htmlspecialchars($user['full_name']); ?>" required>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-4">
                                 <label for="email" class="form-label">Email</label>
                                 <input type="email" class="form-control" id="email" name="email" 
                                        value="<?php echo htmlspecialchars($user['email']); ?>" required>
                             </div>
-                        </div>
-                        <div class="row">
                             <div class="col-md-6 mb-4">
                                 <label for="password" class="form-label">New Password</label>
                                 <input type="password" class="form-control" id="password" name="password"

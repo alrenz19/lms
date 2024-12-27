@@ -10,14 +10,20 @@ if (!isset($_SESSION['user_id'])) {
 $quiz_id = $_GET['id'] ?? 0;
 $user_id = $_SESSION['user_id'];
 
-// Check if quiz is already completed
-$stmt = $conn->prepare("SELECT progress_percentage FROM user_progress WHERE user_id = ? AND quiz_id = ?");
+// Check if quiz exists and if it's already completed
+$stmt = $conn->prepare("
+    SELECT q.course_id, up.completed 
+    FROM quizzes q 
+    LEFT JOIN user_progress up ON up.quiz_id = q.id AND up.user_id = ? 
+    WHERE q.id = ?
+");
 $stmt->bind_param("ii", $user_id, $quiz_id);
 $stmt->execute();
 $result = $stmt->get_result()->fetch_assoc();
 
-if ($result && $result['progress_percentage'] == 100) {
-    header("Location: view_course.php?id=" . $quiz['course_id']);
+// Redirect if quiz doesn't exist or is already completed
+if (!$result || $result['completed']) {
+    header("Location: view_course.php?id=" . ($result['course_id'] ?? 0));
     exit;
 }
 
@@ -32,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $total_questions = count($_POST['answers']);
     $answers = [];
     
-    // Calculate score for this attempt only
+    // Calculate score and store answers
     foreach ($_POST['answers'] as $question_id => $answer) {
         $stmt = $conn->prepare("SELECT correct_answer FROM questions WHERE id = ?");
         $stmt->bind_param("i", $question_id);
@@ -46,23 +52,25 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $answers[$question_id] = $answer;
     }
     
-    // Calculate percentage for this quiz only
+    // Calculate percentage
     $percentage = ($score / $total_questions) * 100;
-    $score = min($score, $total_questions); // Ensure score doesn't exceed total questions
+    $score = min($score, $total_questions);
     
-    // Update user progress with the current attempt
-    $stmt = $conn->prepare("INSERT INTO user_progress (user_id, quiz_id, score, progress_percentage) 
-                           VALUES (?, ?, ?, ?) 
-                           ON DUPLICATE KEY UPDATE 
-                           score = VALUES(score), 
-                           progress_percentage = VALUES(progress_percentage)");
+    // Store answers as JSON
+    $answers_json = json_encode($answers);
     
-    $stmt->bind_param("iidd", 
-        $user_id, 
-        $quiz_id, 
-        $score, 
-        $percentage
+    // Update user progress including the answers
+    $stmt = $conn->prepare("
+        INSERT INTO user_progress (user_id, quiz_id, score, progress_percentage, completed, user_answers) 
+        VALUES (?, ?, ?, ?, TRUE, ?) 
+        ON DUPLICATE KEY UPDATE 
+        score = VALUES(score), 
+        progress_percentage = VALUES(progress_percentage),
+        completed = TRUE,
+        user_answers = VALUES(user_answers)"
     );
+    
+    $stmt->bind_param("iidds", $user_id, $quiz_id, $score, $percentage, $answers_json);
     $stmt->execute();
     
     $_SESSION['quiz_results'] = [

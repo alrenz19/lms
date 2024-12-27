@@ -1,4 +1,13 @@
 <div class="sidebar bg-dark text-white d-flex flex-column">
+    <div class="sidebar-header p-3">
+        <div class="user-info">
+            <i class="bi bi-person-circle"></i>
+            <div>
+                <strong><?php echo htmlspecialchars($_SESSION['full_name']); ?></strong>
+                <small class="text-muted"><?php echo ucfirst($_SESSION['role']); ?></small>
+            </div>
+        </div>
+    </div>
     <div class="p-3">
         <h3 class="text-white">
             <i class="bi bi-book-half me-2"></i>

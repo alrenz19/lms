@@ -20,12 +20,12 @@ try {
     // Delete existing admin
     $conn->query("DELETE FROM users WHERE username = 'admin'");
 
-    // Insert new admin with hashed password
+    // Insert new admin with hashed password and full name
     $password = 'admin123';
     $hashed_password = password_hash($password, PASSWORD_DEFAULT);
     
-    $stmt = $conn->prepare("INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)");
-    $stmt->bind_param("ssss", 'admin', 'admin@lms.com', $hashed_password, 'admin');
+    $stmt = $conn->prepare("INSERT INTO users (username, full_name, email, password, role) VALUES (?, ?, ?, ?, ?)");
+    $stmt->bind_param("sssss", 'admin', 'System Administrator', 'admin@lms.com', $hashed_password, 'admin');
     $stmt->execute();
     
     // Get new admin ID

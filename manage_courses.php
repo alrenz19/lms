@@ -122,9 +122,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                             <tbody>
                                 <?php
                                 $search = $_GET['search'] ?? '';
-                                $query = "SELECT c.*, COUNT(q.id) as quiz_count 
+                                $query = "SELECT c.*, COUNT(q.id) as quiz_count, 
+                                        u.full_name as created_by_name 
                                         FROM courses c 
                                         LEFT JOIN quizzes q ON c.id = q.course_id 
+                                        LEFT JOIN users u ON c.created_by = u.id
                                         WHERE c.title LIKE ? OR c.description LIKE ?
                                         GROUP BY c.id 
                                         ORDER BY c.created_at DESC";
@@ -144,6 +146,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                             </span>
                                         </td>
                                         <td class="text-end">
+                                            <a href="print_course.php?id=<?php echo $row['id']; ?>" 
+                                               class="btn btn-sm btn-outline-secondary me-2" 
+                                               title="Print Progress Report">
+                                                <i class="bi bi-printer"></i>
+                                            </a>
                                             <button class="btn btn-sm btn-outline-success me-2" 
                                                     data-bs-toggle="modal" 
                                                     data-bs-target="#addQuizModal" 

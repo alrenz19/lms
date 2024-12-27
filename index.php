@@ -13,8 +13,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $username = $conn->real_escape_string($_POST['username']);
     $password = $_POST['password'];
     
-    // Change the query to only check username
-    $sql = "SELECT id, username, password, role FROM users WHERE username = ?";
+    // Change the query to include full_name
+    $sql = "SELECT id, username, full_name, password, role FROM users WHERE username = ?";
     if ($stmt = $conn->prepare($sql)) {
         $stmt->bind_param("s", $username);
         $stmt->execute();
@@ -26,6 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             if (password_verify($password, $user['password'])) {
                 $_SESSION['user_id'] = $user['id'];
                 $_SESSION['username'] = $user['username'];
+                $_SESSION['full_name'] = $user['full_name']; // Add full_name to session
                 $_SESSION['role'] = $user['role'];
                 
                 header("Location: dashboard.php");
