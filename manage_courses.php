@@ -7,6 +7,14 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
     exit;
 }
 
+// Get total courses count
+$result = $conn->query("SELECT COUNT(*) as count FROM courses");
+$courses_count = $result->fetch_assoc()['count'];
+
+// Get total quizzes count
+$result = $conn->query("SELECT COUNT(*) as count FROM quizzes");
+$quizzes_count = $result->fetch_assoc()['count'];
+
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if (isset($_POST['add_course'])) {
         $title = $conn->real_escape_string($_POST['title']);
@@ -50,48 +58,69 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <div class="content">
             <div class="container mt-4">
                 <!-- Stats Cards -->
-                <div class="row admin-stats mb-4">
-                    <div class="col-md-4">
-                        <div class="stats-card dashboard-card">
-                            <div class="card-body text-center">
-                                <i class="bi bi-book-fill stats-icon"></i>
-                                <h3>Total Courses</h3>
-                                <?php
-                                $result = $conn->query("SELECT COUNT(*) as count FROM courses");
-                                $courses_count = $result->fetch_assoc()['count'];
-                                ?>
-                                <h2><?php echo $courses_count; ?></h2>
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="admin-card">
+                            <div class="d-flex align-items-center">
+                                <div class="stats-icon me-3">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                                        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3>Total Courses</h3>
+                                    <h2><?php echo $courses_count; ?></h2>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-4">
-                        <div class="stats-card dashboard-card">
-                            <div class="card-body text-center">
-                                <i class="bi bi-question-circle-fill stats-icon"></i>
-                                <h3>Total Quizzes</h3>
-                                <?php
-                                $result = $conn->query("SELECT COUNT(*) as count FROM quizzes");
-                                $quizzes_count = $result->fetch_assoc()['count'];
-                                ?>
-                                <h2><?php echo $quizzes_count; ?></h2>
+                    <div class="col-md-6">
+                        <div class="admin-card">
+                            <div class="d-flex align-items-center">
+                                <div class="stats-icon me-3">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3>Total Quizzes</h3>
+                                    <h2><?php echo $quizzes_count; ?></h2>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Course Management Section -->
-                <div class="admin-card mb-4">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h2 class="mb-0"><i class="bi bi-book"></i> Manage Courses</h2>
+                <div class="admin-card">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div class="d-flex align-items-center">
+                            <div class="stats-icon me-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                                    <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                                </svg>
+                            </div>
+                            <h2 class="mb-0">Manage Courses</h2>
+                        </div>
                         <button class="btn btn-primary action-button" data-bs-toggle="modal" data-bs-target="#addCourseModal">
-                            <i class="bi bi-plus-circle"></i> Add New Course
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Add New Course
                         </button>
                     </div>
 
-                    <?php 
-                    $search_placeholder = "Search courses...";
-                    include 'includes/search_bar.php'; 
-                    ?>
+                    <!-- Search Bar -->
+                    <div class="search-bar mb-4">
+                        <input type="text" class="form-control" placeholder="Search courses..." 
+                               value="<?php echo htmlspecialchars($_GET['search'] ?? ''); ?>"
+                               onkeyup="updateSearch(this.value)">
+                    </div>
 
                     <!-- Alert Messages -->
                     <?php if (isset($_GET['error']) || isset($_GET['success'])): ?>
@@ -110,10 +139,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
                     <!-- Courses Table -->
                     <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead class="table-light">
+                        <table class="table">
+                            <thead>
                                 <tr>
-                                    <th>Title</th>
+                                    <th>Course Title</th>
                                     <th>Description</th>
                                     <th>Quizzes</th>
                                     <th class="text-end">Actions</th>
@@ -138,10 +167,22 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
                                 while ($row = $result->fetch_assoc()): ?>
                                     <tr>
-                                        <td class="align-middle"><?php echo htmlspecialchars($row['title']); ?></td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="stats-icon me-3">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                                                        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                                                    </svg>
+                                                </div>
+                                                <div>
+                                                    <strong><?php echo htmlspecialchars($row['title']); ?></strong>
+                                                </div>
+                                            </div>
+                                        </td>
                                         <td class="align-middle"><?php echo htmlspecialchars($row['description']); ?></td>
                                         <td class="align-middle">
-                                            <span class="badge bg-info">
+                                            <span class="badge bg-primary">
                                                 <?php echo $row['quiz_count']; ?> Quizzes
                                             </span>
                                         </td>
