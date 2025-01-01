@@ -13,3 +13,21 @@
 - Password hashing
 - SQL injection prevention
 - XSS protection
+
+## [1.0.0] - January 1, 2025
+### Improvements
+- Improved UI/UX
+- Improved security
+- Improved performance
+
+### Fixed
+- Fixed bugs
+- Fixed security issues
+- Fixed performance issues
+
+### Added
+- Added new features
+- Added new modules
+- Added new courses
+
+
