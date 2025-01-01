@@ -115,86 +115,90 @@ $users = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
         <div class="content">
             <div class="container mt-4">
                 <!-- Stats Cards -->
-                <div class="row admin-stats mb-4">
+                <div class="row mb-4">
                     <div class="col-md-4">
-                        <div class="stats-card dashboard-card">
-                            <div class="card-body text-center">
-                                <i class="bi bi-people-fill stats-icon"></i>
-                                <h3>Total Users</h3>
-                                <h2><?php echo count($users); ?></h2>
+                        <div class="admin-card">
+                            <div class="d-flex align-items-center">
+                                <div class="stats-icon me-3">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                        <circle cx="9" cy="7" r="4"></circle>
+                                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3>Total Users</h3>
+                                    <h2><?php echo count($users); ?></h2>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Search and Add User Section -->
-                <div class="admin-card mb-4">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h2 class="mb-0"><i class="bi bi-people"></i> Manage Users</h2>
-                        <button type="button" class="btn btn-primary action-button" data-bs-toggle="modal" data-bs-target="#addUserModal">
-                            <i class="bi bi-person-plus"></i> Add New User
+                <!-- User Management Section -->
+                <div class="admin-card">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div class="d-flex align-items-center">
+                            <div class="stats-icon me-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="9" cy="7" r="4"></circle>
+                                    <path d="M22 12h-4"></path>
+                                    <path d="M18 8l4 4-4 4"></path>
+                                </svg>
+                            </div>
+                            <h2 class="mb-0">Manage Users</h2>
+                        </div>
+                        <button class="btn btn-primary action-button" data-bs-toggle="modal" data-bs-target="#addUserModal">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-2">
+                                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="8.5" cy="7" r="4"></circle>
+                                <line x1="20" y1="8" x2="20" y2="14"></line>
+                                <line x1="23" y1="11" x2="17" y2="11"></line>
+                            </svg>
+                            Add New User
                         </button>
                     </div>
-                    
-                    <?php 
-                    $search_placeholder = "Search users...";
-                    include 'includes/search_bar.php'; 
-                    ?>
 
-                    <?php if ($error): ?>
-                        <div class="alert alert-danger alert-dismissible fade show">
-                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                            <?php echo $error; ?>
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        </div>
-                    <?php endif; ?>
-                    
-                    <?php if ($success): ?>
-                        <div class="alert alert-success alert-dismissible fade show">
-                            <i class="bi bi-check-circle-fill me-2"></i>
-                            <?php echo $success; ?>
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        </div>
-                    <?php endif; ?>
+                    <!-- Search Bar -->
+                    <div class="search-bar mb-4">
+                        <input type="text" class="form-control" placeholder="Search users..." 
+                               value="<?php echo htmlspecialchars($_GET['search'] ?? ''); ?>"
+                               onkeyup="updateSearch(this.value)">
+                    </div>
 
                     <!-- Users Table -->
-                    <div class="table-responsive mt-3">
-                        <table class="table table-hover">
-                            <thead class="table-light">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
                                 <tr>
-                                    <th>Username</th>
+                                    <th>User</th>
                                     <th>Email</th>
                                     <th>Role</th>
                                     <th class="text-end">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php
-                                $search = $_GET['search'] ?? '';
-                                $query = "SELECT * FROM users 
-                                        WHERE username LIKE ? OR email LIKE ? 
-                                        ORDER BY created_at DESC";
-                                $search_param = "%$search%";
-                                $stmt = $conn->prepare($query);
-                                $stmt->bind_param("ss", $search_param, $search_param);
-                                $stmt->execute();
-                                $users = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
-
-                                foreach ($users as $user): 
-                                ?>
+                                <?php foreach ($users as $user): ?>
                                 <tr>
-                                    <td class="align-middle">
+                                    <td>
                                         <div class="d-flex align-items-center">
-                                            <i class="bi bi-person-circle me-2"></i>
+                                            <div class="stats-icon me-3">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                                    <circle cx="12" cy="7" r="4"></circle>
+                                                </svg>
+                                            </div>
                                             <div>
                                                 <strong><?php echo htmlspecialchars($user['full_name']); ?></strong>
                                                 <small class="text-muted d-block">@<?php echo htmlspecialchars($user['username']); ?></small>
                                             </div>
                                         </div>
                                     </td>
-                                    <td><?php echo htmlspecialchars($user['email']); ?></td>
-                                    <td>
-                                        <span class="badge bg-<?php echo $user['role'] === 'admin' ? 'danger' : 'primary'; ?>">
+                                    <td class="align-middle"><?php echo htmlspecialchars($user['email']); ?></td>
+                                    <td class="align-middle">
+                                        <span class="badge <?php echo $user['role'] === 'admin' ? 'bg-danger' : 'bg-primary'; ?>">
                                             <?php echo htmlspecialchars($user['role']); ?>
                                         </span>
                                     </td>
