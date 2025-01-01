@@ -1,5 +1,5 @@
-<div class="sidebar bg-dark text-white d-flex flex-column">
-    <div class="sidebar-header p-3">
+<div class="sidebar bg-dark text-white">
+    <div class="sidebar-header">
         <div class="user-info">
             <i class="bi bi-person-circle"></i>
             <div>
@@ -8,40 +8,43 @@
             </div>
         </div>
     </div>
-    <div class="p-3">
-        <h3 class="text-white">
+
+    <div>
+        <h3>
             <i class="bi bi-book-half me-2"></i>
             LMS Portal
         </h3>
-        <hr class="text-white">
+
+        <h3>Main Menu</h3>
         <ul class="nav flex-column">
             <li class="nav-item">
-                <a class="nav-link text-white" href="dashboard.php">
+                <a class="nav-link" href="dashboard.php">
                     <i class="bi bi-speedometer2 nav-icon"></i>
                     Dashboard
                 </a>
             </li>
             <?php if ($_SESSION['role'] === 'admin'): ?>
                 <li class="nav-item">
-                    <a class="nav-link text-white" href="manage_users.php">
+                    <a class="nav-link" href="manage_users.php">
                         <i class="bi bi-people-fill nav-icon"></i>
                         Manage Users
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link text-white" href="manage_courses.php">
+                    <a class="nav-link" href="manage_courses.php">
                         <i class="bi bi-journal-richtext nav-icon"></i>
                         Manage Courses
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link text-white" href="admin_user_progress.php">
-                        <i class="bi bi-graph-up"></i> User Progress
+                    <a class="nav-link" href="admin_user_progress.php">
+                        <i class="bi bi-graph-up nav-icon"></i>
+                        User Progress
                     </a>
                 </li>
             <?php else: ?>
                 <li class="nav-item">
-                    <a class="nav-link text-white" href="user_progress.php">
+                    <a class="nav-link" href="user_progress.php">
                         <i class="bi bi-graph-up-arrow nav-icon"></i>
                         My Progress
                     </a>
@@ -49,10 +52,22 @@
             <?php endif; ?>
         </ul>
     </div>
-    <div class="mt-auto p-3 border-top border-secondary">
-        <a class="nav-link text-white" href="logout.php">
-            <i class="bi bi-box-arrow-right nav-icon"></i>
-            Logout
-        </a>
+
+    <div class="mt-auto">
+        <h3>Account</h3>
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <a class="nav-link" href="profile.php">
+                    <i class="bi bi-person nav-icon"></i>
+                    Profile
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="logout.php">
+                    <i class="bi bi-box-arrow-right nav-icon"></i>
+                    Logout
+                </a>
+            </li>
+        </ul>
     </div>
 </div>
