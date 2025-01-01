@@ -73,42 +73,79 @@ if ($course_count > 0) {
             <div class="container mt-4">
                 <?php if ($is_admin): ?>
                     <!-- Admin Dashboard -->
-                    <div class="row admin-stats">
-                        <div class="col-md-4">
-                            <div class="stats-card dashboard-card">
-                                <div class="card-body text-center">
-                                    <i class="bi bi-people stats-icon"></i>
-                                    <h3>Total Users</h3>
-                                    <h2><?php echo $users_count; ?></h2>
+                    <div class="row">
+                        <div class="col-md-6 mb-4">
+                            <div class="admin-card h-100">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="stats-icon me-3">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                            <circle cx="9" cy="7" r="4"></circle>
+                                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h3 class="mb-1">Total Users</h3>
+                                        <h2 class="mb-0"><?php echo $users_count; ?></h2>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-4">
-                            <div class="stats-card dashboard-card">
-                                <div class="card-body text-center">
-                                    <i class="bi bi-book stats-icon"></i>
-                                    <h3>Total Courses</h3>
-                                    <h2><?php echo $courses_count; ?></h2>
+                        <div class="col-md-6 mb-4">
+                            <div class="admin-card h-100">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="stats-icon me-3">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h3 class="mb-1">Total Courses</h3>
+                                        <h2 class="mb-0"><?php echo $courses_count; ?></h2>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
+
                     <div class="row">
-                        <div class="col-md-6">
-                            <div class="admin-card">
-                                <i class="bi bi-people-fill admin-icon"></i>
-                                <h4>User Management</h4>
-                                <p>Manage user accounts and permissions</p>
+                        <div class="col-md-6 mb-4">
+                            <div class="admin-card h-100">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="stats-icon me-3">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                                            <circle cx="9" cy="7" r="4"></circle>
+                                            <path d="M22 12h-4"></path>
+                                            <path d="M18 8l4 4-4 4"></path>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h3 class="mb-0">User Management</h3>
+                                        <p class="text-muted mb-3">Manage user accounts and permissions</p>
+                                    </div>
+                                </div>
                                 <a href="manage_users.php" class="btn btn-primary action-button">
                                     Manage Users
                                 </a>
                             </div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="admin-card">
-                                <i class="bi bi-book-fill admin-icon"></i>
-                                <h4>Course Management</h4>
-                                <p>Create and manage course content</p>
+                        <div class="col-md-6 mb-4">
+                            <div class="admin-card h-100">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="stats-icon me-3">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                                            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h3 class="mb-0">Course Management</h3>
+                                        <p class="text-muted mb-3">Create and manage course content</p>
+                                    </div>
+                                </div>
                                 <a href="manage_courses.php" class="btn btn-primary action-button">
                                     Manage Courses
                                 </a>
