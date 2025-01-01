@@ -1,9 +1,120 @@
+/* Import Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* Base styles */
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: #1a1f37;
+}
+
+/* Icon improvements */
+.bi {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Sidebar icon improvements */
+.sidebar .nav-icon {
+    width: 24px;
+    height: 24px;
+    margin-right: 12px;
+    font-size: 1.2rem;
+    opacity: 0.9;
+}
+
+.sidebar .nav-link {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+}
+
+/* User info improvements */
+.user-info i {
+    font-size: 2.2rem;
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.user-info strong {
+    font-weight: 600;
+    font-size: 0.95rem;
+    letter-spacing: 0.2px;
+}
+
+/* Section headings */
+.sidebar h3 {
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.4);
+    margin: 24px 0 8px;
+}
+
+/* Stats improvements */
+.stats-icon {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.stats-icon svg {
+    width: 24px;
+    height: 24px;
+    stroke: white;
+    stroke-width: 2;
+}
+
+/* Course items */
+.course-item i {
+    font-size: 1.1rem;
+    margin-right: 6px;
+}
+
+/* Action buttons */
+.action-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+}
+
+.action-button i {
+    font-size: 1.1rem;
+}
+
+/* Page titles */
+h2 {
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+h2 i {
+    font-size: 1.5rem;
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
 /* Dashboard Layout */
 .dashboard-card {
+    background-color: #1a1f37;
+    color: rgba(255, 255, 255, 0.8);
     border: none;
-    border-radius: 15px;
-    box-shadow: 0 0 20px rgba(0,0,0,0.1);
-    transition: transform 0.3s ease;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
 }
 
 .dashboard-card:hover {
@@ -11,21 +122,15 @@
 }
 
 .stats-card {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background-color: #2a2f45;
     color: white;
     border: none;
-    border-radius: 15px;
+    border-radius: 10px;
     box-shadow: 0 4px 15px rgba(0,0,0,0.1);
 }
 
-.stats-icon {
-    font-size: 2.5rem;
-    margin-bottom: 10px;
-    opacity: 0.8;
-}
-
 .progress {
-    height: 10px;
+    height: 15px;
     border-radius: 5px;
     background-color: rgba(255, 255, 255, 0.2);
 }
@@ -40,12 +145,13 @@
 }
 
 .course-item {
+    background-color: #2a2f45;
     border: none;
-    border-radius: 15px;
+    border-radius: 10px;
     margin-bottom: 15px;
     padding: 20px;
     transition: all 0.3s ease;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    color: rgba(255, 255, 255, 0.8);
 }
 
 .course-item:hover {
@@ -54,17 +160,20 @@
 }
 
 .course-title {
-    color: #333;
+    color: white;
     font-weight: 600;
     margin-bottom: 15px;
 }
 
 .course-progress {
-    height: 8px;
+    height: 15px;
     margin: 15px 0;
 }
 
 .action-button {
+    background-color: #2a2f45;
+    color: white;
+    border: none;
     border-radius: 10px;
     padding: 8px 15px;
     font-weight: 500;
@@ -72,6 +181,8 @@
 }
 
 .action-button:hover {
+    background-color: #3a3f55;
+    color: white;
     transform: translateY(-2px);
     box-shadow: 0 4px 10px rgba(0,0,0,0.1);
 }
@@ -82,9 +193,10 @@
 }
 
 .admin-card {
-    background: white;
+    background-color: #2a2f45;
+    color: rgba(255, 255, 255, 0.8);
     padding: 25px;
-    border-radius: 15px;
+    border-radius: 10px;
     box-shadow: 0 4px 15px rgba(0,0,0,0.1);
     transition: all 0.3s ease;
 }
@@ -95,7 +207,7 @@
 
 .admin-icon {
     font-size: 3rem;
-    color: #667eea;
+    color: rgba(255, 255, 255, 0.8);
     margin-bottom: 15px;
 }
 
@@ -260,4 +372,369 @@ textarea.form-control {
 .page-title i {
     margin-right: 0.5rem;
     color: #667eea;
+}
+
+/* Sidebar Styles */
+.sidebar {
+    width: 250px;
+    min-height: 100vh;
+    position: fixed;
+    left: 0;
+    top: 0;
+    background-color: #1a1f37 !important;
+    border-right: 1px solid rgba(255,255,255,0.1);
+    padding: 20px;
+}
+
+.sidebar-header {
+    margin-bottom: 30px;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.user-info i {
+    font-size: 2rem;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.user-info strong {
+    color: white;
+    font-size: 0.9rem;
+    display: block;
+    margin-bottom: 2px;
+}
+
+.user-info small.text-muted {
+    background-color: #2a2f45;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.6) !important;
+}
+
+/* Navigation sections */
+.sidebar h3 {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.4);
+    margin: 20px 0 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.sidebar .nav-link {
+    padding: 10px 15px;
+    border-radius: 8px;
+    margin: 2px 0;
+    transition: all 0.3s ease;
+    color: rgba(255, 255, 255, 0.7) !important;
+    font-size: 0.9rem;
+}
+
+.sidebar .nav-link:hover, 
+.sidebar .nav-link.active {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: white !important;
+}
+
+.nav-icon {
+    margin-right: 10px;
+    font-size: 1.1rem;
+}
+
+/* Adjust main content */
+.content {
+    margin-left: 250px;
+    padding: 20px;
+    background-color: #1a1f37;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+h2, h3, h4 {
+    color: white;
+}
+
+.text-muted {
+    color: rgba(255, 255, 255, 0.6) !important;
+}
+
+/* Table Styles */
+.table {
+    color: rgba(255, 255, 255, 0.8);
+    margin-top: 1rem;
+}
+
+.table thead th {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.85rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 1rem;
+}
+
+.table tbody td {
+    border-color: rgba(255, 255, 255, 0.1);
+    padding: 1rem;
+    vertical-align: middle;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.table tbody tr:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.table .text-muted {
+    color: rgba(255, 255, 255, 0.5) !important;
+}
+
+/* Card and Section Improvements */
+.admin-card {
+    background-color: #2a2f45;
+    border-radius: 15px;
+    padding: 1.5rem;
+    height: 100%;
+    transition: transform 0.3s ease;
+}
+
+.admin-card:hover {
+    transform: translateY(-5px);
+}
+
+.stats-icon {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.stats-icon i {
+    font-size: 1.5rem;
+    color: white;
+}
+
+.admin-card h3 {
+    font-size: 1rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.7);
+    margin: 0;
+}
+
+.admin-card h2 {
+    font-size: 2rem;
+    font-weight: 600;
+    color: white;
+    margin: 0;
+}
+
+.admin-card p {
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+.action-button {
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    border: none;
+    padding: 0.75rem 1.5rem;
+    color: white;
+    font-weight: 500;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.action-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    background: linear-gradient(45deg, #5a70d9, #694393);
+    color: white;
+}
+
+/* Button Improvements */
+.btn-outline-primary,
+.btn-outline-danger,
+.btn-outline-success,
+.btn-outline-info,
+.btn-outline-secondary {
+    border-color: rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.btn-outline-primary:hover,
+.btn-outline-danger:hover,
+.btn-outline-success:hover,
+.btn-outline-info:hover,
+.btn-outline-secondary:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.3);
+    color: white;
+}
+
+/* Badge Improvements */
+.badge {
+    padding: 0.5em 1em;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+}
+
+.badge.bg-info {
+    background: linear-gradient(45deg, #667eea, #764ba2) !important;
+}
+
+/* Modal Improvements */
+.modal-content {
+    background-color: #2a2f45;
+    border: none;
+    border-radius: 15px;
+}
+
+.modal-header {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 1.5rem;
+}
+
+.modal-header .modal-title {
+    color: white;
+    font-weight: 600;
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.modal-footer {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 1.5rem;
+}
+
+/* Form Improvements */
+.form-control, .form-select {
+    background-color: #1a1f37;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
+    border-radius: 8px;
+}
+
+.form-control:focus, .form-select:focus {
+    background-color: #1a1f37;
+    border-color: #667eea;
+    color: white;
+    box-shadow: 0 0 0 2px rgba(102,126,234,0.2);
+}
+
+.form-label {
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+/* Search Bar Improvements */
+.search-bar {
+    background-color: #1a1f37;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.search-bar .form-control {
+    border: none;
+    padding: 0.75rem 1rem;
+}
+
+.search-bar .btn {
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    border: none;
+    padding: 0.75rem 1.5rem;
+}
+
+/* User Info in Tables */
+.user-info-table {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.user-info-table i {
+    font-size: 1.8rem;
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.user-info-table div strong {
+    display: block;
+    color: white;
+    font-size: 0.9rem;
+}
+
+.user-info-table div small {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.8rem;
+}
+
+/* Action Buttons in Tables */
+.table .btn-sm {
+    padding: 0.4rem 0.8rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.table .btn-sm i {
+    font-size: 1rem;
+}
+
+/* User Management Specific Styles */
+.search-bar {
+    background-color: #1e2442;
+    border: none;
+    border-radius: 8px;
+    padding: 0.5rem;
+}
+
+.search-bar .form-control {
+    background-color: transparent;
+    border: none;
+    color: white;
+    padding: 0.5rem 1rem;
+}
+
+.search-bar .form-control::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.table td {
+    padding: 1rem;
+    vertical-align: middle;
+}
+
+.user-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.badge {
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-weight: 500;
+    font-size: 0.75rem;
+}
+
+.badge.bg-primary {
+    background: #4318FF !important;
+}
+
+.badge.bg-danger {
+    background: #DC3545 !important;
 }
