@@ -1,6 +1,6 @@
 <?php
 session_start();
-require_once 'config.php';
+require_once '../config.php';
 
 if (isset($_SESSION['user_id'])) {
     header("Location: dashboard.php");
@@ -46,7 +46,128 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <title>LMS - Login</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="assets/css/login.css">
+    <link rel="stylesheet" href="../assets/css/login.css">
+    <style>
+        .login-page {
+            background-color: #f8f9fa;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .login-container {
+            width: 100%;
+            max-width: 420px;
+            padding: 15px;
+        }
+        
+        .login-card {
+            background: #ffffff;
+            border-radius: 15px;
+            padding: 2.5rem;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.08);
+            border: 1px solid #dee2e6;
+        }
+        
+        .stats-icon {
+            width: 64px;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            background: #f1f5ff;
+            border-radius: 12px;
+            color: #0d6efd;
+            border: 1px solid #e6effd;
+        }
+        
+        .stats-icon svg {
+            stroke: #0d6efd;
+        }
+        
+        .system-title {
+            color: #212529;
+            font-size: 1.75rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+        }
+        
+        .text-muted {
+            color: #6c757d !important;
+            font-size: 0.95rem;
+        }
+        
+        .input-group {
+            margin-bottom: 1.25rem;
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            overflow: hidden;
+            background-color: #ffffff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+        
+        .input-group-text {
+            background-color: #f8f9fa;
+            border: none;
+            border-right: 1px solid #dee2e6;
+            color: #0d6efd;
+            padding: 0.75rem 1.25rem;
+        }
+        
+        .form-control {
+            border: none;
+            padding: 0.75rem 1.25rem;
+            color: #212529;
+            background-color: #ffffff;
+            font-size: 0.95rem;
+        }
+        
+        .form-control::placeholder {
+            color: #adb5bd;
+            font-size: 0.95rem;
+        }
+        
+        .form-control:focus {
+            box-shadow: none;
+            background-color: #ffffff;
+        }
+        
+        .input-group:focus-within {
+            border-color: #86b7fe;
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.1);
+        }
+        
+        .action-button {
+            padding: 0.875rem;
+            font-weight: 500;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            background: #0d6efd;
+            border: none;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .action-button:hover {
+            background: #0b5ed7;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(13, 110, 253, 0.15);
+        }
+        
+        .alert {
+            background-color: #fff4f4;
+            border: 1px solid #ffebeb;
+            color: #dc3545;
+            border-radius: 10px;
+            padding: 1rem 1.25rem;
+            margin-bottom: 1.5rem;
+        }
+    </style>
 </head>
 <body class="login-page">
     <div class="login-container">
@@ -70,7 +191,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 </div>
             <?php endif; ?>
 
-            <form method="POST">
+            <form method="POST" action="">
                 <div class="mb-4">
                     <div class="input-group">
                         <span class="input-group-text">
@@ -82,8 +203,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         <input type="text" 
                                class="form-control" 
                                name="username" 
-                               placeholder="Enter username"
-                               required>
+                               placeholder="Username"
+                               required
+                               style="background-color: #ffffff; color: #212529;">
                     </div>
                 </div>
                 <div class="mb-4">
@@ -97,8 +219,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         <input type="password" 
                                class="form-control" 
                                name="password" 
-                               placeholder="Enter password"
-                               required>
+                               placeholder="Password"
+                               required
+                               style="background-color: #ffffff; color: #212529;">
                     </div>
                 </div>
                 <button type="submit" class="btn btn-primary w-100 action-button">

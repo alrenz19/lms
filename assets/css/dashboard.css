@@ -4,7 +4,7 @@
 /* Base styles */
 body {
     font-family: 'Inter', sans-serif;
-    background-color: #1a1f37;
+    background-color: #f8f9fa;
 }
 
 /* Icon improvements */
@@ -29,6 +29,18 @@ body {
     padding: 12px 16px;
     font-weight: 500;
     letter-spacing: 0.3px;
+    color: #495057 !important;
+}
+
+.sidebar .nav-link:hover, 
+.sidebar .nav-link.active {
+    background-color: #f8f9fa;
+    color: #0d6efd !important;
+}
+
+.sidebar .nav-link:hover .nav-icon,
+.sidebar .nav-link.active .nav-icon {
+    color: #0d6efd !important;
 }
 
 /* User info improvements */
@@ -36,6 +48,8 @@ body {
     font-size: 2.2rem;
     background: linear-gradient(45deg, #667eea, #764ba2);
     -webkit-background-clip: text;
+    background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 
@@ -43,6 +57,15 @@ body {
     font-weight: 600;
     font-size: 0.95rem;
     letter-spacing: 0.2px;
+    color: #212529;
+}
+
+.user-info small.text-muted {
+    background-color: #f8f9fa;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    color: #6c757d !important;
 }
 
 /* Section headings */
@@ -51,8 +74,9 @@ body {
     font-weight: 600;
     letter-spacing: 1px;
     text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.4);
+    color: #6c757d;
     margin: 24px 0 8px;
+    border-bottom: none;  /* Remove border */
 }
 
 /* Stats improvements */
@@ -63,13 +87,14 @@ body {
     align-items: center;
     justify-content: center;
     border-radius: 12px;
-    background: rgba(255, 255, 255, 0.1);
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
 }
 
 .stats-icon svg {
     width: 24px;
     height: 24px;
-    stroke: white;
+    stroke: #0d6efd;
     stroke-width: 2;
 }
 
@@ -86,10 +111,17 @@ body {
     gap: 8px;
     font-weight: 500;
     letter-spacing: 0.3px;
+    background: #0d6efd;
+    color: white;
 }
 
 .action-button i {
     font-size: 1.1rem;
+}
+
+.action-button:hover {
+    background: #0b5ed7;
+    color: white;
 }
 
 /* Page titles */
@@ -99,6 +131,7 @@ h2 {
     display: flex;
     align-items: center;
     gap: 10px;
+    color: #212529;
 }
 
 h2 i {
@@ -123,7 +156,7 @@ h2 i {
 
 .stats-card {
     background-color: #2a2f45;
-    color: white;
+    color: #2a2f45;
     border: none;
     border-radius: 10px;
     box-shadow: 0 4px 15px rgba(0,0,0,0.1);
@@ -193,12 +226,13 @@ h2 i {
 }
 
 .admin-card {
-    background-color: #2a2f45;
-    color: rgba(255, 255, 255, 0.8);
+    background-color: white;
+    color: #212529;
     padding: 25px;
     border-radius: 10px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
     transition: all 0.3s ease;
+    border: 1px solid #dee2e6;
 }
 
 .admin-card:hover {
@@ -223,20 +257,26 @@ h2 i {
 /* User Management Styles */
 .table {
     margin-bottom: 0;
+    color: #212529;
 }
 
 .table thead th {
     border-top: none;
-    border-bottom: 2px solid #edf2f9;
+    border-bottom: 1px solid #dee2e6;
     font-weight: 600;
     font-size: 0.95rem;
     color: #495057;
+    background-color: #f8f9fa;
 }
 
 .table tbody td {
     vertical-align: middle;
-    border-color: #edf2f9;
-    color: #495057;
+    border-color: #dee2e6;
+    color: #212529;
+}
+
+.table tbody tr:hover {
+    background: #f8f9fa;
 }
 
 .badge {
@@ -269,11 +309,13 @@ h2 i {
     border-radius: 10px;
     box-shadow: 0 2px 6px rgba(0,0,0,0.05);
     margin-bottom: 20px;
+    background-color: white;
+    border: 1px solid #dee2e6;
 }
 
 .search-bar .form-control {
     border-radius: 10px 0 0 10px;
-    border: 1px solid #edf2f9;
+    border: 1px solid #dee2e6;
 }
 
 .search-bar .btn {
@@ -320,14 +362,18 @@ h2 i {
 /* Form Styles */
 .form-control {
     border-radius: 10px;
-    border: 1px solid #edf2f9;
+    border: 1px solid #dee2e6;
     padding: 0.75rem 1.2rem;
     transition: all 0.3s ease;
+    background-color: white;
+    color: #212529;
 }
 
 .form-control:focus {
-    border-color: #667eea;
+    border-color: #86b7fe;
     box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.15);
+    background-color: white;
+    color: #212529;
 }
 
 .form-label {
@@ -381,13 +427,14 @@ textarea.form-control {
     position: fixed;
     left: 0;
     top: 0;
-    background-color: #1a1f37 !important;
-    border-right: 1px solid rgba(255,255,255,0.1);
+    background-color: white !important;
+    border-right: 1px solid #dee2e6;
     padding: 20px;
 }
 
 .sidebar-header {
     margin-bottom: 30px;
+    border-bottom: 2px solid #343a40;
 }
 
 .user-info {
@@ -424,6 +471,7 @@ textarea.form-control {
     margin: 20px 0 10px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    border-bottom: 2px solid #343a40;
 }
 
 .sidebar .nav-link {
@@ -450,39 +498,33 @@ textarea.form-control {
 .content {
     margin-left: 250px;
     padding: 20px;
-    background-color: #1a1f37;
-    color: rgba(255, 255, 255, 0.8);
+    background-color: #f8f9fa;
+    color: #212529;
 }
 
 h2, h3, h4 {
-    color: white;
+    color: #212529;
 }
 
 .text-muted {
-    color: rgba(255, 255, 255, 0.6) !important;
+    color: #6c757d !important;
 }
 
 /* Table Styles */
 .table {
-    color: rgba(255, 255, 255, 0.8);
+    color: #212529;
     margin-top: 1rem;
 }
 
 .table thead th {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    color: rgba(255, 255, 255, 0.6);
-    font-size: 0.85rem;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    padding: 1rem;
+    border-bottom: 1px solid #dee2e6;
+    color: #495057;
+    background-color: #f8f9fa;
 }
 
 .table tbody td {
-    border-color: rgba(255, 255, 255, 0.1);
-    padding: 1rem;
-    vertical-align: middle;
-    color: rgba(255, 255, 255, 0.8);
+    border-color: #dee2e6;
+    color: #212529;
 }
 
 .table tbody tr:hover {
@@ -495,7 +537,8 @@ h2, h3, h4 {
 
 /* Card and Section Improvements */
 .admin-card {
-    background-color: #2a2f45;
+    background-color: white;
+    color: #212529;
     border-radius: 15px;
     padding: 1.5rem;
     height: 100%;
@@ -518,20 +561,20 @@ h2, h3, h4 {
 
 .stats-icon i {
     font-size: 1.5rem;
-    color: white;
+    color: #0d6efd;
 }
 
 .admin-card h3 {
     font-size: 1rem;
     font-weight: 500;
-    color: rgba(255, 255, 255, 0.7);
+    color: #495057;
     margin: 0;
 }
 
 .admin-card h2 {
     font-size: 2rem;
     font-weight: 600;
-    color: white;
+    color: #212529;
     margin: 0;
 }
 
@@ -577,6 +620,38 @@ h2, h3, h4 {
     color: white;
 }
 
+/* Button Improvements - Light Theme */
+.btn-outline-primary,
+.btn-outline-danger,
+.btn-outline-success,
+.btn-outline-info,
+.btn-outline-secondary {
+    border-color: #dee2e6;
+    color: #212529;
+}
+
+.btn-outline-primary {
+    border-color: #0d6efd;
+    color: #0d6efd;
+}
+
+.btn-outline-primary:hover {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+    color: white;
+}
+
+.btn-outline-danger {
+    border-color: #dc3545;
+    color: #dc3545;
+}
+
+.btn-outline-danger:hover {
+    background-color: #dc3545;
+    border-color: #dc3545;
+    color: white;
+}
+
 /* Badge Improvements */
 .badge {
     padding: 0.5em 1em;
@@ -590,18 +665,17 @@ h2, h3, h4 {
 
 /* Modal Improvements */
 .modal-content {
-    background-color: #2a2f45;
-    border: none;
-    border-radius: 15px;
+    background-color: white;
+    border: 1px solid #dee2e6;
 }
 
 .modal-header {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid #dee2e6;
     padding: 1.5rem;
 }
 
 .modal-header .modal-title {
-    color: white;
+    color: #212529;
     font-weight: 600;
 }
 
@@ -616,28 +690,28 @@ h2, h3, h4 {
 
 /* Form Improvements */
 .form-control, .form-select {
-    background-color: #1a1f37;
+    background-color: white;
     border: 1px solid rgba(255, 255, 255, 0.1);
-    color: white;
+    color: #212529;
     border-radius: 8px;
 }
 
 .form-control:focus, .form-select:focus {
-    background-color: #1a1f37;
+    background-color: white;
     border-color: #667eea;
-    color: white;
+    color: #212529;
     box-shadow: 0 0 0 2px rgba(102,126,234,0.2);
 }
 
 .form-label {
-    color: rgba(255, 255, 255, 0.8);
+    color: #495057;
     font-weight: 500;
     margin-bottom: 0.5rem;
 }
 
 /* Search Bar Improvements */
 .search-bar {
-    background-color: #1a1f37;
+    background-color: white;
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 10px;
     overflow: hidden;
@@ -646,12 +720,11 @@ h2, h3, h4 {
 .search-bar .form-control {
     border: none;
     padding: 0.75rem 1rem;
+    color: #212529;
 }
 
-.search-bar .btn {
-    background: linear-gradient(45deg, #667eea, #764ba2);
-    border: none;
-    padding: 0.75rem 1.5rem;
+.search-bar .form-control::placeholder {
+    color: rgba(255, 255, 255, 0.5);
 }
 
 /* User Info in Tables */
@@ -670,12 +743,12 @@ h2, h3, h4 {
 
 .user-info-table div strong {
     display: block;
-    color: white;
+    color: #212529;
     font-size: 0.9rem;
 }
 
 .user-info-table div small {
-    color: rgba(255, 255, 255, 0.6);
+    color: #6c757d;
     font-size: 0.8rem;
 }
 

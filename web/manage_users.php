@@ -1,6 +1,6 @@
 <?php
 session_start();
-require_once 'config.php';
+require_once '../config.php';
 
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
     header("Location: index.php");
@@ -105,9 +105,9 @@ $users = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
     <title>LMS - Manage Users</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="assets/css/style.css">
-    <link rel="stylesheet" href="assets/css/custom.css">
-    <link rel="stylesheet" href="assets/css/dashboard.css">
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="../assets/css/custom.css">
+    <link rel="stylesheet" href="../assets/css/dashboard.css">
 </head>
 <body>
     <div class="wrapper">
@@ -138,34 +138,28 @@ $users = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
                 <!-- User Management Section -->
                 <div class="admin-card">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <div class="d-flex align-items-center">
-                            <div class="stats-icon me-3">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
-                                    <circle cx="9" cy="7" r="4"></circle>
-                                    <path d="M22 12h-4"></path>
-                                    <path d="M18 8l4 4-4 4"></path>
-                                </svg>
+                    <div class="page-header">
+                        <h1 class="page-title">
+                            <i class="bi bi-people"></i>
+                            Manage Users
+                        </h1>
+                        <div class="header-actions">
+                            <div class="search-wrapper">
+                                <i class="bi bi-search search-icon"></i>
+                                <input type="search" 
+                                       class="search-box" 
+                                       id="searchUsers" 
+                                       placeholder="Search users by name, email..." 
+                                       required>
+                                <button type="button" class="clear-search" onclick="clearSearch()">
+                                    <i class="bi bi-x"></i>
+                                </button>
                             </div>
-                            <h2 class="mb-0">Manage Users</h2>
+                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal">
+                                <i class="bi bi-person-plus"></i>
+                                Add New User
+                            </button>
                         </div>
-                        <button class="btn btn-primary action-button" data-bs-toggle="modal" data-bs-target="#addUserModal">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-2">
-                                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                                <circle cx="8.5" cy="7" r="4"></circle>
-                                <line x1="20" y1="8" x2="20" y2="14"></line>
-                                <line x1="23" y1="11" x2="17" y2="11"></line>
-                            </svg>
-                            Add New User
-                        </button>
-                    </div>
-
-                    <!-- Search Bar -->
-                    <div class="search-bar mb-4">
-                        <input type="text" class="form-control" placeholder="Search users..." 
-                               value="<?php echo htmlspecialchars($_GET['search'] ?? ''); ?>"
-                               onkeyup="updateSearch(this.value)">
                     </div>
 
                     <!-- Users Table -->
@@ -211,14 +205,16 @@ $users = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
                                                     data-username="<?php echo htmlspecialchars($user['username']); ?>"
                                                     data-email="<?php echo htmlspecialchars($user['email']); ?>"
                                                     data-full-name="<?php echo htmlspecialchars($user['full_name']); ?>"
-                                                    data-role="<?php echo htmlspecialchars($user['role']); ?>">
+                                                    data-role="<?php echo htmlspecialchars($user['role']); ?>"
+                                                    style="border-color: #0d6efd; color: #0d6efd;">
                                                 <i class="bi bi-pencil"></i>
                                             </button>
                                             <button class="btn btn-sm btn-outline-danger" 
                                                     data-bs-toggle="modal" 
                                                     data-bs-target="#deleteUserModal"
                                                     data-user-id="<?php echo $user['id']; ?>"
-                                                    data-username="<?php echo htmlspecialchars($user['username']); ?>">
+                                                    data-username="<?php echo htmlspecialchars($user['username']); ?>"
+                                                    style="border-color: #dc3545; color: #dc3545;">
                                                 <i class="bi bi-trash"></i>
                                             </button>
                                         <?php endif; ?>
@@ -238,30 +234,35 @@ $users = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Add New User</h5>
+                    <h5 class="modal-title" style="color: #212529;">Add New User</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <form method="POST" action="">
                     <div class="modal-body">
                         <div class="mb-3">
-                            <label for="full_name" class="form-label">Full Name</label>
-                            <input type="text" class="form-control" id="full_name" name="full_name" required>
+                            <label for="full_name" class="form-label" style="color: #212529;">Full Name</label>
+                            <input type="text" class="form-control" id="full_name" name="full_name" required
+                                   style="background-color: white; color: #212529; border: 1px solid #dee2e6;">
                         </div>
                         <div class="mb-3">
-                            <label for="username" class="form-label">Username</label>
-                            <input type="text" class="form-control" id="username" name="username" required>
+                            <label for="username" class="form-label" style="color: #212529;">Username</label>
+                            <input type="text" class="form-control" id="username" name="username" required
+                                   style="background-color: white; color: #212529; border: 1px solid #dee2e6;">
                         </div>
                         <div class="mb-3">
-                            <label for="email" class="form-label">Email</label>
-                            <input type="email" class="form-control" id="email" name="email" required>
+                            <label for="email" class="form-label" style="color: #212529;">Email</label>
+                            <input type="email" class="form-control" id="email" name="email" required
+                                   style="background-color: white; color: #212529; border: 1px solid #dee2e6;">
                         </div>
                         <div class="mb-3">
-                            <label for="password" class="form-label">Password</label>
-                            <input type="password" class="form-control" id="password" name="password" required>
+                            <label for="password" class="form-label" style="color: #212529;">Password</label>
+                            <input type="password" class="form-control" id="password" name="password" required
+                                   style="background-color: white; color: #212529; border: 1px solid #dee2e6;">
                         </div>
                         <div class="mb-3">
-                            <label for="role" class="form-label">Role</label>
-                            <select class="form-select" id="role" name="role" required>
+                            <label for="role" class="form-label" style="color: #212529;">Role</label>
+                            <select class="form-select" id="role" name="role" required
+                                   style="background-color: white; color: #212529; border: 1px solid #dee2e6;">
                                 <option value="user">User</option>
                                 <option value="admin">Admin</option>
                             </select>
@@ -281,7 +282,7 @@ $users = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Edit User</h5>
+                    <h5 class="modal-title" style="color: #212529;">Edit User</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <form id="editUserForm" method="POST">
@@ -289,24 +290,29 @@ $users = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
                     <input type="hidden" name="user_id" id="editUserId">
                     <div class="modal-body">
                         <div class="mb-3">
-                            <label for="edit_full_name" class="form-label">Full Name</label>
-                            <input type="text" class="form-control" id="edit_full_name" name="full_name" required>
+                            <label for="edit_full_name" class="form-label" style="color: #212529;">Full Name</label>
+                            <input type="text" class="form-control" id="edit_full_name" name="full_name" required
+                                   style="background-color: white; color: #212529; border: 1px solid #dee2e6;">
                         </div>
                         <div class="mb-3">
-                            <label for="edit_username" class="form-label">Username</label>
-                            <input type="text" class="form-control" id="edit_username" name="username" required>
+                            <label for="edit_username" class="form-label" style="color: #212529;">Username</label>
+                            <input type="text" class="form-control" id="edit_username" name="username" required
+                                   style="background-color: white; color: #212529; border: 1px solid #dee2e6;">
                         </div>
                         <div class="mb-3">
-                            <label for="edit_email" class="form-label">Email</label>
-                            <input type="email" class="form-control" id="edit_email" name="email" required>
+                            <label for="edit_email" class="form-label" style="color: #212529;">Email</label>
+                            <input type="email" class="form-control" id="edit_email" name="email" required
+                                   style="background-color: white; color: #212529; border: 1px solid #dee2e6;">
                         </div>
                         <div class="mb-3">
-                            <label for="edit_password" class="form-label">New Password (leave blank to keep current)</label>
-                            <input type="password" class="form-control" id="edit_password" name="password">
+                            <label for="edit_password" class="form-label" style="color: #212529;">New Password (leave blank to keep current)</label>
+                            <input type="password" class="form-control" id="edit_password" name="password"
+                                   style="background-color: white; color: #212529; border: 1px solid #dee2e6;">
                         </div>
                         <div class="mb-3">
-                            <label for="edit_role" class="form-label">Role</label>
-                            <select class="form-select" id="edit_role" name="role" required>
+                            <label for="edit_role" class="form-label" style="color: #212529;">Role</label>
+                            <select class="form-select" id="edit_role" name="role" required
+                                   style="background-color: white; color: #212529; border: 1px solid #dee2e6;">
                                 <option value="user">User</option>
                                 <option value="admin">Admin</option>
                             </select>
@@ -347,45 +353,220 @@ $users = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Handle Edit User Modal
         document.addEventListener('DOMContentLoaded', function() {
+            // Real-time search functionality
+            const searchInput = document.getElementById('searchUsers');
+            const userRows = document.querySelectorAll('tr[data-user-row]');
+            
+            function filterUsers(searchTerm) {
+                searchTerm = searchTerm.toLowerCase();
+                userRows.forEach(row => {
+                    const name = row.querySelector('[data-user-name]').textContent.toLowerCase();
+                    const email = row.querySelector('[data-user-email]').textContent.toLowerCase();
+                    const username = row.querySelector('[data-username]').textContent.toLowerCase();
+                    const matches = name.includes(searchTerm) || 
+                                  email.includes(searchTerm) || 
+                                  username.includes(searchTerm);
+                    row.style.display = matches ? '' : 'none';
+                });
+            }
+
+            searchInput.addEventListener('input', (e) => {
+                filterUsers(e.target.value);
+            });
+
+            // Clear search functionality
+            window.clearSearch = function() {
+                searchInput.value = '';
+                searchInput.dispatchEvent(new Event('input'));
+                searchInput.focus();
+            };
+
+            // Handle Edit User Modal
             const editUserModal = document.getElementById('editUserModal');
-            editUserModal.addEventListener('show.bs.modal', function(event) {
-                const button = event.relatedTarget;
-                const userId = button.getAttribute('data-user-id');
-                const username = button.getAttribute('data-username');
-                const email = button.getAttribute('data-email');
-                const fullName = button.getAttribute('data-full-name');
-                const role = button.getAttribute('data-role');
+            if (editUserModal) {
+                editUserModal.addEventListener('show.bs.modal', function(event) {
+                    const button = event.relatedTarget;
+                    const userId = button.getAttribute('data-user-id');
+                    const username = button.getAttribute('data-username');
+                    const email = button.getAttribute('data-email');
+                    const fullName = button.getAttribute('data-full-name');
+                    const role = button.getAttribute('data-role');
 
-                editUserModal.querySelector('#editUserId').value = userId;
-                editUserModal.querySelector('#edit_username').value = username;
-                editUserModal.querySelector('#edit_email').value = email;
-                editUserModal.querySelector('#edit_full_name').value = fullName;
-                editUserModal.querySelector('#edit_role').value = role;
-            });
-        });
+                    this.querySelector('#editUserId').value = userId;
+                    this.querySelector('#edit_username').value = username;
+                    this.querySelector('#edit_email').value = email;
+                    this.querySelector('#edit_full_name').value = fullName;
+                    this.querySelector('#edit_role').value = role;
+                });
+            }
 
-        // Handle Delete User Modal
-        document.addEventListener('DOMContentLoaded', function() {
+            // Handle Delete User Modal
             const deleteUserModal = document.getElementById('deleteUserModal');
-            deleteUserModal.addEventListener('show.bs.modal', function(event) {
-                const button = event.relatedTarget;
-                const userId = button.getAttribute('data-user-id');
-                const username = button.getAttribute('data-username');
+            if (deleteUserModal) {
+                deleteUserModal.addEventListener('show.bs.modal', function(event) {
+                    const button = event.relatedTarget;
+                    const userId = button.getAttribute('data-user-id');
+                    const username = button.getAttribute('data-username');
 
-                deleteUserModal.querySelector('#deleteUserId').value = userId;
-                deleteUserModal.querySelector('#deleteUserName').textContent = username;
-            });
+                    this.querySelector('#deleteUserId').value = userId;
+                    this.querySelector('#deleteUserName').textContent = username;
+                });
+            }
+
+            // Form validation
+            const addUserForm = document.querySelector('form[name="addUserForm"]');
+            const editUserForm = document.querySelector('form[name="editUserForm"]');
+
+            function validateForm(form) {
+                const password = form.querySelector('input[type="password"]');
+                const email = form.querySelector('input[type="email"]');
+                
+                if (password && password.value.length < 6) {
+                    alert('Password must be at least 6 characters long');
+                    return false;
+                }
+
+                if (email && !email.value.includes('@')) {
+                    alert('Please enter a valid email address');
+                    return false;
+                }
+
+                return true;
+            }
+
+            if (addUserForm) {
+                addUserForm.addEventListener('submit', function(e) {
+                    if (!validateForm(this)) {
+                        e.preventDefault();
+                    }
+                });
+            }
+
+            if (editUserForm) {
+                editUserForm.addEventListener('submit', function(e) {
+                    if (!validateForm(this)) {
+                        e.preventDefault();
+                    }
+                });
+            }
+
+            // Show success/error messages
+            const alertMessage = document.querySelector('.alert');
+            if (alertMessage) {
+                setTimeout(() => {
+                    alertMessage.classList.remove('show');
+                    setTimeout(() => alertMessage.remove(), 150);
+                }, 3000);
+            }
         });
-
-        // Show modal if there was an error adding user
-        <?php if ($error && isset($_POST['add_user'])): ?>
-            document.addEventListener('DOMContentLoaded', function() {
-                var modal = new bootstrap.Modal(document.getElementById('addUserModal'));
-                modal.show();
-            });
-        <?php endif; ?>
     </script>
+
+    <style>
+        /* Table Styles */
+        .table th {
+            font-weight: 600;
+            color: #495057;
+            border-bottom: 2px solid #e9ecef;
+            padding: 1rem;
+        }
+
+        .table td {
+            padding: 1rem;
+            vertical-align: middle;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        /* User Icon Styles */
+        .user-icon {
+            width: 40px;
+            height: 40px;
+            background-color: #e9ecef;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 1rem;
+        }
+
+        /* Badge Styles */
+        .badge {
+            padding: 0.5em 0.75em;
+            font-weight: 500;
+            font-size: 0.75rem;
+        }
+
+        .badge.bg-primary {
+            background-color: #6366f1 !important;
+        }
+
+        .badge.bg-danger {
+            background-color: #ef4444 !important;
+        }
+
+        /* Button Styles */
+        .btn-sm {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+        }
+
+        .btn-outline-primary {
+            color: #6366f1;
+            border-color: #6366f1;
+        }
+
+        .btn-outline-primary:hover {
+            background-color: #6366f1;
+            border-color: #6366f1;
+        }
+
+        .btn-outline-danger {
+            color: #ef4444;
+            border-color: #ef4444;
+        }
+
+        .btn-outline-danger:hover {
+            background-color: #ef4444;
+            border-color: #ef4444;
+        }
+
+        /* Modal Styles */
+        .modal-content {
+            border: none;
+            border-radius: 8px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        .modal-header {
+            border-bottom: 1px solid #e9ecef;
+            padding: 1.25rem 1.5rem;
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .modal-footer {
+            border-top: 1px solid #e9ecef;
+            padding: 1.25rem 1.5rem;
+        }
+
+        .form-label {
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-control {
+            border-radius: 4px;
+            border: 1px solid #dee2e6;
+            padding: 0.5rem 0.75rem;
+            font-size: 0.875rem;
+        }
+
+        .form-control:focus {
+            border-color: #6366f1;
+            box-shadow: 0 0 0 0.25rem rgba(99, 102, 241, 0.25);
+        }
+    </style>
 </body>
 </html>

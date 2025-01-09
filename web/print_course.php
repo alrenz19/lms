@@ -1,6 +1,6 @@
 <?php
 session_start();
-require_once 'config.php';
+require_once '../config.php';
 
 // Restrict access to admin users only
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
@@ -225,34 +225,117 @@ if (!$selected_user_id) {
                 color: rgba(255, 255, 255, 0.8);
                 margin: 0.5rem 0;
             }
+
+            /* Light Theme Styles */
+            body {
+                background-color: #f8f9fa;
+                color: #212529;
+            }
+
+            .select-user-card {
+                background: white;
+                border: 1px solid #dee2e6;
+                border-radius: 15px;
+                padding: 2rem;
+                box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            }
+
+            .select-user-card h4 {
+                color: #212529;
+                font-size: 1.25rem;
+                font-weight: 600;
+            }
+
+            .form-label {
+                color: #495057;
+                font-weight: 500;
+            }
+
+            .form-select {
+                background-color: white;
+                border: 1px solid #dee2e6;
+                color: #212529;
+                border-radius: 8px;
+            }
+
+            .form-select:focus {
+                border-color: #86b7fe;
+                box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+            }
+
+            .alert-info {
+                background-color: #cff4fc;
+                border-color: #b6effb;
+                color: #055160;
+            }
+
+            .quiz-section {
+                background: white;
+                border: 1px solid #dee2e6;
+                border-radius: 15px;
+                margin-bottom: 1.5rem;
+            }
+
+            .quiz-header {
+                background: #f8f9fa;
+                border-left: 4px solid #0d6efd;
+                color: #212529;
+            }
+
+            .quiz-header h3 {
+                color: #212529;
+            }
+
+            .question {
+                border-bottom: 1px solid #dee2e6;
+                color: #212529;
+            }
+
+            .option {
+                color: #495057;
+            }
+
+            .header h1 {
+                color: #212529;
+            }
+
+            .student-info {
+                color: #495057;
+            }
         </style>
     </head>
-    <body class="bg-dark">
+    <body class="bg-light">  <!-- Changed from bg-dark to bg-light -->
         <div class="container mt-5">
             <div class="row justify-content-center">
                 <div class="col-md-6">
-                    <div class="select-user-card">
+                    <div class="d-flex justify-content-end mb-3">
+                        <a href="manage_courses.php" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Back to Courses
+                        </a>
+                    </div>
+                    <div class="select-user-card" style="background-color: white; border: 1px solid #dee2e6; box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);">
                         <div class="d-flex align-items-center mb-4">
                             <div class="stats-icon me-3">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0d6efd" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
                                     <circle cx="9" cy="7" r="4"></circle>
                                     <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
                                     <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                                 </svg>
                             </div>
-                            <h4>Select User for Print Preview</h4>
+                            <h4 style="color: #212529;">Select User for Print Preview</h4>
                         </div>
 
                         <?php if (empty($users)): ?>
-                            <div class="alert alert-info">
+                            <div class="alert alert-info" style="background-color: #cff4fc; border-color: #b6effb; color: #055160;">
                                 No users have attempted this course yet.
                             </div>
                         <?php else: ?>
                             <form action="print_course.php" method="GET">
                                 <input type="hidden" name="id" value="<?php echo $course_id; ?>">
                                 <div class="mb-4">
-                                    <select class="form-select" name="user_id" id="user_id" required>
+                                    <select class="form-select" name="user_id" id="user_id" required
+                                            style="background-color: white; color: #212529; border: 1px solid #dee2e6;">
                                         <option value="">Choose a user...</option>
                                         <?php foreach ($users as $user): ?>
                                             <option value="<?php echo $user['id']; ?>">
@@ -366,6 +449,59 @@ foreach ($results as $row) {
             margin: 0.5cm;
         }
         
+        body {
+            background-color: #f8f9fa;
+            color: #212529;
+        }
+
+        .quiz-section {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 15px;
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+        }
+
+        .quiz-header {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-left: 4px solid #0d6efd;
+            color: #212529;
+        }
+
+        .quiz-header h3 {
+            color: #212529;
+            margin-bottom: 0.5rem;
+        }
+
+        .question {
+            padding: 1rem;
+            border-bottom: 1px solid #dee2e6;
+            color: #212529;
+        }
+
+        .options {
+            margin-top: 0.75rem;
+            color: #212529;
+        }
+
+        .option {
+            color: #212529;
+            margin: 0.5rem 0;
+        }
+
+        .header h1 {
+            color: #212529;
+        }
+
+        .student-info {
+            color: #212529;
+        }
+
+        .student-info strong {
+            color: #495057;
+        }
+
         @media print {
             body { 
                 margin: 0;
@@ -374,6 +510,8 @@ foreach ($results as $row) {
                 height: 297mm;
                 font-size: 11px;
                 line-height: 1.3;
+                background: white !important;
+                color: black !important;
             }
             .no-print { 
                 display: none !important;
@@ -445,12 +583,17 @@ foreach ($results as $row) {
 <body>
     <div class="container my-4">
         <div class="no-print mb-4">
-            <button onclick="window.print()" class="btn btn-primary">
-                <i class="bi bi-printer"></i> Print Report
-            </button>
-            <a href="print_course.php?id=<?php echo $course_id; ?>" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-left"></i> Select Different User
-            </a>
+            <div class="d-flex gap-2">
+                <button onclick="window.print()" class="btn btn-primary">
+                    <i class="bi bi-printer"></i> Print Report
+                </button>
+                <a href="print_course.php?id=<?php echo $course_id; ?>" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Select Different User
+                </a>
+                <a href="manage_courses.php" class="btn btn-outline-danger">
+                    <i class="bi bi-x-circle"></i> Cancel
+                </a>
+            </div>
         </div>
 
         <div class="header">

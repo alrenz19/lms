@@ -1,7 +1,7 @@
 -- Active: 1735001374986@@127.0.0.1@3306@db_lms
 <?php
 session_start();
-require_once 'config.php';
+require_once '../config.php';
 
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
     header("Location: index.php");

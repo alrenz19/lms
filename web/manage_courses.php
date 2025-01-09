@@ -1,6 +1,6 @@
 <?php
 session_start();
-require_once 'config.php';
+require_once '../config.php';
 
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
     header("Location: index.php");
@@ -48,9 +48,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <title>LMS - Manage Courses</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="assets/css/style.css">
-    <link rel="stylesheet" href="assets/css/custom.css">
-    <link rel="stylesheet" href="assets/css/dashboard.css">
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="../assets/css/custom.css">
+    <link rel="stylesheet" href="../assets/css/dashboard.css">
 </head>
 <body>
     <div class="wrapper">
@@ -96,30 +96,28 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
                 <!-- Course Management Section -->
                 <div class="admin-card">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <div class="d-flex align-items-center">
-                            <div class="stats-icon me-3">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
-                                    <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
-                                </svg>
+                    <div class="page-header">
+                        <h1 class="page-title">
+                            <i class="bi bi-book"></i>
+                            Manage Courses
+                        </h1>
+                        <div class="header-actions">
+                            <div class="search-wrapper">
+                                <i class="bi bi-search search-icon"></i>
+                                <input type="search" 
+                                       class="search-box" 
+                                       id="searchCourses" 
+                                       placeholder="Search courses by title..." 
+                                       required>
+                                <button type="button" class="clear-search" onclick="clearSearch()">
+                                    <i class="bi bi-x"></i>
+                                </button>
                             </div>
-                            <h2 class="mb-0">Manage Courses</h2>
+                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCourseModal">
+                                <i class="bi bi-plus-lg"></i>
+                                Add New Course
+                            </button>
                         </div>
-                        <button class="btn btn-primary action-button" data-bs-toggle="modal" data-bs-target="#addCourseModal">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-2">
-                                <line x1="12" y1="5" x2="12" y2="19"></line>
-                                <line x1="5" y1="12" x2="19" y2="12"></line>
-                            </svg>
-                            Add New Course
-                        </button>
-                    </div>
-
-                    <!-- Search Bar -->
-                    <div class="search-bar mb-4">
-                        <input type="text" class="form-control" placeholder="Search courses..." 
-                               value="<?php echo htmlspecialchars($_GET['search'] ?? ''); ?>"
-                               onkeyup="updateSearch(this.value)">
                     </div>
 
                     <!-- Alert Messages -->
@@ -204,7 +202,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                             </a>
                                             <a href="edit_course.php?id=<?php echo $row['id']; ?>" 
                                                class="btn btn-sm btn-outline-primary me-2">
-                                                <i class="bi bi-pencil"></i>
+                                                <i class="bi bi-pencil"></i> Edit
                                             </a>
                                             <button class="btn btn-sm btn-outline-danger" 
                                                     onclick="deleteCourse(<?php echo $row['id']; ?>)">
@@ -226,18 +224,36 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Add New Course</h5>
+                    <h5 class="modal-title" style="color: #212529;">Add New Course</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <form method="POST">
                     <div class="modal-body">
                         <div class="mb-3">
-                            <label for="title" class="form-label">Course Title</label>
-                            <input type="text" class="form-control" id="title" name="title" required>
+                            <label for="title" class="form-label" style="color: #212529;">Course Title</label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="title" 
+                                   name="title" 
+                                   required
+                                   style="background-color: #ffffff;
+                                          border: 1px solid #ced4da;
+                                          color: #212529;
+                                          padding: 10px 15px;
+                                          box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
                         </div>
                         <div class="mb-3">
-                            <label for="description" class="form-label">Description</label>
-                            <textarea class="form-control" id="description" name="description" rows="3" required></textarea>
+                            <label for="description" class="form-label" style="color: #212529;">Description</label>
+                            <textarea class="form-control" 
+                                      id="description" 
+                                      name="description" 
+                                      rows="3" 
+                                      required
+                                      style="background-color: #ffffff;
+                                             border: 1px solid #ced4da;
+                                             color: #212529;
+                                             padding: 10px 15px;
+                                             box-shadow: 0 1px 3px rgba(0,0,0,0.1);"></textarea>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -254,16 +270,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Add New Quiz</h5>
+                    <h5 class="modal-title" style="color: #212529;">Add New Quiz</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <form method="POST">
                     <div class="modal-body">
                         <input type="hidden" name="course_id" id="courseIdInput">
                         <div class="mb-3">
-                            <label for="quiz_title" class="form-label">Quiz Title</label>
-                            <input type="text" class="form-control" id="quiz_title" name="quiz_title" required minlength="3" placeholder="Enter quiz title">
-                            <div class="form-text">Quiz title is required before adding questions.</div>
+                            <label for="quiz_title" class="form-label" style="color: #212529;">Quiz Title</label>
+                            <input type="text" class="form-control" id="quiz_title" name="quiz_title" required 
+                                   minlength="3" placeholder="Enter quiz title"
+                                   style="background-color: white; color: #212529; border: 1px solid #dee2e6;">
+                            <div class="form-text" style="color: #6c757d;">Quiz title is required before adding questions.</div>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -277,17 +295,200 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-    document.querySelectorAll('[data-bs-target="#addQuizModal"]').forEach(button => {
-        button.addEventListener('click', () => {
-            document.getElementById('courseIdInput').value = button.dataset.courseId;
-        });
-    });
-
-    function deleteCourse(id) {
-        if (confirm('Are you sure you want to delete this course? This will also delete all related quizzes and progress data.')) {
-            window.location.href = 'delete_course.php?id=' + id;
+    document.addEventListener('DOMContentLoaded', function() {
+        // Real-time search functionality
+        const searchInput = document.getElementById('searchCourses');
+        const courseRows = document.querySelectorAll('tr[data-course-row]');
+        
+        function filterCourses(searchTerm) {
+            searchTerm = searchTerm.toLowerCase();
+            courseRows.forEach(row => {
+                const title = row.querySelector('[data-course-title]').textContent.toLowerCase();
+                const description = row.querySelector('[data-course-description]').textContent.toLowerCase();
+                const matches = title.includes(searchTerm) || description.includes(searchTerm);
+                row.style.display = matches ? '' : 'none';
+            });
         }
-    }
+
+        searchInput.addEventListener('input', (e) => {
+            filterCourses(e.target.value);
+        });
+
+        // Clear search functionality
+        window.clearSearch = function() {
+            searchInput.value = '';
+            searchInput.dispatchEvent(new Event('input'));
+            searchInput.focus();
+        };
+
+        // Handle Add Quiz Modal
+        const addQuizModal = document.getElementById('addQuizModal');
+        if (addQuizModal) {
+            addQuizModal.addEventListener('show.bs.modal', function(event) {
+                const button = event.relatedTarget;
+                const courseId = button.getAttribute('data-course-id');
+                this.querySelector('#courseIdInput').value = courseId;
+            });
+        }
+
+        // Form validation
+        const addCourseForm = document.querySelector('form[name="addCourseForm"]');
+        const addQuizForm = document.querySelector('form[name="addQuizForm"]');
+
+        function validateCourseForm(form) {
+            const title = form.querySelector('input[name="title"]');
+            const description = form.querySelector('textarea[name="description"]');
+            
+            if (title.value.trim().length < 3) {
+                alert('Course title must be at least 3 characters long');
+                return false;
+            }
+
+            if (description.value.trim().length < 10) {
+                alert('Course description must be at least 10 characters long');
+                return false;
+            }
+
+            return true;
+        }
+
+        if (addCourseForm) {
+            addCourseForm.addEventListener('submit', function(e) {
+                if (!validateCourseForm(this)) {
+                    e.preventDefault();
+                }
+            });
+        }
+
+        if (addQuizForm) {
+            addQuizForm.addEventListener('submit', function(e) {
+                const title = this.querySelector('input[name="quiz_title"]');
+                if (title.value.trim().length < 3) {
+                    alert('Quiz title must be at least 3 characters long');
+                    e.preventDefault();
+                }
+            });
+        }
+
+        // Delete course confirmation
+        window.deleteCourse = function(id) {
+            if (confirm('Are you sure you want to delete this course? This action cannot be undone and will delete all related quizzes and progress data.')) {
+                window.location.href = 'delete_course.php?id=' + id;
+            }
+        };
+
+        // Show success/error messages
+        const alertMessage = document.querySelector('.alert');
+        if (alertMessage) {
+            setTimeout(() => {
+                alertMessage.classList.remove('show');
+                setTimeout(() => alertMessage.remove(), 150);
+            }, 3000);
+        }
+    });
     </script>
+
+    <style>
+    /* Course Icon Styles */
+    .course-icon {
+        width: 40px;
+        height: 40px;
+        background-color: rgba(99, 102, 241, 0.1);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 1rem;
+        color: #6366f1;
+    }
+
+    /* Quiz Count Badge */
+    .badge.bg-primary {
+        background-color: #6366f1 !important;
+        font-weight: 500;
+        font-size: 0.75rem;
+        padding: 0.5em 0.75em;
+    }
+
+    /* Action Buttons */
+    .btn-sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+    }
+
+    .btn-outline-secondary { color: #6b7280; border-color: #6b7280; }
+    .btn-outline-success { color: #10b981; border-color: #10b981; }
+    .btn-outline-info { color: #3b82f6; border-color: #3b82f6; }
+    .btn-outline-primary { color: #6366f1; border-color: #6366f1; }
+    .btn-outline-danger { color: #ef4444; border-color: #ef4444; }
+
+    .btn-outline-secondary:hover { background-color: #6b7280; border-color: #6b7280; }
+    .btn-outline-success:hover { background-color: #10b981; border-color: #10b981; }
+    .btn-outline-info:hover { background-color: #3b82f6; border-color: #3b82f6; }
+    .btn-outline-primary:hover { background-color: #6366f1; border-color: #6366f1; }
+    .btn-outline-danger:hover { background-color: #ef4444; border-color: #ef4444; }
+
+    /* Alert Styles */
+    .alert {
+        border: none;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .alert-success {
+        background-color: #ecfdf5;
+        color: #047857;
+    }
+
+    .alert-danger {
+        background-color: #fef2f2;
+        color: #b91c1c;
+    }
+
+    /* Modal Styles */
+    .modal-content {
+        border: none;
+        border-radius: 8px;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+
+    .modal-header {
+        border-bottom: 1px solid #e9ecef;
+        padding: 1.25rem 1.5rem;
+    }
+
+    .modal-body {
+        padding: 1.5rem;
+    }
+
+    .modal-footer {
+        border-top: 1px solid #e9ecef;
+        padding: 1.25rem 1.5rem;
+    }
+
+    .form-label {
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+        color: #374151;
+    }
+
+    .form-control {
+        border-radius: 4px;
+        border: 1px solid #dee2e6;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.875rem;
+    }
+
+    .form-control:focus {
+        border-color: #6366f1;
+        box-shadow: 0 0 0 0.25rem rgba(99, 102, 241, 0.25);
+    }
+
+    .form-text {
+        font-size: 0.75rem;
+        color: #6b7280;
+    }
+    </style>
 </body>
 </html>

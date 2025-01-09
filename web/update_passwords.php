@@ -1,5 +1,5 @@
 <?php
-require_once 'config.php';
+require_once '../config.php';
 
 // Hash admin password
 $admin_password = 'admin123'; // Default admin password
