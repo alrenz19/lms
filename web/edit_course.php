@@ -67,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 
                 // First try to delete old video if exists
                 if ($video_info) {
-                    $old_video_path = $video_info['file_path'];
+                    $old_video_path = $video_info['video_url'];
                     if (file_exists($old_video_path)) {
                         if (!unlink($old_video_path)) {
                             throw new Exception("Failed to delete old video file");
@@ -87,7 +87,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 }
                 
                 // Update course_videos table
-                $stmt = $conn->prepare("INSERT INTO course_videos (course_id, file_path, file_size) VALUES (?, ?, ?)");
+                $stmt = $conn->prepare("INSERT INTO course_videos (course_id, video_url, file_size) VALUES (?, ?, ?)");
                 $stmt->bind_param("isi", $course_id, $video_path, $file_size);
                 if (!$stmt->execute()) {
                     throw new Exception("Failed to update database with video information");
@@ -133,7 +133,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             // Get current video info
             if ($video_info) {
                 // Delete physical file
-                $old_video_path = $video_info['file_path'];
+                $old_video_path = $video_info['video_url'];
                 if (file_exists($old_video_path)) {
                     if (!unlink($old_video_path)) {
                         throw new Exception("Failed to delete video file");

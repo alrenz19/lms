@@ -282,7 +282,7 @@ $average_score = $courses_with_score > 0 ? $total_score / $courses_with_score : 
     .stats-icon {
         width: 48px;
         height: 48px;
-        background-color: rgba(99, 102, 241, 0.1);
+        background: rgba(99, 102, 241, 0.1);
         border-radius: 12px;
         display: flex;
         align-items: center;
@@ -304,7 +304,7 @@ $average_score = $courses_with_score > 0 ? $total_score / $courses_with_score : 
     }
 
     .stats-info h2 {
-        font-size: 1.5rem;
+        font-size: 2rem;
         font-weight: 600;
         color: #111827;
         margin: 0;
@@ -313,12 +313,13 @@ $average_score = $courses_with_score > 0 ? $total_score / $courses_with_score : 
     /* Course Cards */
     .course-card {
         background: white;
-        border-radius: 12px;
+        border-radius: 16px;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-        transition: all 0.3s ease;
+        transition: all 0.2s ease;
         height: 100%;
         display: flex;
         flex-direction: column;
+        border: 1px solid #e5e7eb;
     }
 
     .course-card:hover {
@@ -334,7 +335,7 @@ $average_score = $courses_with_score > 0 ? $total_score / $courses_with_score : 
     .course-icon {
         width: 48px;
         height: 48px;
-        background-color: rgba(99, 102, 241, 0.1);
+        background: rgba(99, 102, 241, 0.1);
         border-radius: 12px;
         display: flex;
         align-items: center;
@@ -360,7 +361,7 @@ $average_score = $courses_with_score > 0 ? $total_score / $courses_with_score : 
     }
 
     .progress-bar {
-        background-color: #6366f1;
+        background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
         transition: width 0.3s ease;
     }
 
@@ -434,12 +435,19 @@ $average_score = $courses_with_score > 0 ? $total_score / $courses_with_score : 
     /* Admin Cards */
     .admin-card {
         background: white;
-        border-radius: 12px;
+        border-radius: 16px;
         padding: 1.5rem;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        border: 1px solid #e5e7eb;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
+        transition: all 0.2s ease;
+    }
+
+    .admin-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 20px rgba(0, 0, 0, 0.1);
     }
 
     .admin-card h3 {
@@ -456,6 +464,24 @@ $average_score = $courses_with_score > 0 ? $total_score / $courses_with_score : 
     .action-button {
         margin-top: 1rem;
         width: 100%;
+        background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+        border: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 500;
+        color: white;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+    }
+
+    .action-button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+        background: linear-gradient(135deg, #5a5be6 0%, #4338ca 100%);
+        color: white;
     }
     </style>
 </body>

@@ -57,7 +57,7 @@ $base_path = $is_in_includes ? '..' : '.';
 
 <style>
 .sidebar {
-    width: 260px;
+    width: 280px;
     height: 100vh;
     background: white;
     border-right: 1px solid #e5e7eb;
@@ -104,19 +104,21 @@ $base_path = $is_in_includes ? '..' : '.';
     gap: 0.75rem;
     padding: 0.75rem 1rem;
     text-decoration: none;
-    color: #4b5563;
-    border-radius: 0.5rem;
+    color: #6b7280;
+    border-radius: 8px;
     transition: all 0.2s;
+    font-size: 0.875rem;
+    font-weight: 500;
 }
 
 .sidebar nav a:hover {
     background: #f3f4f6;
-    color: #111827;
+    color: #6366f1;
 }
 
 .sidebar nav a.active {
-    background: #6366f1;
-    color: white;
+    background: rgba(99, 102, 241, 0.1);
+    color: #6366f1;
 }
 
 .sidebar nav a i {
@@ -124,7 +126,7 @@ $base_path = $is_in_includes ? '..' : '.';
 }
 
 .content {
-    margin-left: 260px;
+    margin-left: 280px;
     padding: 2rem;
 }
 

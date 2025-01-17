@@ -49,26 +49,295 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
     <link rel="stylesheet" href="../assets/css/style.css">
-    <link rel="stylesheet" href="../assets/css/custom.css">
     <link rel="stylesheet" href="../assets/css/dashboard.css">
+    <style>
+        .progress-header {
+            background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px rgba(109, 40, 217, 0.1);
+        }
+
+        .page-title {
+            font-size: 2rem;
+            font-weight: 600;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: #fff;
+        }
+
+        .page-title i {
+            font-size: 1.75rem;
+            color: #fff;
+        }
+
+        .stats-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            height: 100%;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e5e7eb;
+            transition: all 0.2s ease;
+        }
+
+        .stats-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .stats-icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(99, 102, 241, 0.1);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+            color: #6366f1;
+        }
+
+        .stats-info h3 {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #6b7280;
+            margin-bottom: 0.5rem;
+        }
+
+        .stats-info h2 {
+            font-size: 2rem;
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 0.25rem;
+        }
+
+        .admin-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e5e7eb;
+        }
+
+        .search-wrapper {
+            position: relative;
+            max-width: 300px;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6b7280;
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 0.75rem 1rem 0.75rem 2.5rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            color: #111827;
+            transition: all 0.2s;
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .table {
+            margin: 0;
+        }
+
+        .table th {
+            padding: 1rem 1.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #6b7280;
+            background: #f9fafb;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .table td {
+            padding: 1rem 1.5rem;
+            vertical-align: middle;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .badge {
+            padding: 0.5em 0.75em;
+            font-weight: 500;
+            font-size: 0.75rem;
+        }
+
+        .badge.bg-primary {
+            background-color: #6366f1 !important;
+        }
+
+        .btn-sm {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.875rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .btn-outline-primary {
+            color: #6366f1;
+            border-color: #6366f1;
+        }
+
+        .btn-outline-primary:hover {
+            background: #6366f1;
+            color: white;
+        }
+
+        .btn-outline-danger {
+            color: #ef4444;
+            border-color: #ef4444;
+        }
+
+        .btn-outline-danger:hover {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-outline-success {
+            color: #10b981;
+            border-color: #10b981;
+        }
+
+        .btn-outline-success:hover {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-outline-info {
+            color: #3b82f6;
+            border-color: #3b82f6;
+        }
+
+        .btn-outline-info:hover {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .modal-content {
+            border-radius: 12px;
+            border: none;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        }
+
+        .modal-header {
+            background: #f9fafb;
+            border-bottom: 1px solid #e5e7eb;
+            border-radius: 12px 12px 0 0;
+            padding: 1.5rem;
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+            background: #ffffff;
+        }
+
+        .modal-footer {
+            border-top: 1px solid #e5e7eb;
+            padding: 1.5rem;
+            border-radius: 0 0 12px 12px;
+            background: #f9fafb;
+        }
+
+        .form-label {
+            font-weight: 500;
+            color: #6b7280;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-control {
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+            padding: 0.75rem;
+            font-size: 0.875rem;
+            color: #111827;
+            background-color: #ffffff;
+            transition: all 0.2s;
+        }
+
+        .form-control:focus {
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+            background-color: #ffffff;
+        }
+
+        .alert {
+            border: none;
+            border-radius: 8px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .alert-success {
+            background-color: #ecfdf5;
+            color: #059669;
+            border: 1px solid #d1fae5;
+        }
+
+        .alert-danger {
+            background-color: #fef2f2;
+            color: #b91c1c;
+            border: 1px solid #fee2e2;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .header-actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .search-wrapper {
+                max-width: none;
+            }
+        }
+    </style>
 </head>
 <body>
     <div class="wrapper">
         <?php include 'includes/sidebar.php'; ?>
         <div class="content">
             <div class="container mt-4">
+                <div class="progress-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h1 class="page-title">
+                            <i class="bi bi-book"></i> Course Management
+                        </h1>
+                    </div>
+                </div>
+
                 <!-- Stats Cards -->
                 <div class="row mb-4">
                     <div class="col-md-6">
-                        <div class="admin-card">
+                        <div class="stats-card">
                             <div class="d-flex align-items-center">
                                 <div class="stats-icon me-3">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-                                        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
-                                    </svg>
+                                    <i class="bi bi-book"></i>
                                 </div>
-                                <div>
+                                <div class="stats-info">
                                     <h3>Total Courses</h3>
                                     <h2><?php echo $courses_count; ?></h2>
                                 </div>
@@ -76,16 +345,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <div class="admin-card">
+                        <div class="stats-card">
                             <div class="d-flex align-items-center">
                                 <div class="stats-icon me-3">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <circle cx="12" cy="12" r="10"></circle>
-                                        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
-                                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
-                                    </svg>
+                                    <i class="bi bi-question-circle"></i>
                                 </div>
-                                <div>
+                                <div class="stats-info">
                                     <h3>Total Quizzes</h3>
                                     <h2><?php echo $quizzes_count; ?></h2>
                                 </div>
@@ -96,28 +361,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
                 <!-- Course Management Section -->
                 <div class="admin-card">
-                    <div class="page-header">
-                        <h1 class="page-title">
-                            <i class="bi bi-book"></i>
-                            Manage Courses
-                        </h1>
-                        <div class="header-actions">
-                            <div class="search-wrapper">
-                                <i class="bi bi-search search-icon"></i>
-                                <input type="search" 
-                                       class="search-box" 
-                                       id="searchCourses" 
-                                       placeholder="Search courses by title..." 
-                                       required>
-                                <button type="button" class="clear-search" onclick="clearSearch()">
-                                    <i class="bi bi-x"></i>
-                                </button>
-                            </div>
-                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCourseModal">
-                                <i class="bi bi-plus-lg"></i>
-                                Add New Course
-                            </button>
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div class="search-wrapper">
+                            <i class="bi bi-search search-icon"></i>
+                            <input type="search" 
+                                   class="search-box" 
+                                   id="searchCourses" 
+                                   placeholder="Search courses..." 
+                                   required>
                         </div>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCourseModal">
+                            <i class="bi bi-plus-lg"></i> Add New Course
+                        </button>
                     </div>
 
                     <!-- Alert Messages -->
@@ -224,41 +479,25 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" style="color: #212529;">Add New Course</h5>
+                    <h5 class="modal-title">Add New Course</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <form method="POST">
                     <div class="modal-body">
                         <div class="mb-3">
-                            <label for="title" class="form-label" style="color: #212529;">Course Title</label>
-                            <input type="text" 
-                                   class="form-control" 
-                                   id="title" 
-                                   name="title" 
-                                   required
-                                   style="background-color: #ffffff;
-                                          border: 1px solid #ced4da;
-                                          color: #212529;
-                                          padding: 10px 15px;
-                                          box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                            <label for="title" class="form-label">Course Title</label>
+                            <input type="text" class="form-control" id="title" name="title" required>
                         </div>
                         <div class="mb-3">
-                            <label for="description" class="form-label" style="color: #212529;">Description</label>
-                            <textarea class="form-control" 
-                                      id="description" 
-                                      name="description" 
-                                      rows="3" 
-                                      required
-                                      style="background-color: #ffffff;
-                                             border: 1px solid #ced4da;
-                                             color: #212529;
-                                             padding: 10px 15px;
-                                             box-shadow: 0 1px 3px rgba(0,0,0,0.1);"></textarea>
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="description" rows="3" required></textarea>
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        <button type="submit" name="add_course" class="btn btn-primary">Add Course</button>
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" name="add_course" class="btn btn-primary">
+                            <i class="bi bi-plus-lg"></i> Add Course
+                        </button>
                     </div>
                 </form>
             </div>
@@ -387,108 +626,5 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
     });
     </script>
-
-    <style>
-    /* Course Icon Styles */
-    .course-icon {
-        width: 40px;
-        height: 40px;
-        background-color: rgba(99, 102, 241, 0.1);
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-right: 1rem;
-        color: #6366f1;
-    }
-
-    /* Quiz Count Badge */
-    .badge.bg-primary {
-        background-color: #6366f1 !important;
-        font-weight: 500;
-        font-size: 0.75rem;
-        padding: 0.5em 0.75em;
-    }
-
-    /* Action Buttons */
-    .btn-sm {
-        padding: 0.25rem 0.5rem;
-        font-size: 0.75rem;
-    }
-
-    .btn-outline-secondary { color: #6b7280; border-color: #6b7280; }
-    .btn-outline-success { color: #10b981; border-color: #10b981; }
-    .btn-outline-info { color: #3b82f6; border-color: #3b82f6; }
-    .btn-outline-primary { color: #6366f1; border-color: #6366f1; }
-    .btn-outline-danger { color: #ef4444; border-color: #ef4444; }
-
-    .btn-outline-secondary:hover { background-color: #6b7280; border-color: #6b7280; }
-    .btn-outline-success:hover { background-color: #10b981; border-color: #10b981; }
-    .btn-outline-info:hover { background-color: #3b82f6; border-color: #3b82f6; }
-    .btn-outline-primary:hover { background-color: #6366f1; border-color: #6366f1; }
-    .btn-outline-danger:hover { background-color: #ef4444; border-color: #ef4444; }
-
-    /* Alert Styles */
-    .alert {
-        border: none;
-        border-radius: 8px;
-        padding: 1rem;
-        margin-bottom: 1rem;
-    }
-
-    .alert-success {
-        background-color: #ecfdf5;
-        color: #047857;
-    }
-
-    .alert-danger {
-        background-color: #fef2f2;
-        color: #b91c1c;
-    }
-
-    /* Modal Styles */
-    .modal-content {
-        border: none;
-        border-radius: 8px;
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-    }
-
-    .modal-header {
-        border-bottom: 1px solid #e9ecef;
-        padding: 1.25rem 1.5rem;
-    }
-
-    .modal-body {
-        padding: 1.5rem;
-    }
-
-    .modal-footer {
-        border-top: 1px solid #e9ecef;
-        padding: 1.25rem 1.5rem;
-    }
-
-    .form-label {
-        font-weight: 500;
-        margin-bottom: 0.5rem;
-        color: #374151;
-    }
-
-    .form-control {
-        border-radius: 4px;
-        border: 1px solid #dee2e6;
-        padding: 0.5rem 0.75rem;
-        font-size: 0.875rem;
-    }
-
-    .form-control:focus {
-        border-color: #6366f1;
-        box-shadow: 0 0 0 0.25rem rgba(99, 102, 241, 0.25);
-    }
-
-    .form-text {
-        font-size: 0.75rem;
-        color: #6b7280;
-    }
-    </style>
 </body>
 </html>

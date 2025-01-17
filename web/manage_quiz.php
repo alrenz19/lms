@@ -73,21 +73,30 @@ unset($_SESSION['new_question_id']);
     <title>LMS - Manage Quiz</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="assets/css/style.css">
-    <link rel="stylesheet" href="assets/css/dashboard.css">
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="../assets/css/dashboard.css">
     <style>
-        .quiz-header {
-            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+        .progress-header {
+            background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
             border-radius: 12px;
             padding: 2rem;
             margin-bottom: 2rem;
-            color: white;
+            box-shadow: 0 4px 6px rgba(109, 40, 217, 0.1);
         }
 
         .page-title {
             font-size: 2rem;
             font-weight: 600;
-            margin-bottom: 0.5rem;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: #fff;
+        }
+
+        .page-title i {
+            font-size: 1.75rem;
+            color: #fff;
         }
 
         .quiz-selector {
@@ -96,14 +105,16 @@ unset($_SESSION['new_question_id']);
             padding: 1.5rem;
             margin-bottom: 2rem;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e5e7eb;
         }
 
         .form-select {
             border-radius: 8px;
-            border: 1px solid #d1d5db;
+            border: 1px solid #e5e7eb;
             padding: 0.75rem;
             font-size: 0.875rem;
-            background-color: #f9fafb;
+            background-color: #ffffff;
+            color: #111827;
             transition: all 0.2s;
         }
 
@@ -128,6 +139,8 @@ unset($_SESSION['new_question_id']);
         .action-button:hover {
             background-color: #4f46e5;
             transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
+            color: white;
         }
 
         .question-list {
@@ -160,7 +173,7 @@ unset($_SESSION['new_question_id']);
 
         .question-number {
             font-size: 0.875rem;
-            font-weight: 600;
+            font-weight: 500;
             color: #6366f1;
             background: rgba(99, 102, 241, 0.1);
             padding: 0.25rem 0.75rem;
@@ -226,6 +239,7 @@ unset($_SESSION['new_question_id']);
         .btn-edit:hover {
             background-color: #f59e0b;
             color: white;
+            box-shadow: 0 4px 12px rgba(251, 191, 36, 0.15);
         }
 
         .btn-delete {
@@ -244,11 +258,13 @@ unset($_SESSION['new_question_id']);
         .btn-delete:hover {
             background-color: #dc2626;
             color: white;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.15);
         }
 
         .modal-content {
             border-radius: 12px;
             border: none;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
         }
 
         .modal-header {
@@ -260,45 +276,43 @@ unset($_SESSION['new_question_id']);
 
         .modal-body {
             padding: 1.5rem;
+            background: #ffffff;
         }
 
         .modal-footer {
             border-top: 1px solid #e5e7eb;
             padding: 1.5rem;
             border-radius: 0 0 12px 12px;
+            background: #f9fafb;
         }
 
         .form-label {
             font-weight: 500;
-            color: #374151;
+            color: #6b7280;
             margin-bottom: 0.5rem;
         }
 
         .form-control {
             border-radius: 8px;
-            border: 1px solid #d1d5db;
+            border: 1px solid #e5e7eb;
             padding: 0.75rem;
             font-size: 0.875rem;
+            color: #111827;
+            background-color: #ffffff;
             transition: all 0.2s;
         }
 
         .form-control:focus {
             border-color: #6366f1;
             box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+            background-color: #ffffff;
         }
 
         .input-group-text {
             background-color: #f9fafb;
-            border: 1px solid #d1d5db;
+            border: 1px solid #e5e7eb;
             border-radius: 8px 0 0 8px;
-        }
-
-        .option-group {
-            transition: all 0.3s ease;
-        }
-
-        .option-group:hover {
-            transform: translateX(4px);
+            color: #6b7280;
         }
 
         .alert {
@@ -314,11 +328,30 @@ unset($_SESSION['new_question_id']);
         .alert-success {
             background-color: #ecfdf5;
             color: #059669;
+            border: 1px solid #d1fae5;
         }
 
         .alert-warning {
             background-color: #fffbeb;
             color: #92400e;
+            border: 1px solid #fef3c7;
+        }
+
+        .btn-outline-light {
+            color: #fff;
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .btn-outline-light:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-color: #fff;
+            color: #fff;
+        }
+
+        .course-title {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 1rem;
+            margin: 0;
         }
     </style>
 </head>
@@ -328,7 +361,7 @@ unset($_SESSION['new_question_id']);
         <div class="content">
             <div class="container mt-4">
                 <?php if ($quizzes->num_rows == 0): ?>
-                    <div class="quiz-header">
+                    <div class="progress-header">
                         <div class="alert alert-warning mb-0">
                             <i class="bi bi-exclamation-triangle-fill"></i>
                             Please create a quiz first before adding questions.
@@ -336,13 +369,13 @@ unset($_SESSION['new_question_id']);
                         </div>
                     </div>
                 <?php else: ?>
-                    <div class="quiz-header">
+                    <div class="progress-header">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
                                 <h1 class="page-title">
                                     <i class="bi bi-question-circle"></i> Quiz Management
                                 </h1>
-                                <p class="mb-0"><?php echo htmlspecialchars($course['title']); ?></p>
+                                <p class="course-title"><?php echo htmlspecialchars($course['title']); ?></p>
                             </div>
                             <a href="manage_courses.php" class="btn btn-outline-light">
                                 <i class="bi bi-arrow-left"></i> Back to Courses

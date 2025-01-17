@@ -1,6 +1,11 @@
 <?php
 session_start();
 require_once '../config.php';
+require_once 'includes/security.php';
+
+// Enable error reporting for debugging
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
     header("Location: index.php");
@@ -12,20 +17,41 @@ $success = '';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if (isset($_POST['add_user'])) {
-        $username = clean_input($_POST['username']);
-        $email = clean_input($_POST['email']);
-        $full_name = clean_input($_POST['full_name']);  // Add this line
-        $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
-        $role = clean_input($_POST['role']);
-        
         try {
-            $stmt = $conn->prepare("INSERT INTO users (username, email, full_name, password, role) VALUES (?, ?, ?, ?, ?)");  // Modified
-            $stmt->bind_param("sssss", $username, $email, $full_name, $password, $role);  // Modified
-            if ($stmt->execute()) {
-                $success = "User added successfully!";
+            $username = clean_input($_POST['username']);
+            $email = clean_input($_POST['email']);
+            $full_name = clean_input($_POST['full_name']);
+            $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
+            $role = clean_input($_POST['role']);
+            
+            // Validate inputs
+            if (empty($username) || empty($email) || empty($full_name) || empty($password) || empty($role)) {
+                throw new Exception("All fields are required");
             }
-        } catch (mysqli_sql_exception $e) {
-            $error = ($e->getCode() == 1062) ? "Username or email already exists" : "Error adding user";
+            
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                throw new Exception("Invalid email format");
+            }
+            
+            // Begin transaction
+            $conn->begin_transaction();
+            
+            $stmt = $conn->prepare("INSERT INTO users (username, email, full_name, password, role) VALUES (?, ?, ?, ?, ?)");
+            if (!$stmt) {
+                throw new Exception("Prepare failed: " . $conn->error);
+            }
+            
+            $stmt->bind_param("sssss", $username, $email, $full_name, $password, $role);
+            if (!$stmt->execute()) {
+                throw new Exception("Execute failed: " . $stmt->error);
+            }
+            
+            $conn->commit();
+            $success = "User added successfully!";
+            
+        } catch (Exception $e) {
+            $conn->rollback();
+            $error = "Error adding user: " . $e->getMessage();
         }
     }
 
@@ -106,28 +132,311 @@ $users = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
     <link rel="stylesheet" href="../assets/css/style.css">
-    <link rel="stylesheet" href="../assets/css/custom.css">
     <link rel="stylesheet" href="../assets/css/dashboard.css">
+    <style>
+        .progress-header {
+            background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px rgba(109, 40, 217, 0.1);
+        }
+
+        .page-title {
+            font-size: 2rem;
+            font-weight: 600;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: #fff;
+        }
+
+        .page-title i {
+            font-size: 1.75rem;
+            color: #fff;
+        }
+
+        .stats-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            height: 100%;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e5e7eb;
+            transition: all 0.2s ease;
+        }
+
+        .stats-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .stats-icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(99, 102, 241, 0.1);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+            color: #6366f1;
+        }
+
+        .stats-info h3 {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #6b7280;
+            margin-bottom: 0.5rem;
+        }
+
+        .stats-info h2 {
+            font-size: 2rem;
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 0.25rem;
+        }
+
+        .admin-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e5e7eb;
+        }
+
+        .search-wrapper {
+            position: relative;
+            max-width: 300px;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6b7280;
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 0.75rem 1rem 0.75rem 2.5rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            color: #111827;
+            transition: all 0.2s;
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .table {
+            margin: 0;
+        }
+
+        .table th {
+            padding: 1rem 1.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #6b7280;
+            background: #f9fafb;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .table td {
+            padding: 1rem 1.5rem;
+            vertical-align: middle;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .badge {
+            padding: 0.5em 0.75em;
+            font-weight: 500;
+            font-size: 0.75rem;
+        }
+
+        .badge.bg-primary {
+            background-color: #6366f1 !important;
+        }
+
+        .badge.bg-danger {
+            background-color: #ef4444 !important;
+        }
+
+        .btn-sm {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.875rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .btn-outline-primary {
+            color: #6366f1;
+            border-color: #6366f1;
+        }
+
+        .btn-outline-primary:hover {
+            background: #6366f1;
+            color: white;
+        }
+
+        .btn-outline-danger {
+            color: #ef4444;
+            border-color: #ef4444;
+        }
+
+        .btn-outline-danger:hover {
+            background: #ef4444;
+            color: white;
+        }
+
+        .modal-content {
+            border-radius: 12px;
+            border: none;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        }
+
+        .modal-header {
+            background: #f9fafb;
+            border-bottom: 1px solid #e5e7eb;
+            border-radius: 12px 12px 0 0;
+            padding: 1.5rem;
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+            background: #ffffff;
+        }
+
+        .modal-footer {
+            border-top: 1px solid #e5e7eb;
+            padding: 1.5rem;
+            border-radius: 0 0 12px 12px;
+            background: #f9fafb;
+        }
+
+        .form-label {
+            font-weight: 500;
+            color: #6b7280;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-control {
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+            padding: 0.75rem;
+            font-size: 0.875rem;
+            color: #111827;
+            background-color: #ffffff;
+            transition: all 0.2s;
+        }
+
+        .form-control:focus {
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+            background-color: #ffffff;
+        }
+
+        .form-select {
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+            padding: 0.75rem;
+            font-size: 0.875rem;
+            color: #111827;
+            background-color: #ffffff;
+            transition: all 0.2s;
+        }
+
+        .form-select:focus {
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+            background-color: #ffffff;
+        }
+
+        .alert {
+            border: none;
+            border-radius: 8px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .alert-success {
+            background-color: #ecfdf5;
+            color: #059669;
+            border: 1px solid #d1fae5;
+        }
+
+        .alert-danger {
+            background-color: #fef2f2;
+            color: #b91c1c;
+            border: 1px solid #fee2e2;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .header-actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .search-wrapper {
+                max-width: none;
+            }
+        }
+    </style>
 </head>
 <body>
     <div class="wrapper">
         <?php include 'includes/sidebar.php'; ?>
         <div class="content">
             <div class="container mt-4">
+                <div class="progress-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h1 class="page-title">
+                            <i class="bi bi-people"></i> User Management
+                        </h1>
+                    </div>
+                </div>
+
+                <?php if (!empty($error)): ?>
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                        <?php echo htmlspecialchars($error); ?>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                <?php endif; ?>
+                
+                <?php if (!empty($success)): ?>
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <i class="bi bi-check-circle-fill"></i>
+                        <?php echo htmlspecialchars($success); ?>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                <?php endif; ?>
+
                 <!-- Stats Cards -->
                 <div class="row mb-4">
                     <div class="col-md-4">
-                        <div class="admin-card">
+                        <div class="stats-card">
                             <div class="d-flex align-items-center">
                                 <div class="stats-icon me-3">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                                        <circle cx="9" cy="7" r="4"></circle>
-                                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                                    </svg>
+                                    <i class="bi bi-people"></i>
                                 </div>
-                                <div>
+                                <div class="stats-info">
                                     <h3>Total Users</h3>
                                     <h2><?php echo count($users); ?></h2>
                                 </div>
@@ -138,28 +447,18 @@ $users = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
                 <!-- User Management Section -->
                 <div class="admin-card">
-                    <div class="page-header">
-                        <h1 class="page-title">
-                            <i class="bi bi-people"></i>
-                            Manage Users
-                        </h1>
-                        <div class="header-actions">
-                            <div class="search-wrapper">
-                                <i class="bi bi-search search-icon"></i>
-                                <input type="search" 
-                                       class="search-box" 
-                                       id="searchUsers" 
-                                       placeholder="Search users by name, email..." 
-                                       required>
-                                <button type="button" class="clear-search" onclick="clearSearch()">
-                                    <i class="bi bi-x"></i>
-                                </button>
-                            </div>
-                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal">
-                                <i class="bi bi-person-plus"></i>
-                                Add New User
-                            </button>
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div class="search-wrapper">
+                            <i class="bi bi-search search-icon"></i>
+                            <input type="search" 
+                                   class="search-box" 
+                                   id="searchUsers" 
+                                   placeholder="Search users..." 
+                                   required>
                         </div>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal">
+                            <i class="bi bi-person-plus"></i> Add New User
+                        </button>
                     </div>
 
                     <!-- Users Table -->
@@ -179,10 +478,7 @@ $users = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
                                     <td>
                                         <div class="d-flex align-items-center">
                                             <div class="stats-icon me-3">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                                                    <circle cx="12" cy="7" r="4"></circle>
-                                                </svg>
+                                                <i class="bi bi-person"></i>
                                             </div>
                                             <div>
                                                 <strong><?php echo htmlspecialchars($user['full_name']); ?></strong>
@@ -205,17 +501,15 @@ $users = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
                                                     data-username="<?php echo htmlspecialchars($user['username']); ?>"
                                                     data-email="<?php echo htmlspecialchars($user['email']); ?>"
                                                     data-full-name="<?php echo htmlspecialchars($user['full_name']); ?>"
-                                                    data-role="<?php echo htmlspecialchars($user['role']); ?>"
-                                                    style="border-color: #0d6efd; color: #0d6efd;">
-                                                <i class="bi bi-pencil"></i>
+                                                    data-role="<?php echo htmlspecialchars($user['role']); ?>">
+                                                <i class="bi bi-pencil"></i> Edit
                                             </button>
                                             <button class="btn btn-sm btn-outline-danger" 
                                                     data-bs-toggle="modal" 
                                                     data-bs-target="#deleteUserModal"
                                                     data-user-id="<?php echo $user['id']; ?>"
-                                                    data-username="<?php echo htmlspecialchars($user['username']); ?>"
-                                                    style="border-color: #dc3545; color: #dc3545;">
-                                                <i class="bi bi-trash"></i>
+                                                    data-username="<?php echo htmlspecialchars($user['username']); ?>">
+                                                <i class="bi bi-trash"></i> Delete
                                             </button>
                                         <?php endif; ?>
                                     </td>
@@ -234,43 +528,40 @@ $users = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" style="color: #212529;">Add New User</h5>
+                    <h5 class="modal-title">Add New User</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <form method="POST" action="">
                     <div class="modal-body">
                         <div class="mb-3">
-                            <label for="full_name" class="form-label" style="color: #212529;">Full Name</label>
-                            <input type="text" class="form-control" id="full_name" name="full_name" required
-                                   style="background-color: white; color: #212529; border: 1px solid #dee2e6;">
+                            <label for="full_name" class="form-label">Full Name</label>
+                            <input type="text" class="form-control" id="full_name" name="full_name" required>
                         </div>
                         <div class="mb-3">
-                            <label for="username" class="form-label" style="color: #212529;">Username</label>
-                            <input type="text" class="form-control" id="username" name="username" required
-                                   style="background-color: white; color: #212529; border: 1px solid #dee2e6;">
+                            <label for="username" class="form-label">Username</label>
+                            <input type="text" class="form-control" id="username" name="username" required>
                         </div>
                         <div class="mb-3">
-                            <label for="email" class="form-label" style="color: #212529;">Email</label>
-                            <input type="email" class="form-control" id="email" name="email" required
-                                   style="background-color: white; color: #212529; border: 1px solid #dee2e6;">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" name="email" required>
                         </div>
                         <div class="mb-3">
-                            <label for="password" class="form-label" style="color: #212529;">Password</label>
-                            <input type="password" class="form-control" id="password" name="password" required
-                                   style="background-color: white; color: #212529; border: 1px solid #dee2e6;">
+                            <label for="password" class="form-label">Password</label>
+                            <input type="password" class="form-control" id="password" name="password" required>
                         </div>
                         <div class="mb-3">
-                            <label for="role" class="form-label" style="color: #212529;">Role</label>
-                            <select class="form-select" id="role" name="role" required
-                                   style="background-color: white; color: #212529; border: 1px solid #dee2e6;">
+                            <label for="role" class="form-label">Role</label>
+                            <select class="form-select" id="role" name="role" required>
                                 <option value="user">User</option>
                                 <option value="admin">Admin</option>
                             </select>
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        <button type="submit" name="add_user" class="btn btn-primary">Add User</button>
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" name="add_user" class="btn btn-primary">
+                            <i class="bi bi-person-plus"></i> Add User
+                        </button>
                     </div>
                 </form>
             </div>
@@ -282,7 +573,7 @@ $users = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" style="color: #212529;">Edit User</h5>
+                    <h5 class="modal-title">Edit User</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <form id="editUserForm" method="POST">
@@ -290,37 +581,34 @@ $users = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
                     <input type="hidden" name="user_id" id="editUserId">
                     <div class="modal-body">
                         <div class="mb-3">
-                            <label for="edit_full_name" class="form-label" style="color: #212529;">Full Name</label>
-                            <input type="text" class="form-control" id="edit_full_name" name="full_name" required
-                                   style="background-color: white; color: #212529; border: 1px solid #dee2e6;">
+                            <label for="edit_full_name" class="form-label">Full Name</label>
+                            <input type="text" class="form-control" id="edit_full_name" name="full_name" required>
                         </div>
                         <div class="mb-3">
-                            <label for="edit_username" class="form-label" style="color: #212529;">Username</label>
-                            <input type="text" class="form-control" id="edit_username" name="username" required
-                                   style="background-color: white; color: #212529; border: 1px solid #dee2e6;">
+                            <label for="edit_username" class="form-label">Username</label>
+                            <input type="text" class="form-control" id="edit_username" name="username" required>
                         </div>
                         <div class="mb-3">
-                            <label for="edit_email" class="form-label" style="color: #212529;">Email</label>
-                            <input type="email" class="form-control" id="edit_email" name="email" required
-                                   style="background-color: white; color: #212529; border: 1px solid #dee2e6;">
+                            <label for="edit_email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="edit_email" name="email" required>
                         </div>
                         <div class="mb-3">
-                            <label for="edit_password" class="form-label" style="color: #212529;">New Password (leave blank to keep current)</label>
-                            <input type="password" class="form-control" id="edit_password" name="password"
-                                   style="background-color: white; color: #212529; border: 1px solid #dee2e6;">
+                            <label for="edit_password" class="form-label">New Password (leave blank to keep current)</label>
+                            <input type="password" class="form-control" id="edit_password" name="password">
                         </div>
                         <div class="mb-3">
-                            <label for="edit_role" class="form-label" style="color: #212529;">Role</label>
-                            <select class="form-select" id="edit_role" name="role" required
-                                   style="background-color: white; color: #212529; border: 1px solid #dee2e6;">
+                            <label for="edit_role" class="form-label">Role</label>
+                            <select class="form-select" id="edit_role" name="role" required>
                                 <option value="user">User</option>
                                 <option value="admin">Admin</option>
                             </select>
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-primary">Update User</button>
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-lg"></i> Update User
+                        </button>
                     </div>
                 </form>
             </div>
@@ -356,14 +644,14 @@ $users = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
         document.addEventListener('DOMContentLoaded', function() {
             // Real-time search functionality
             const searchInput = document.getElementById('searchUsers');
-            const userRows = document.querySelectorAll('tr[data-user-row]');
+            const userRows = document.querySelectorAll('tbody tr');
             
             function filterUsers(searchTerm) {
                 searchTerm = searchTerm.toLowerCase();
                 userRows.forEach(row => {
-                    const name = row.querySelector('[data-user-name]').textContent.toLowerCase();
-                    const email = row.querySelector('[data-user-email]').textContent.toLowerCase();
-                    const username = row.querySelector('[data-username]').textContent.toLowerCase();
+                    const name = row.querySelector('strong').textContent.toLowerCase();
+                    const email = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+                    const username = row.querySelector('small').textContent.toLowerCase();
                     const matches = name.includes(searchTerm) || 
                                   email.includes(searchTerm) || 
                                   username.includes(searchTerm);
@@ -374,13 +662,6 @@ $users = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
             searchInput.addEventListener('input', (e) => {
                 filterUsers(e.target.value);
             });
-
-            // Clear search functionality
-            window.clearSearch = function() {
-                searchInput.value = '';
-                searchInput.dispatchEvent(new Event('input'));
-                searchInput.focus();
-            };
 
             // Handle Edit User Modal
             const editUserModal = document.getElementById('editUserModal');
@@ -401,28 +682,15 @@ $users = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
                 });
             }
 
-            // Handle Delete User Modal
-            const deleteUserModal = document.getElementById('deleteUserModal');
-            if (deleteUserModal) {
-                deleteUserModal.addEventListener('show.bs.modal', function(event) {
-                    const button = event.relatedTarget;
-                    const userId = button.getAttribute('data-user-id');
-                    const username = button.getAttribute('data-username');
-
-                    this.querySelector('#deleteUserId').value = userId;
-                    this.querySelector('#deleteUserName').textContent = username;
-                });
-            }
-
             // Form validation
-            const addUserForm = document.querySelector('form[name="addUserForm"]');
-            const editUserForm = document.querySelector('form[name="editUserForm"]');
+            const addUserForm = document.querySelector('form[action=""]');
+            const editUserForm = document.querySelector('#editUserForm');
 
             function validateForm(form) {
                 const password = form.querySelector('input[type="password"]');
                 const email = form.querySelector('input[type="email"]');
                 
-                if (password && password.value.length < 6) {
+                if (password && password.value && password.value.length < 6) {
                     alert('Password must be at least 6 characters long');
                     return false;
                 }
@@ -461,112 +729,5 @@ $users = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
             }
         });
     </script>
-
-    <style>
-        /* Table Styles */
-        .table th {
-            font-weight: 600;
-            color: #495057;
-            border-bottom: 2px solid #e9ecef;
-            padding: 1rem;
-        }
-
-        .table td {
-            padding: 1rem;
-            vertical-align: middle;
-            border-bottom: 1px solid #e9ecef;
-        }
-
-        /* User Icon Styles */
-        .user-icon {
-            width: 40px;
-            height: 40px;
-            background-color: #e9ecef;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 1rem;
-        }
-
-        /* Badge Styles */
-        .badge {
-            padding: 0.5em 0.75em;
-            font-weight: 500;
-            font-size: 0.75rem;
-        }
-
-        .badge.bg-primary {
-            background-color: #6366f1 !important;
-        }
-
-        .badge.bg-danger {
-            background-color: #ef4444 !important;
-        }
-
-        /* Button Styles */
-        .btn-sm {
-            padding: 0.25rem 0.5rem;
-            font-size: 0.75rem;
-        }
-
-        .btn-outline-primary {
-            color: #6366f1;
-            border-color: #6366f1;
-        }
-
-        .btn-outline-primary:hover {
-            background-color: #6366f1;
-            border-color: #6366f1;
-        }
-
-        .btn-outline-danger {
-            color: #ef4444;
-            border-color: #ef4444;
-        }
-
-        .btn-outline-danger:hover {
-            background-color: #ef4444;
-            border-color: #ef4444;
-        }
-
-        /* Modal Styles */
-        .modal-content {
-            border: none;
-            border-radius: 8px;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-        }
-
-        .modal-header {
-            border-bottom: 1px solid #e9ecef;
-            padding: 1.25rem 1.5rem;
-        }
-
-        .modal-body {
-            padding: 1.5rem;
-        }
-
-        .modal-footer {
-            border-top: 1px solid #e9ecef;
-            padding: 1.25rem 1.5rem;
-        }
-
-        .form-label {
-            font-weight: 500;
-            margin-bottom: 0.5rem;
-        }
-
-        .form-control {
-            border-radius: 4px;
-            border: 1px solid #dee2e6;
-            padding: 0.5rem 0.75rem;
-            font-size: 0.875rem;
-        }
-
-        .form-control:focus {
-            border-color: #6366f1;
-            box-shadow: 0 0 0 0.25rem rgba(99, 102, 241, 0.25);
-        }
-    </style>
 </body>
 </html>

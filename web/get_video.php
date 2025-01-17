@@ -28,7 +28,7 @@ if ($result->num_rows === 0) {
 }
 
 $video = $result->fetch_assoc();
-$file_path = $video['file_path'];
+$file_path = $video['video_url'];
 
 if (!file_exists($file_path)) {
     header("HTTP/1.1 404 Not Found");

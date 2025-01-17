@@ -4,22 +4,21 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: #f8f9fa;
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
     font-family: 'Inter', sans-serif;
 }
 
 .login-container {
     width: 100%;
     max-width: 400px;
-    padding: 20px;
+    padding: 2rem;
 }
 
 .login-card {
-    background: #ffffff;
-    border: 1px solid #dee2e6;
-    border-radius: 20px;
+    background: white;
+    border-radius: 16px;
     padding: 2.5rem;
-    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.08);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
 }
 
 .stats-icon {
@@ -28,105 +27,116 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 0 auto;
+    margin: 0 auto 1.5rem;
     border-radius: 16px;
-    background: #f1f5ff;
-    margin-bottom: 1.5rem;
-    color: #0d6efd;
-    border: 1px solid #e6effd;
+    background: rgba(99, 102, 241, 0.1);
+    color: #6366f1;
 }
 
 .stats-icon svg {
-    stroke: #0d6efd;
+    width: 32px;
+    height: 32px;
+    stroke: currentColor;
 }
 
 .system-title {
-    color: #212529;
-    font-size: 1.75rem;
+    color: #111827;
+    font-size: 1.875rem;
     font-weight: 600;
     margin-bottom: 0.75rem;
-    letter-spacing: -0.5px;
+    text-align: center;
 }
 
 .text-muted {
-    color: #6c757d !important;
-    font-size: 0.95rem;
+    color: #6b7280 !important;
+    font-size: 0.875rem;
+    text-align: center;
+    margin-bottom: 2rem;
 }
 
 .input-group {
-    background: #ffffff;
-    border: 1px solid #dee2e6;
-    border-radius: 12px;
-    overflow: hidden;
-    margin-bottom: 1rem;
-}
-
-.input-group-text {
-    background-color: #f8f9fa;
-    border: none;
-    border-right: 1px solid #dee2e6;
-    color: #0d6efd;
-    padding: 0.75rem 1.25rem;
-}
-
-.form-control {
-    background-color: #ffffff;
-    border: none;
-    color: #212529 !important;
-    padding: 0.75rem 1.25rem;
-    font-size: 0.95rem;
-}
-
-.form-control:focus {
-    background-color: #ffffff;
-    box-shadow: none;
-    color: #212529 !important;
-}
-
-.form-control::placeholder {
-    color: #adb5bd;
-    font-size: 0.95rem;
+    margin-bottom: 1.25rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    transition: all 0.2s;
 }
 
 .input-group:focus-within {
-    border-color: #86b7fe;
-    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.1);
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.input-group-text {
+    background-color: #f9fafb;
+    border: none;
+    color: #6b7280;
+    padding: 0.75rem 1rem;
+}
+
+.form-control {
+    border: none;
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    color: #111827;
+    background-color: white;
+}
+
+.form-control:focus {
+    box-shadow: none;
+    background-color: white;
+}
+
+.form-control::placeholder {
+    color: #9ca3af;
 }
 
 .action-button {
-    background: #0d6efd;
-    border: none;
+    width: 100%;
     padding: 0.875rem;
-    border-radius: 12px;
-    font-size: 0.95rem;
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    border: none;
+    border-radius: 8px;
+    color: white;
     font-weight: 500;
+    font-size: 0.875rem;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    transition: all 0.3s ease;
-    color: #ffffff;
+    transition: all 0.2s;
 }
 
 .action-button:hover {
-    background: #0b5ed7;
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.15);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
 }
 
 .alert {
-    background: #fff4f4;
-    border: 1px solid #ffebeb;
-    color: #dc3545;
-    border-radius: 12px;
+    border-radius: 8px;
     padding: 1rem 1.25rem;
     margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.875rem;
 }
 
-.alert .bi {
-    color: #dc3545;
+.alert-danger {
+    background-color: #fef2f2;
+    border: 1px solid #fee2e2;
+    color: #dc2626;
 }
 
-.btn-close {
-    opacity: 0.5;
+.alert i {
+    font-size: 1.25rem;
+}
+
+@media (max-width: 768px) {
+    .login-container {
+        padding: 1rem;
+    }
+
+    .login-card {
+        padding: 1.5rem;
+    }
 }

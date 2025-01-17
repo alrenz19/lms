@@ -292,16 +292,17 @@ $overall_score = $total_questions > 0 ? ($total_correct_answers / $total_questio
 
     .stats-card {
         background: white;
-        border-radius: 15px;
-        padding: 1.75rem;
+        border-radius: 16px;
+        padding: 1.5rem;
         height: 100%;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-        transition: all 0.3s ease;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        border: 1px solid #e5e7eb;
+        transition: all 0.2s ease;
     }
 
     .stats-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 12px rgba(0, 0, 0, 0.1);
+        transform: translateY(-4px);
+        box-shadow: 0 12px 20px rgba(0, 0, 0, 0.1);
     }
 
     .stats-icon {
@@ -315,8 +316,8 @@ $overall_score = $total_questions > 0 ? ($total_correct_answers / $total_questio
     }
 
     .stats-icon.purple {
-        background: rgba(139, 92, 246, 0.1);
-        color: #8b5cf6;
+        background: rgba(99, 102, 241, 0.1);
+        color: #6366f1;
     }
 
     .stats-icon.green {
@@ -336,14 +337,14 @@ $overall_score = $total_questions > 0 ? ($total_correct_answers / $total_questio
     .stats-info h3 {
         font-size: 0.9rem;
         font-weight: 600;
-        color: #4b5563;
+        color: #6b7280;
         margin-bottom: 0.75rem;
     }
 
     .stats-info h2 {
         font-size: 2.25rem;
         font-weight: 700;
-        color: #1f2937;
+        color: #111827;
         margin-bottom: 0.5rem;
     }
 
@@ -413,13 +414,13 @@ $overall_score = $total_questions > 0 ? ($total_correct_answers / $total_questio
 
     .course-icon i {
         font-size: 24px;
-        color: #8b5cf6;
+        color: #6366f1;
     }
 
     .course-info h4 {
         font-size: 1.125rem;
         font-weight: 600;
-        color: #1f2937;
+        color: #111827;
         margin: 0 0 0.5rem 0;
         line-height: 1.4;
     }
@@ -432,7 +433,7 @@ $overall_score = $total_questions > 0 ? ($total_correct_answers / $total_questio
     }
 
     .badge.bg-purple {
-        background-color: #8b5cf6 !important;
+        background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%) !important;
     }
 
     .course-description {
@@ -460,6 +461,7 @@ $overall_score = $total_questions > 0 ? ($total_correct_answers / $total_questio
 
     .stat-item i {
         font-size: 1.25rem;
+        color: #6366f1;
     }
 
     .stat-item small {

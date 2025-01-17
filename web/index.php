@@ -2,6 +2,18 @@
 session_start();
 require_once '../config.php';
 
+// Check if admin exists
+$stmt = $conn->prepare("SELECT COUNT(*) as admin_count FROM users WHERE role = 'admin'");
+$stmt->execute();
+$result = $stmt->get_result();
+$admin_exists = $result->fetch_assoc()['admin_count'] > 0;
+
+// If no admin exists, redirect to setup page
+if (!$admin_exists) {
+    header("Location: setup_admin.php");
+    exit;
+}
+
 if (isset($_SESSION['user_id'])) {
     header("Location: dashboard.php");
     exit;

@@ -41,16 +41,14 @@ if (!$selected_user_id) {
             /* Print Styles */
             @page {
                 size: A4;
-                margin: 0.5cm;
+                margin: 2.54cm; /* Standard 1-inch margins */
             }
             
             @media print {
                 body { 
                     margin: 0;
-                    padding: 15mm;
-                    width: 210mm;
-                    height: 297mm;
-                    font-size: 12px;
+                    padding: 0;
+                    font-size: 11pt; /* Standard readable font size */
                     line-height: 1.4;
                     background: white !important;
                     color: black !important;
@@ -61,45 +59,58 @@ if (!$selected_user_id) {
                 }
                 
                 .header { 
-                    text-align: center;
-                    margin-bottom: 20px;
+                    margin-bottom: 25pt;
+                }
+                
+                .header h1 {
+                    font-size: 14pt;
+                    margin-bottom: 15pt;
                 }
                 
                 .student-info {
                     display: grid;
                     grid-template-columns: 1fr 1fr;
-                    margin-bottom: 20px;
-                    font-size: 12px;
-                    border-bottom: 1px solid #ddd;
-                    padding-bottom: 10px;
+                    margin-bottom: 20pt;
+                    font-size: 11pt;
+                    gap: 10pt;
+                }
+                
+                .quiz-header {
+                    background: #f8f9fa !important;
+                    padding: 12pt;
+                    margin: 15pt 0;
+                    border-left: 3pt solid #007bff;
+                }
+                
+                .quiz-header h3 {
+                    font-size: 12pt;
+                    margin: 0 0 5pt 0;
                 }
                 
                 .question { 
-                    margin-bottom: 15px;
+                    margin-bottom: 15pt;
                     page-break-inside: avoid;
+                    padding: 0 12pt 12pt 12pt;
                 }
                 
                 .options { 
-                    margin-left: 25px;
+                    margin: 8pt 0 0 20pt;
                     columns: 2;
-                    column-gap: 30px;
+                    column-gap: 25pt;
                 }
                 
                 .option { 
-                    margin: 3px 0;
+                    margin: 4pt 0;
                     break-inside: avoid;
+                    font-size: 10pt;
                 }
                 
                 .circle {
-                    display: inline-flex;
-                    align-items: center;
-                    justify-content: center;
-                    width: 16px;
-                    height: 16px;
-                    border-radius: 50%;
-                    border: 1.5px solid #000;
-                    margin-right: 8px;
-                    font-size: 11px;
+                    width: 12pt;
+                    height: 12pt;
+                    margin-right: 6pt;
+                    font-size: 9pt;
+                    line-height: 12pt;
                 }
                 
                 .correct {
@@ -446,7 +457,7 @@ foreach ($results as $row) {
     <style>
         @page {
             size: A4;
-            margin: 0.5cm;
+            margin: 1.27cm; /* 0.5-inch margins */
         }
         
         body {
@@ -505,76 +516,126 @@ foreach ($results as $row) {
         @media print {
             body { 
                 margin: 0;
-                padding: 10mm;
-                width: 210mm;
-                height: 297mm;
-                font-size: 11px;
-                line-height: 1.3;
+                padding: 0;
+                font-size: 9pt;
+                line-height: 1;
                 background: white !important;
                 color: black !important;
+                column-count: 2;
+                column-gap: 0.8cm;
             }
-            .no-print { 
-                display: none !important;
+
+            .container {
+                max-width: none;
+                padding: 0;
+                margin: 0;
             }
-            .header { 
-                text-align: center;
-                
+
+            .header {
+                column-span: all;
+                margin-bottom: 12pt;
+                padding-bottom: 6pt;
+                border-bottom: 0.5pt solid #ccc;
             }
+
+            .header h1 {
+                font-size: 12pt;
+                margin: 0;
+                font-weight: bold;
+                display: inline;
+            }
+
             .student-info {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                margin-bottom: 15px;
-                font-size: 11px;
+                display: inline;
+                margin-left: 1cm;
+                font-size: 9pt;
             }
-            .question { 
-                margin-bottom: 10px;
-                page-break-inside: avoid;
+
+            .student-info p {
+                display: inline;
+                margin: 0 1em 0 0;
             }
-            .options { 
-                margin-left: 20px;
-                columns: 2;
-                column-gap: 20px;
-            }
-            .option { 
-                margin: 2px 0;
+
+            .quiz-section {
                 break-inside: avoid;
+                margin-bottom: 8pt;
+                border: none;
+                background: none;
             }
-            .circle {
+
+            .quiz-header {
+                background: none !important;
+                padding: 4pt 4pt 4pt 8pt;
+                margin: 0 0 4pt 0;
+                border-left: 2pt solid #007bff;
+            }
+
+            .quiz-header h3 {
+                font-size: 10pt;
+                margin: 0;
+                font-weight: bold;
                 display: inline-block;
-                width: 14px;
-                height: 14px;
-                border-radius: 50%;
-                border: 1px solid #000;
-                text-align: center;
-                margin-right: 6px;
-                font-size: 10px;
-                line-height: 14px;
             }
+
+            .quiz-header p {
+                font-size: 9pt;
+                margin: 0;
+                display: inline-block;
+                margin-left: 8pt;
+            }
+
+            .question {
+                break-inside: avoid;
+                padding: 3pt 4pt;
+                margin-bottom: 6pt;
+                border: none;
+            }
+
+            .question p {
+                margin: 0;
+                display: inline-block;
+                width: 100%;
+            }
+
+            .options {
+                display: inline-flex;
+                flex-wrap: wrap;
+                gap: 4pt;
+                margin: 2pt 0 0 12pt;
+            }
+
+            .option {
+                flex: 0 0 calc(50% - 2pt);
+                font-size: 9pt;
+                margin: 0;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .circle {
+                min-width: 10pt;
+                height: 10pt;
+                margin-right: 3pt;
+                font-size: 8pt;
+                line-height: 10pt;
+                text-align: center;
+                display: inline-block;
+                border-radius: 50%;
+            }
+
             .correct {
-                border: 1.5px solid #28a745;
+                border: 0.5pt solid #28a745;
                 background-color: #d4edda;
             }
+
             .incorrect {
-                border: 1.5px solid #dc3545;
+                border: 0.5pt solid #dc3545;
                 background-color: #f8d7da;
             }
-            .quiz-header {
-                background: #f8f9fa;
-                padding: 6px;
-                margin: 10px 0;
-                border-left: 3px solid #007bff;
-                page-break-inside: avoid;
-                font-size: 11px;
-            }
-            h1 { 
-                font-size: 16px;
-                margin: 0;
-                padding: 0;
-            }
-            h3 { 
-                font-size: 13px;
-                margin: 0;
-                padding: 0;
+
+            .no-print {
+                display: none !important;
             }
         }
     </style>
