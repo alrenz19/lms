@@ -34,3 +34,10 @@ CREATE TABLE user_video_progress (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (video_id) REFERENCES course_videos(id) ON DELETE CASCADE
 );
+
+-- Add image fields to questions table
+ALTER TABLE questions ADD COLUMN question_image VARCHAR(255) NULL;
+ALTER TABLE questions ADD COLUMN option_a_image VARCHAR(255) NULL;
+ALTER TABLE questions ADD COLUMN option_b_image VARCHAR(255) NULL;
+ALTER TABLE questions ADD COLUMN option_c_image VARCHAR(255) NULL;
+ALTER TABLE questions ADD COLUMN option_d_image VARCHAR(255) NULL;

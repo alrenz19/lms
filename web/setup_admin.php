@@ -80,23 +80,49 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Setup Admin Account - LMS</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="../assets/css/style.css">
-    <link rel="stylesheet" href="../assets/css/custom.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        blue: {
+                            50: '#f0f5ff',
+                            100: '#e0eaff',
+                            200: '#c7d7fe',
+                            300: '#a5b9fc',
+                            400: '#8193f7',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            800: '#3730a3',
+                            900: '#312e81',
+                            950: '#1e1b4b',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
     <style>
         body {
-            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
+            padding: 2rem;
         }
 
-        .setup-card {
+        .setup-container {
             background: white;
-            border-radius: 16px;
+            border-radius: 1rem;
             padding: 2.5rem;
+            width: 100%;
             max-width: 500px;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
         }
@@ -106,172 +132,127 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             margin-bottom: 2rem;
         }
 
-        .setup-header h1 {
-            color: #111827;
-            font-size: 1.875rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-        }
-
-        .setup-header p {
-            color: #6b7280;
-            font-size: 0.875rem;
-        }
-
-        .form-label {
-            color: #6b7280;
-            font-weight: 500;
-            margin-bottom: 0.5rem;
-        }
-
-        .form-control {
-            border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            padding: 0.75rem 1rem;
-            font-size: 0.875rem;
-            transition: all 0.2s;
-        }
-
-        .form-control:focus {
-            border-color: #6366f1;
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-            border: none;
-            padding: 0.75rem 1.5rem;
-            font-weight: 500;
-            border-radius: 8px;
-            color: white;
-            transition: all 0.2s;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
-            background: linear-gradient(135deg, #5a5be6 0%, #4338ca 100%);
-        }
-
-        .alert {
-            border: none;
-            border-radius: 8px;
-            padding: 1rem 1.5rem;
-            margin-bottom: 1.5rem;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-
-        .alert-danger {
-            background-color: #fef2f2;
-            color: #991b1b;
-        }
-
-        .alert-success {
-            background-color: #f0fdf4;
-            color: #166534;
-        }
-
-        .password-requirements {
-            font-size: 0.75rem;
-            color: #6b7280;
-            margin-top: 0.5rem;
-        }
-
-        .password-requirements ul {
-            list-style: none;
-            padding-left: 0;
-            margin-bottom: 0;
-        }
-
-        .password-requirements li {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            margin-bottom: 0.25rem;
-        }
-
-        .password-requirements i {
-            font-size: 0.875rem;
+        @media (max-width: 640px) {
+            .setup-container {
+                padding: 1.5rem;
+            }
         }
     </style>
 </head>
 <body>
     <div class="setup-container">
         <?php if (!empty($error)): ?>
-            <div class="alert alert-danger">
-                <i class="bi bi-exclamation-triangle-fill"></i>
-                <?php echo htmlspecialchars($error); ?>
+            <div class="bg-red-50 border border-red-100 text-red-600 rounded-xl p-4 mb-6 flex items-center gap-2 relative">
+                <i data-lucide="alert-circle" class="w-5 h-5"></i>
+                <span><?php echo htmlspecialchars($error); ?></span>
             </div>
         <?php endif; ?>
 
         <?php if (!empty($success)): ?>
-            <div class="alert alert-success">
-                <i class="bi bi-check-circle-fill"></i>
-                <?php echo htmlspecialchars($success); ?>
+            <div class="bg-green-50 border border-green-100 text-green-600 rounded-xl p-4 mb-6 flex items-center gap-2 relative">
+                <i data-lucide="check-circle" class="w-5 h-5"></i>
+                <span><?php echo htmlspecialchars($success); ?></span>
             </div>
         <?php endif; ?>
 
         <div class="setup-header">
-            <h1>Welcome to LMS</h1>
-            <p>Create your admin account to get started</p>
+            <div class="w-16 h-16 rounded-full bg-blue-600 flex items-center justify-center mx-auto mb-6">
+                <i data-lucide="user-check" class="w-8 h-8 text-white"></i>
+            </div>
+            <h1 class="text-2xl font-semibold text-blue-900 mb-2">Welcome to LMS</h1>
+            <p class="text-blue-600">Set up your administrator account to get started</p>
         </div>
 
         <form method="POST" action="" id="setupForm">
-            <div class="mb-3">
-                <label for="full_name" class="form-label">Full Name</label>
-                <input type="text" class="form-control" id="full_name" name="full_name" required>
-            </div>
-
-            <div class="mb-3">
-                <label for="username" class="form-label">Username</label>
-                <input type="text" class="form-control" id="username" name="username" required>
-            </div>
-
-            <div class="mb-3">
-                <label for="email" class="form-label">Email</label>
-                <input type="email" class="form-control" id="email" name="email" required>
-            </div>
-
-            <div class="mb-3">
-                <label for="password" class="form-label">Password</label>
-                <input type="password" class="form-control" id="password" name="password" required>
-                <div class="password-requirements">
-                    <ul>
-                        <li><i class="bi bi-check-circle"></i> At least 6 characters long</li>
-                        <li><i class="bi bi-check-circle"></i> Contains letters and numbers</li>
-                        <li><i class="bi bi-check-circle"></i> Includes special characters (recommended)</li>
-                    </ul>
+            <div class="mb-4">
+                <label for="full_name" class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                <div class="flex border border-gray-200 rounded-xl overflow-hidden shadow-sm focus-within:ring-2 focus-within:ring-blue-100 focus-within:border-blue-500 transition">
+                    <span class="bg-blue-50 border-r border-gray-200 text-blue-500 px-3 flex items-center">
+                        <i data-lucide="user" class="w-5 h-5"></i>
+                    </span>
+                    <input type="text" 
+                           class="w-full py-2.5 px-4 text-gray-800 bg-white focus:outline-none" 
+                           id="full_name" 
+                           name="full_name" 
+                           required>
                 </div>
             </div>
 
             <div class="mb-4">
-                <label for="confirm_password" class="form-label">Confirm Password</label>
-                <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                <label for="username" class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                <div class="flex border border-gray-200 rounded-xl overflow-hidden shadow-sm focus-within:ring-2 focus-within:ring-blue-100 focus-within:border-blue-500 transition">
+                    <span class="bg-blue-50 border-r border-gray-200 text-blue-500 px-3 flex items-center">
+                        <i data-lucide="at-sign" class="w-5 h-5"></i>
+                    </span>
+                    <input type="text" 
+                           class="w-full py-2.5 px-4 text-gray-800 bg-white focus:outline-none" 
+                           id="username" 
+                           name="username" 
+                           required>
+                </div>
             </div>
 
-            <button type="submit" class="btn btn-primary w-100">Create Admin Account</button>
+            <div class="mb-4">
+                <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <div class="flex border border-gray-200 rounded-xl overflow-hidden shadow-sm focus-within:ring-2 focus-within:ring-blue-100 focus-within:border-blue-500 transition">
+                    <span class="bg-blue-50 border-r border-gray-200 text-blue-500 px-3 flex items-center">
+                        <i data-lucide="mail" class="w-5 h-5"></i>
+                    </span>
+                    <input type="email" 
+                           class="w-full py-2.5 px-4 text-gray-800 bg-white focus:outline-none" 
+                           id="email" 
+                           name="email" 
+                           required>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                <div class="flex border border-gray-200 rounded-xl overflow-hidden shadow-sm focus-within:ring-2 focus-within:ring-blue-100 focus-within:border-blue-500 transition">
+                    <span class="bg-blue-50 border-r border-gray-200 text-blue-500 px-3 flex items-center">
+                        <i data-lucide="lock" class="w-5 h-5"></i>
+                    </span>
+                    <input type="password" 
+                           class="w-full py-2.5 px-4 text-gray-800 bg-white focus:outline-none" 
+                           id="password" 
+                           name="password" 
+                           required>
+                </div>
+                <div class="mt-2 password-requirements">
+                    <ul>
+                        <li class="text-xs text-gray-500 flex items-center">
+                            <i data-lucide="check" class="w-3 h-3 text-green-500 mr-1"></i>
+                            At least 6 characters long
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="mb-5">
+                <label for="confirm_password" class="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
+                <div class="flex border border-gray-200 rounded-xl overflow-hidden shadow-sm focus-within:ring-2 focus-within:ring-blue-100 focus-within:border-blue-500 transition">
+                    <span class="bg-blue-50 border-r border-gray-200 text-blue-500 px-3 flex items-center">
+                        <i data-lucide="check-circle" class="w-5 h-5"></i>
+                    </span>
+                    <input type="password" 
+                           class="w-full py-2.5 px-4 text-gray-800 bg-white focus:outline-none" 
+                           id="confirm_password" 
+                           name="confirm_password" 
+                           required>
+                </div>
+            </div>
+
+            <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white py-3 rounded-xl font-medium flex items-center justify-center gap-2 transition transform hover:-translate-y-0.5 hover:shadow-md">
+                <i data-lucide="check" class="w-5 h-5"></i>
+                Create Admin Account
+            </button>
         </form>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        document.getElementById('setupForm').addEventListener('submit', function(e) {
-            const password = document.getElementById('password').value;
-            const confirmPassword = document.getElementById('confirm_password').value;
-
-            if (password.length < 6) {
-                e.preventDefault();
-                alert('Password must be at least 6 characters long');
-                return;
-            }
-
-            if (password !== confirmPassword) {
-                e.preventDefault();
-                alert('Passwords do not match');
-                return;
-            }
+        // Initialize Lucide icons
+        document.addEventListener('DOMContentLoaded', function() {
+            lucide.createIcons();
         });
     </script>
 </body>

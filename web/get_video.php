@@ -7,24 +7,24 @@ if (!isset($_SESSION['user_id'])) {
     exit("Access denied");
 }
 
-if (!isset($_GET['id'])) {
+if (!isset($_GET['course_id'])) {
     header("HTTP/1.1 400 Bad Request");
     exit("Video ID not provided");
 }
 
-$video_id = intval($_GET['id']);
+$video_id = intval($_GET['course_id']);
 
 // Get video information
 $stmt = $conn->prepare("SELECT cv.*, c.id as course_id FROM course_videos cv 
                        JOIN courses c ON cv.course_id = c.id 
-                       WHERE cv.id = ?");
+                       WHERE cv.course_id = ?");
 $stmt->bind_param("i", $video_id);
 $stmt->execute();
 $result = $stmt->get_result();
 
 if ($result->num_rows === 0) {
     header("HTTP/1.1 404 Not Found");
-    exit("Video not found");
+    exit(`"Video not found"`.$video_id);
 }
 
 $video = $result->fetch_assoc();

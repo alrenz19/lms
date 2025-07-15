@@ -54,6 +54,28 @@ $results['total_questions'] = $total_questions;
 $results['final_score'] = $final_score;
 $results['time_taken'] = isset($results['time_taken']) ? $results['time_taken'] : 0;
 
+// Initialize variables to avoid undefined variable errors
+$user_progress = [
+    'score' => $final_score,
+    'completed_at' => date('Y-m-d H:i:s')
+];
+
+// Set time taken value
+$time_taken = isset($results['time_taken']) ? $results['time_taken'] : 'N/A';
+
+// Set text grade based on score
+if ($final_score >= 90) {
+    $text_grade = 'Excellent';
+} elseif ($final_score >= 80) {
+    $text_grade = 'Good';
+} elseif ($final_score >= 70) {
+    $text_grade = 'Satisfactory';
+} elseif ($final_score >= 60) {
+    $text_grade = 'Fair';
+} else {
+    $text_grade = 'Needs improvement';
+}
+
 ?>
 
 <!DOCTYPE html>
@@ -62,325 +84,160 @@ $results['time_taken'] = isset($results['time_taken']) ? $results['time_taken'] 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quiz Results - <?php echo htmlspecialchars($quiz['title']); ?></title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="../assets/css/style.css">
-    <link rel="stylesheet" href="../assets/css/custom.css">
-    <link rel="stylesheet" href="../assets/css/dashboard.css">
-    <style>
-        .quiz-header {
-            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-            border-radius: 12px;
-            padding: 2rem;
-            margin-bottom: 2rem;
-            color: white;
-        }
-
-        .page-title {
-            font-size: 2rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-        }
-
-        .quiz-info {
-            font-size: 1rem;
-            opacity: 0.9;
-            margin: 0;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-
-        .separator {
-            color: rgba(255, 255, 255, 0.5);
-        }
-
-        .stats-card {
-            background: white;
-            border-radius: 12px;
-            padding: 1.5rem;
-            height: 100%;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-            transition: all 0.2s;
-        }
-
-        .stats-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 12px rgba(0, 0, 0, 0.1);
-        }
-
-        .stats-icon {
-            width: 48px;
-            height: 48px;
-            background: rgba(99, 102, 241, 0.1);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 1rem;
-        }
-
-        .stats-icon i {
-            font-size: 24px;
-            color: #6366f1;
-        }
-
-        .stats-info h3 {
-            font-size: 0.875rem;
-            font-weight: 500;
-            color: #6b7280;
-            margin-bottom: 0.5rem;
-        }
-
-        .stats-info h2 {
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: #111827;
-            margin: 0;
-        }
-
-        .section-title {
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: #111827;
-            margin-bottom: 1.5rem;
-        }
-
-        .question-card {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-            overflow: hidden;
-            margin-bottom: 1.5rem;
-        }
-
-        .question-header {
-            padding: 1.5rem;
-            border-bottom: 1px solid #e5e7eb;
-        }
-
-        .question-number {
-            font-size: 0.875rem;
-            font-weight: 500;
-            color: #6366f1;
-        }
-
-        .question-result {
-            font-size: 0.875rem;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .question-result.correct {
-            color: #059669;
-        }
-
-        .question-result.incorrect {
-            color: #dc2626;
-        }
-
-        .question-text {
-            font-size: 1rem;
-            color: #111827;
-            line-height: 1.5;
-        }
-
-        .answer-option {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 1rem;
-            border-radius: 8px;
-            border: 1px solid #e5e7eb;
-            margin-bottom: 0.75rem;
-            transition: all 0.2s;
-        }
-
-        .answer-option:last-child {
-            margin-bottom: 0;
-        }
-
-        .answer-option.correct {
-            background: #ecfdf5;
-            border-color: #059669;
-        }
-
-        .answer-option.incorrect {
-            background: #fef2f2;
-            border-color: #dc2626;
-        }
-
-        .option-letter {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 28px;
-            height: 28px;
-            background: rgba(99, 102, 241, 0.1);
-            color: #6366f1;
-            border-radius: 9999px;
-            font-weight: 500;
-            margin-right: 0.75rem;
-        }
-
-        .answer-option.correct .option-letter {
-            background: rgba(5, 150, 105, 0.1);
-            color: #059669;
-        }
-
-        .answer-option.incorrect .option-letter {
-            background: rgba(220, 38, 38, 0.1);
-            color: #dc2626;
-        }
-
-        .option-text {
-            font-weight: 400;
-        }
-
-        .results-content {
-            background: white;
-            border-radius: 12px;
-            padding: 2rem;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-        }
-
-        .btn-outline-light {
-            border-color: rgba(255, 255, 255, 0.5);
-            color: white;
-        }
-
-        .btn-outline-light:hover {
-            background-color: rgba(255, 255, 255, 0.1);
-            border-color: white;
-            color: white;
-        }
-
-        @media (min-width: 768px) {
-            .stats-card {
-                margin-bottom: 0;
-            }
-        }
-    </style>
 </head>
-<body>
-    <div class="wrapper">
-        <?php include 'includes/sidebar.php'; ?>
-        <div class="content">
-            <div class="container mt-4">
-                <div class="quiz-header">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h1 class="page-title">Quiz Results</h1>
-                            <p class="quiz-info">
-                                <span class="quiz-name"><?php echo htmlspecialchars($quiz['title']); ?></span>
-                                <span class="separator">•</span>
-                                <span class="course-name"><?php echo htmlspecialchars($quiz['course_title']); ?></span>
-                            </p>
-                        </div>
-                        <a href="view_course.php?id=<?php echo $quiz['course_id']; ?>" class="btn btn-outline-light">
-                            <i class="bi bi-arrow-left"></i> Back to Course
-                        </a>
+<body class="bg-gray-50">
+    <?php include 'includes/sidebar.php'; ?>
+    
+    <div class="p-8 sm:ml-72">
+        <div class="container mx-auto">
+            <div class="bg-gradient-to-r from-blue-600 to-blue-800 rounded-xl p-8 shadow-md mb-8">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div>
+                        <h1 class="text-2xl font-bold text-white mb-2"><?php echo htmlspecialchars($quiz['title']); ?> - Results</h1>
+                        <p class="text-blue-100 flex items-center gap-2">
+                            <i class="bi bi-book"></i>
+                            <span><?php echo htmlspecialchars($quiz['course_title']); ?></span>
+                            <span class="text-blue-300">•</span>
+                            <span>Completed: <?php echo date('M j, Y', strtotime($user_progress['completed_at'])); ?></span>
+                        </p>
                     </div>
+                    <a href="view_course.php?id=<?php echo $quiz['course_id']; ?>" class="px-5 py-2.5 bg-white/10 hover:bg-white/20 border border-white/30 text-white rounded-xl flex items-center gap-2 transition font-medium">
+                        <i class="bi bi-arrow-left"></i> Back to Course
+                    </a>
                 </div>
+            </div>
 
-                <div class="results-overview">
-                    <div class="row">
-                        <div class="col-md-4 mb-4">
-                            <div class="stats-card">
-                                <div class="stats-icon">
-                                    <i class="bi bi-trophy-fill"></i>
-                                </div>
-                                <div class="stats-info">
-                                    <h3>Final Score</h3>
-                                    <h2><?php echo $final_score; ?>%</h2>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4 mb-4">
-                            <div class="stats-card">
-                                <div class="stats-icon">
-                                    <i class="bi bi-check-circle-fill"></i>
-                                </div>
-                                <div class="stats-info">
-                                    <h3>Correct Answers</h3>
-                                    <h2><?php echo $correct_answers; ?> / <?php echo $total_questions; ?></h2>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4 mb-4">
-                            <div class="stats-card">
-                                <div class="stats-icon">
-                                    <i class="bi bi-clock-fill"></i>
-                                </div>
-                                <div class="stats-info">
-                                    <h3>Time Taken</h3>
-                                    <h2><?php echo gmdate("i:s", $results['time_taken']); ?></h2>
-                                </div>
-                            </div>
-                        </div>
+            <!-- Result Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <!-- Score Card -->
+                <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                    <div class="w-12 h-12 rounded-lg bg-blue-50 flex items-center justify-center mb-4 text-blue-500">
+                        <i class="bi bi-trophy text-2xl"></i>
                     </div>
+                    <h3 class="text-gray-700 font-medium mb-1">Your Score</h3>
+                    <div class="text-3xl font-bold text-gray-900 mb-1"><?php echo $final_score; ?>%</div>
+                    <div class="text-sm text-gray-500"><?php echo $text_grade; ?></div>
                 </div>
+                
+                <!-- Correct Answers -->
+                <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                    <div class="w-12 h-12 rounded-lg bg-blue-50 flex items-center justify-center mb-4 text-blue-500">
+                        <i class="bi bi-check-circle text-2xl"></i>
+                    </div>
+                    <h3 class="text-gray-700 font-medium mb-1">Correct Answers</h3>
+                    <div class="text-3xl font-bold text-gray-900 mb-1"><?php echo $correct_answers; ?></div>
+                    <div class="text-sm text-gray-500">out of <?php echo $total_questions; ?> questions</div>
+                </div>
+                
+                <!-- Time Taken -->
+                <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                    <div class="w-12 h-12 rounded-lg bg-blue-50 flex items-center justify-center mb-4 text-blue-500">
+                        <i class="bi bi-clock text-2xl"></i>
+                    </div>
+                    <h3 class="text-gray-700 font-medium mb-1">Time Taken</h3>
+                    <div class="text-3xl font-bold text-gray-900 mb-1"><?php echo $time_taken; ?></div>
+                    <div class="text-sm text-gray-500">minutes to complete</div>
+                </div>
+            </div>
 
-                <div class="results-content">
-                    <h2 class="section-title">Detailed Review</h2>
-                    <div class="question-list">
-                        <?php foreach ($questions as $index => $question): 
-                            $isCorrect = $question['correct_answer'] === $question['user_answer'];
-                            $options = [
-                                'A' => $question['option_a'],
-                                'B' => $question['option_b'],
-                                'C' => $question['option_c'],
-                                'D' => $question['option_d']
-                            ];
-                        ?>
-                            <div class="question-card mb-4">
-                                <div class="question-header">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <span class="question-number">Question <?php echo $index + 1; ?></span>
-                                        <span class="question-result <?php echo $isCorrect ? 'correct' : 'incorrect'; ?>">
-                                            <?php if ($isCorrect): ?>
-                                                <i class="bi bi-check-circle-fill"></i> Correct
-                                            <?php else: ?>
-                                                <i class="bi bi-x-circle-fill"></i> Incorrect
-                                            <?php endif; ?>
-                                        </span>
-                                    </div>
-                                    <div class="question-text mt-2">
-                                        <?php echo htmlspecialchars($question['question_text']); ?>
-                                    </div>
+            <!-- Detailed Review -->
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                <h2 class="text-xl font-semibold text-gray-900 mb-6">Detailed Review</h2>
+                <div class="space-y-6">
+                    <?php foreach ($questions as $index => $question): 
+                        $isCorrect = $question['correct_answer'] === $question['user_answer'];
+                        $options = [
+                            'A' => $question['option_a'],
+                            'B' => $question['option_b'],
+                            'C' => $question['option_c'],
+                            'D' => $question['option_d']
+                        ];
+                    ?>
+                        <div class="bg-gray-50 rounded-xl border border-gray-100 overflow-hidden">
+                            <div class="border-b border-gray-100 p-4">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-xs font-medium text-blue-600">Question <?php echo $index + 1; ?></span>
+                                    <span class="flex items-center gap-1.5 text-xs font-medium <?php echo $isCorrect ? 'text-green-600' : 'text-red-600'; ?>">
+                                        <?php if ($isCorrect): ?>
+                                            <i class="bi bi-check-circle-fill"></i> Correct
+                                        <?php else: ?>
+                                            <i class="bi bi-x-circle-fill"></i> Incorrect
+                                        <?php endif; ?>
+                                    </span>
                                 </div>
-                                <div class="options-list p-3">
-                                    <?php foreach ($options as $letter => $option_text): 
-                                        $optionClass = '';
-                                        if ($letter === $question['correct_answer']) {
-                                            $optionClass = 'correct';
-                                        } elseif ($letter === $question['user_answer'] && !$isCorrect) {
-                                            $optionClass = 'incorrect';
-                                        }
-                                    ?>
-                                        <div class="answer-option <?php echo $optionClass; ?>">
+                                <div class="mt-2 text-sm text-gray-800">
+                                    <?php echo htmlspecialchars($question['question_text']); ?>
+                                </div>
+                                <?php if (!empty($question['question_image'])): ?>
+                                <div class="mt-3">
+                                    <?php if (strpos($question['question_image'], 'assets:') === 0): ?>
+                                        <img src="../assets/<?php echo htmlspecialchars(substr($question['question_image'], 7)); ?>" 
+                                             alt="Question Image" 
+                                             class="max-w-full h-auto rounded-lg border border-gray-200 max-h-64">
+                                    <?php else: ?>
+                                        <img src="../uploads/question_images/<?php echo htmlspecialchars($question['question_image']); ?>" 
+                                             alt="Question Image" 
+                                             class="max-w-full h-auto rounded-lg border border-gray-200 max-h-64">
+                                    <?php endif; ?>
+                                </div>
+                                <?php endif; ?>
+                            </div>
+                            <div class="p-4 space-y-3">
+                                <?php foreach ($options as $letter => $option_text): 
+                                    $optionClass = '';
+                                    $optionBg = 'bg-white';
+                                    $optionBorder = 'border-gray-200';
+                                    $iconColor = '';
+                                    
+                                    if ($letter === $question['correct_answer']) {
+                                        $optionClass = 'border-green-500';
+                                        $optionBg = 'bg-green-50';
+                                        $iconColor = 'text-green-600';
+                                    } elseif ($letter === $question['user_answer'] && !$isCorrect) {
+                                        $optionClass = 'border-red-500';
+                                        $optionBg = 'bg-red-50';
+                                        $iconColor = 'text-red-600';
+                                    }
+                                    
+                                    $option_image_field = 'option_' . strtolower($letter) . '_image';
+                                    $has_image = !empty($question[$option_image_field]);
+                                ?>
+                                    <div class="flex flex-col p-3 rounded-lg border <?php echo $optionClass ?: 'border-gray-200'; ?> <?php echo $optionBg; ?>">
+                                        <div class="flex justify-between items-center">
                                             <div>
-                                                <span class="option-letter"><?php echo $letter; ?></span>
-                                                <span class="option-text"><?php echo htmlspecialchars($option_text); ?></span>
+                                                <span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-blue-100 text-blue-700 text-sm font-medium mr-3"><?php echo $letter; ?></span>
+                                                <span class="text-sm"><?php echo htmlspecialchars($option_text); ?></span>
                                             </div>
-                                            <?php if ($optionClass === 'correct'): ?>
-                                                <i class="bi bi-check-circle-fill text-success"></i>
-                                            <?php elseif ($optionClass === 'incorrect'): ?>
-                                                <i class="bi bi-x-circle-fill text-danger"></i>
+                                            <?php if ($letter === $question['correct_answer']): ?>
+                                                <i class="bi bi-check-circle-fill text-green-600"></i>
+                                            <?php elseif ($letter === $question['user_answer'] && !$isCorrect): ?>
+                                                <i class="bi bi-x-circle-fill text-red-600"></i>
                                             <?php endif; ?>
                                         </div>
-                                    <?php endforeach; ?>
-                                </div>
+                                        <?php if ($has_image): ?>
+                                        <div class="mt-3 w-full">
+                                            <?php if (strpos($question[$option_image_field], 'assets:') === 0): ?>
+                                                <img src="../assets/<?php echo htmlspecialchars(substr($question[$option_image_field], 7)); ?>" 
+                                                     alt="Option <?php echo $letter; ?> Image" 
+                                                     class="max-w-full h-auto rounded-lg border border-gray-100 max-h-36">
+                                            <?php else: ?>
+                                                <img src="../uploads/question_images/<?php echo htmlspecialchars($question[$option_image_field]); ?>" 
+                                                     alt="Option <?php echo $letter; ?> Image" 
+                                                     class="max-w-full h-auto rounded-lg border border-gray-100 max-h-36">
+                                            <?php endif; ?>
+                                        </div>
+                                        <?php endif; ?>
+                                    </div>
+                                <?php endforeach; ?>
                             </div>
-                        <?php endforeach; ?>
-                    </div>
+                        </div>
+                    <?php endforeach; ?>
                 </div>
             </div>
         </div>
     </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
