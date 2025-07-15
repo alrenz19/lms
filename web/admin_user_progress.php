@@ -81,402 +81,276 @@ while ($row = $result->fetch_assoc()) {
 }
 
 $result->data_seek(0); // Reset result pointer
+
+// Calculate average completion rate
+$avg_completion = $total_users > 0 ? round($total_completed_courses / $total_users, 1) : 0;
+
+// Include the header
+include 'includes/header.php';
+
+// Include the dashboard card component
+include_once 'components/dashboard_card.php';
 ?>
-
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Progress Overview - LMS</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="../assets/css/style.css">
-    <link rel="stylesheet" href="../assets/css/custom.css">
-    <link rel="stylesheet" href="../assets/css/dashboard.css">
-</head>
-<body>
-    <div class="wrapper">
-        <?php include 'includes/sidebar.php'; ?>
-        <div class="content">
-            <div class="container mt-4">
-                <div class="progress-header">
-                    <h1 class="page-title text-white">
-                        <i class="bi bi-graph-up text-white"></i>
-                        User Progress Overview
-                    </h1>
+    
+<div class="p-8 sm:ml-72">
+    <div class="container mx-auto">
+        <!-- Page header -->
+        <div class="bg-gradient-to-r from-blue-600 to-blue-800 rounded-xl p-6 mb-6 flex justify-between items-center shadow-sm">
+            <div class="flex items-center">
+                <div class="bg-white/10 p-3 rounded-lg mr-4">
+                    <i data-lucide="bar-chart-2" class="h-8 w-8 text-white"></i>
                 </div>
-
-                <!-- Platform Stats -->
-                <div class="row mb-4">
-                    <div class="col-md-3">
-                        <div class="stats-card">
-                            <div class="stats-icon">
-                                <i class="bi bi-people-fill"></i>
-                            </div>
-                            <div class="stats-info">
-                                <h3>Active Users</h3>
-                                <h2><?php echo $total_users; ?></h2>
-                                <p class="stats-detail">
-                                    <?php echo $active_users_last_week; ?> active this week
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="stats-card">
-                            <div class="stats-icon">
-                                <i class="bi bi-book-fill"></i>
-                            </div>
-                            <div class="stats-info">
-                                <h3>Total Courses</h3>
-                                <h2><?php echo $total_courses; ?></h2>
-                                <p class="stats-detail">
-                                    <?php echo $total_completed_courses; ?> completions
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="stats-card">
-                            <div class="stats-icon">
-                                <i class="bi bi-check-circle-fill"></i>
-                            </div>
-                            <div class="stats-info">
-                                <h3>Correct Answers</h3>
-                                <h2><?php echo $total_correct_answers; ?></h2>
-                                <p class="stats-detail">
-                                    Platform-wide
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="stats-card">
-                            <div class="stats-icon">
-                                <i class="bi bi-lightning-fill"></i>
-                            </div>
-                            <div class="stats-info">
-                                <h3>Average Completion</h3>
-                                <h2><?php 
-                                    echo $total_users > 0 ? 
-                                        round($total_completed_courses / $total_users, 1) : 
-                                        '0';
-                                ?></h2>
-                                <p class="stats-detail">
-                                    Courses per user
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- User Progress Table -->
-                <div class="progress-card">
-                    <div class="card-header">
-                        <div class="search-wrapper">
-                            <i class="bi bi-search"></i>
-                            <input type="search" 
-                                   class="search-input" 
-                                   id="searchProgress" 
-                                   placeholder="Search users..." 
-                                   autocomplete="off">
-                        </div>
-                    </div>
-                    <div class="table-responsive">
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>User</th>
-                                    <th>Email</th>
-                                    <th>Course Progress</th>
-                                    <th>Completed</th>
-                                    <th>Last Activity</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php while ($row = $result->fetch_assoc()): 
-                                    $completion_rate = $row['total_enrolled_courses'] > 0 ? 
-                                        ($row['completed_courses'] / $row['total_enrolled_courses']) * 100 : 0;
-                                ?>
-                                <tr>
-                                    <td>
-                                        <div class="user-info">
-                                            <div class="user-avatar">
-                                                <i class="bi bi-person"></i>
-                                            </div>
-                                            <div>
-                                                <div class="user-name">
-                                                    <?php echo htmlspecialchars($row['full_name']); ?>
-                                                </div>
-                                                <div class="user-username">
-                                                    @<?php echo htmlspecialchars($row['username']); ?>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td><?php echo htmlspecialchars($row['email']); ?></td>
-                                    <td>
-                                        <div class="progress">
-                                            <div class="progress-bar" role="progressbar" 
-                                                 style="width: <?php echo round($completion_rate); ?>%">
-                                                <?php echo round($completion_rate); ?>%
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <span class="completed-courses">
-                                            <?php echo $row['completed_courses']; ?> / <?php echo $row['total_enrolled_courses']; ?>
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <span class="last-activity">
-                                            <?php 
-                                                if ($row['last_activity']) {
-                                                    echo date('M j, Y g:i A', strtotime($row['last_activity']));
-                                                } else {
-                                                    echo 'No activity';
-                                                }
-                                            ?>
-                                        </span>
-                                    </td>
-                                </tr>
-                                <?php endwhile; ?>
-                            </tbody>
-                        </table>
-                    </div>
+                <div>
+                    <h1 class="text-2xl font-bold text-white">User Progress Overview</h1>
+                    <p class="text-blue-100">Monitor learning progress and performance across all users</p>
                 </div>
             </div>
         </div>
-    </div>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const searchInput = document.getElementById('searchProgress');
-            const tableRows = document.querySelectorAll('tbody tr');
+
+        <!-- Platform Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200 hover:shadow-md transition-all duration-300">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-gray-700 font-medium">Active Users</h3>
+                    <div class="bg-blue-100 text-blue-800 p-2 rounded-lg">
+                        <i data-lucide="users" class="w-5 h-5"></i>
+                    </div>
+                </div>
+                <div class="text-3xl font-bold text-gray-900 mb-1"><?php echo $total_users; ?></div>
+                <div class="text-sm text-gray-500 flex items-center">
+                    <i data-lucide="activity" class="w-4 h-4 mr-1 text-blue-500"></i>
+                    <span><?php echo $active_users_last_week; ?> active this week</span>
+                </div>
+            </div>
             
-            searchInput.addEventListener('input', function() {
-                const searchTerm = this.value.toLowerCase();
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200 hover:shadow-md transition-all duration-300">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-gray-700 font-medium">Total Courses</h3>
+                    <div class="bg-blue-100 text-blue-800 p-2 rounded-lg">
+                        <i data-lucide="book-open" class="w-5 h-5"></i>
+                    </div>
+                </div>
+                <div class="text-3xl font-bold text-gray-900 mb-1"><?php echo $total_courses; ?></div>
+                <div class="text-sm text-gray-500 flex items-center">
+                    <i data-lucide="check-circle" class="w-4 h-4 mr-1 text-green-500"></i>
+                    <span><?php echo $total_completed_courses; ?> completions</span>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200 hover:shadow-md transition-all duration-300">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-gray-700 font-medium">Correct Answers</h3>
+                    <div class="bg-green-100 text-green-800 p-2 rounded-lg">
+                        <i data-lucide="check-circle" class="w-5 h-5"></i>
+                    </div>
+                </div>
+                <div class="text-3xl font-bold text-gray-900 mb-1"><?php echo $total_correct_answers; ?></div>
+                <div class="text-sm text-gray-500 flex items-center">
+                    <i data-lucide="globe" class="w-4 h-4 mr-1 text-blue-500"></i>
+                    <span>Platform-wide</span>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200 hover:shadow-md transition-all duration-300">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-gray-700 font-medium">Average Completion</h3>
+                    <div class="bg-amber-100 text-amber-800 p-2 rounded-lg">
+                        <i data-lucide="zap" class="w-5 h-5"></i>
+                    </div>
+                </div>
+                <div class="text-3xl font-bold text-gray-900 mb-1"><?php echo $avg_completion; ?></div>
+                <div class="text-sm text-gray-500 flex items-center">
+                    <i data-lucide="book" class="w-4 h-4 mr-1 text-amber-500"></i>
+                    <span>Courses per user</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- User Progress Table -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="p-6 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <h2 class="text-lg font-semibold text-gray-800 flex items-center">
+                    <i data-lucide="users" class="w-5 h-5 text-blue-600 mr-2"></i>
+                    User Progress Details
+                </h2>
+                <div class="relative w-full sm:w-auto">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
+                        <i data-lucide="search" class="w-4 h-4"></i>
+                    </span>
+                    <input type="search" 
+                           class="w-full sm:w-64 pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                           id="searchProgress" 
+                           placeholder="Search users..." 
+                           autocomplete="off">
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="bg-gray-50">
+                            <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                            <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                            <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Course Progress</th>
+                            <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Completed</th>
+                            <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Activity</th>
+                        </tr>
+                    </thead>
+                    <tbody id="progressTableBody" class="divide-y divide-gray-200">
+                        <?php if ($result->num_rows === 0): ?>
+                            <tr>
+                                <td colspan="5" class="px-6 py-12 text-center">
+                                    <div class="flex flex-col items-center justify-center text-gray-500">
+                                        <i data-lucide="bar-chart-off" class="h-12 w-12 text-gray-300 mb-4"></i>
+                                        <h3 class="text-lg font-medium text-gray-900 mb-1">No progress data available</h3>
+                                        <p class="text-gray-500">User progress information will appear here when users start taking courses</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php else: ?>
+                            <?php while ($row = $result->fetch_assoc()): 
+                                $completion_rate = $row['total_enrolled_courses'] > 0 ? 
+                                    ($row['completed_courses'] / $row['total_enrolled_courses']) * 100 : 0;
+                            ?>
+                            <tr class="hover:bg-blue-50/50 transition-colors" data-name="<?php echo strtolower($row['full_name']); ?>" data-email="<?php echo strtolower($row['email']); ?>">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center">
+                                        <div class="w-10 h-10 flex-shrink-0 bg-blue-50 rounded-full flex items-center justify-center mr-4">
+                                            <i data-lucide="user" class="w-5 h-5 text-blue-600"></i>
+                                        </div>
+                                        <div>
+                                            <div class="text-sm font-medium text-gray-900">
+                                                <?php echo htmlspecialchars($row['full_name']); ?>
+                                            </div>
+                                            <div class="text-xs text-gray-500">
+                                                @<?php echo htmlspecialchars($row['username']); ?>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <?php echo htmlspecialchars($row['email']); ?>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="w-full bg-gray-200 rounded-full h-2.5 mb-2">
+                                        <div class="bg-blue-600 h-2.5 rounded-full" 
+                                             style="width: <?php echo round($completion_rate); ?>%" 
+                                             title="<?php echo round($completion_rate); ?>% completed"></div>
+                                    </div>
+                                    <div class="flex justify-between items-center">
+                                        <div class="text-xs text-gray-500">
+                                            <?php echo round($completion_rate); ?>%
+                                        </div>
+                                        <?php if ($completion_rate === 100): ?>
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                                <i data-lucide="check" class="w-3 h-3 mr-1"></i> Complete
+                                            </span>
+                                        <?php elseif ($completion_rate > 0): ?>
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                                <i data-lucide="clock" class="w-3 h-3 mr-1"></i> In Progress
+                                            </span>
+                                        <?php else: ?>
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                                                <i data-lucide="clock" class="w-3 h-3 mr-1"></i> Not Started
+                                            </span>
+                                        <?php endif; ?>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="text-sm font-medium text-emerald-600 flex items-center">
+                                        <i data-lucide="check-circle" class="w-4 h-4 mr-1 <?php echo $row['completed_courses'] > 0 ? 'text-emerald-500' : 'text-gray-300'; ?>"></i>
+                                        <?php echo $row['completed_courses']; ?> / <?php echo $row['total_enrolled_courses']; ?>
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <?php if ($row['last_activity']): ?>
+                                        <span class="text-sm text-gray-500 flex items-center">
+                                            <i data-lucide="clock" class="w-4 h-4 mr-1 text-blue-500"></i>
+                                            <?php 
+                                                $time_ago = time() - strtotime($row['last_activity']);
+                                                if ($time_ago < 60*60*24) { // less than 24 hours
+                                                    echo date('g:i A', strtotime($row['last_activity']));
+                                                } else {
+                                                    echo date('M j, Y', strtotime($row['last_activity']));
+                                                }
+                                            ?>
+                                        </span>
+                                    <?php else: ?>
+                                        <span class="text-sm text-gray-400 italic">No activity</span>
+                                    <?php endif; ?>
+                                </td>
+                            </tr>
+                            <?php endwhile; ?>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+            <!-- Empty Search Results Message -->
+            <div id="noSearchResults" class="hidden p-12 text-center">
+                <i data-lucide="search-x" class="h-12 w-12 text-gray-300 mx-auto mb-4"></i>
+                <h3 class="text-lg font-medium text-gray-700 mb-2">No users found</h3>
+                <p class="text-gray-500 mb-4">Try adjusting your search term</p>
+                <button class="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-sm font-medium" 
+                        onclick="clearSearch()">
+                    Clear Search
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize Lucide icons
+        lucide.createIcons();
+        
+        // Search functionality
+        const searchInput = document.getElementById('searchProgress');
+        const tableRows = document.querySelectorAll('#progressTableBody tr:not([colspan])');
+        const noResultsMessage = document.getElementById('noSearchResults');
+        const tableBody = document.getElementById('progressTableBody');
+        
+        function filterTable(searchTerm) {
+            searchTerm = searchTerm.toLowerCase();
+            let hasResults = false;
+            
+            tableRows.forEach(row => {
+                const name = row.getAttribute('data-name') || '';
+                const email = row.getAttribute('data-email') || '';
+                const username = row.querySelector('.text-gray-500')?.textContent.toLowerCase() || '';
                 
-                tableRows.forEach(row => {
-                    const text = row.textContent.toLowerCase();
-                    row.style.display = text.includes(searchTerm) ? '' : 'none';
-                });
+                if (name.includes(searchTerm) || email.includes(searchTerm) || username.includes(searchTerm)) {
+                    row.classList.remove('hidden');
+                    hasResults = true;
+                } else {
+                    row.classList.add('hidden');
+                }
             });
+            
+            // Show/hide no results message
+            if (!hasResults && searchTerm.length > 0) {
+                noResultsMessage.classList.remove('hidden');
+                // If there's a "no data available" row, hide it during search
+                const noDataRow = document.querySelector('#progressTableBody tr[colspan]');
+                if (noDataRow) noDataRow.classList.add('hidden');
+            } else {
+                noResultsMessage.classList.add('hidden');
+                // Restore "no data available" row if it exists and search is cleared
+                if (searchTerm === '') {
+                    const noDataRow = document.querySelector('#progressTableBody tr[colspan]');
+                    if (noDataRow) noDataRow.classList.remove('hidden');
+                }
+            }
+        }
+        
+        searchInput.addEventListener('input', function() {
+            filterTable(this.value);
         });
-    </script>
-</body>
-</html>
-
-<style>
-.progress-header {
-    background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
-    border-radius: 12px;
-    padding: 2rem;
-    margin-bottom: 2rem;
-    box-shadow: 0 4px 6px rgba(109, 40, 217, 0.1);
-}
-
-.page-title {
-    font-size: 2rem;
-    font-weight: 600;
-    margin: 0;
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-}
-
-.page-title i {
-    font-size: 1.75rem;
-}
-
-.text-white {
-    color: #fff !important;
-}
-
-.stats-card {
-    background: white;
-    border-radius: 12px;
-    padding: 1.5rem;
-    height: 100%;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-}
-
-.stats-icon {
-    width: 48px;
-    height: 48px;
-    background: rgba(99, 102, 241, 0.1);
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 1rem;
-}
-
-.stats-icon i {
-    font-size: 24px;
-    color: #6366f1;
-}
-
-.stats-info h3 {
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: #6b7280;
-    margin-bottom: 0.5rem;
-}
-
-.stats-info h2 {
-    font-size: 2rem;
-    font-weight: 600;
-    color: #111827;
-    margin-bottom: 0.25rem;
-}
-
-.stats-detail {
-    font-size: 0.875rem;
-    color: #6b7280;
-    margin: 0;
-}
-
-.progress-card {
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-}
-
-.card-header {
-    padding: 1.5rem;
-    border-bottom: 1px solid #e5e7eb;
-}
-
-.search-wrapper {
-    position: relative;
-    max-width: 300px;
-}
-
-.search-wrapper i {
-    position: absolute;
-    left: 1rem;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #6b7280;
-}
-
-.search-input {
-    width: 100%;
-    padding: 0.75rem 1rem 0.75rem 2.5rem;
-    border: 1px solid #e5e7eb;
-    border-radius: 9999px;
-    font-size: 0.875rem;
-    color: #111827;
-    transition: all 0.2s;
-}
-
-.search-input:focus {
-    outline: none;
-    border-color: #6366f1;
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
-}
-
-.table {
-    margin: 0;
-}
-
-.table th {
-    padding: 1rem 1.5rem;
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: #6b7280;
-    background: #f9fafb;
-    border-bottom: 1px solid #e5e7eb;
-}
-
-.table td {
-    padding: 1rem 1.5rem;
-    vertical-align: middle;
-    border-bottom: 1px solid #e5e7eb;
-}
-
-.user-info {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-}
-
-.user-avatar {
-    width: 40px;
-    height: 40px;
-    background: rgba(99, 102, 241, 0.1);
-    border-radius: 9999px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.user-avatar i {
-    font-size: 1.25rem;
-    color: #6366f1;
-}
-
-.user-name {
-    font-weight: 500;
-    color: #111827;
-}
-
-.user-username {
-    font-size: 0.875rem;
-    color: #6b7280;
-}
-
-.progress {
-    height: 0.5rem;
-    border-radius: 9999px;
-    background: #f3f4f6;
-}
-
-.progress-bar {
-    background: #6366f1;
-    border-radius: 9999px;
-}
-
-.completed-courses {
-    font-weight: 500;
-    color: #059669;
-}
-
-.last-activity {
-    font-size: 0.875rem;
-    color: #6b7280;
-}
-
-.action-buttons {
-    display: flex;
-    gap: 0.5rem;
-}
-
-.btn-sm {
-    padding: 0.375rem;
-    font-size: 0.875rem;
-}
-
-.btn-outline-primary {
-    color: #6366f1;
-    border-color: #6366f1;
-}
-
-.btn-outline-primary:hover {
-    background: #6366f1;
-    color: white;
-}
-
-.btn-outline-secondary {
-    color: #6b7280;
-    border-color: #e5e7eb;
-}
-
-.btn-outline-secondary:hover {
-    background: #f3f4f6;
-    color: #374151;
-    border-color: #9ca3af;
-}
-</style>
+        
+        // Clear search function
+        window.clearSearch = function() {
+            searchInput.value = '';
+            filterTable('');
+            searchInput.focus();
+        };
+    });
+</script>

@@ -91,272 +91,136 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Take Quiz - <?php echo htmlspecialchars($quiz['title']); ?></title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="../assets/css/style.css">
-    <link rel="stylesheet" href="../assets/css/custom.css">
-    <link rel="stylesheet" href="../assets/css/dashboard.css">
-    <style>
-        .quiz-header {
-            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-            border-radius: 12px;
-            padding: 2rem;
-            margin-bottom: 2rem;
-            color: white;
-        }
-
-        .quiz-title {
-            font-size: 2rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-        }
-
-        .course-title {
-            font-size: 1rem;
-            opacity: 0.9;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            margin: 0;
-        }
-
-        .quiz-content {
-            background: white;
-            border-radius: 12px;
-            padding: 2rem;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-        }
-
-        .question-card {
-            background: #f9fafb;
-            border: 1px solid #e5e7eb;
-            border-radius: 12px;
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-            transition: all 0.2s;
-        }
-
-        .question-card:hover {
-            border-color: #6366f1;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-        }
-
-        .question-header {
-            margin-bottom: 1.5rem;
-        }
-
-        .question-number {
-            display: inline-block;
-            background: rgba(99, 102, 241, 0.1);
-            color: #6366f1;
-            padding: 0.25rem 0.75rem;
-            border-radius: 9999px;
-            font-size: 0.875rem;
-            font-weight: 500;
-            margin-bottom: 0.75rem;
-        }
-
-        .question-text {
-            font-size: 1.125rem;
-            font-weight: 500;
-            color: #111827;
-            line-height: 1.5;
-        }
-
-        .options-list {
-            display: grid;
-            gap: 1rem;
-        }
-
-        .option-item {
-            width: 100%;
-        }
-
-        .btn-check:checked + .btn-outline-primary {
-            background-color: #6366f1;
-            border-color: #6366f1;
-            color: white;
-        }
-
-        .btn-outline-primary {
-            color: #6366f1;
-            border-color: #e5e7eb;
-            background: white;
-            padding: 1rem;
-            transition: all 0.2s;
-        }
-
-        .btn-outline-primary:hover {
-            background-color: #f9fafb;
-            border-color: #6366f1;
-            color: #6366f1;
-            transform: translateY(-1px);
-        }
-
-        .option-letter {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 28px;
-            height: 28px;
-            background: rgba(99, 102, 241, 0.1);
-            color: #6366f1;
-            border-radius: 9999px;
-            font-weight: 500;
-            margin-right: 0.75rem;
-        }
-
-        .btn-check:checked + .btn-outline-primary .option-letter {
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-        }
-
-        .option-text {
-            font-weight: 400;
-        }
-
-        .quiz-actions {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding-top: 1.5rem;
-            border-top: 1px solid #e5e7eb;
-        }
-
-        .btn {
-            padding: 0.75rem 1.5rem;
-            font-weight: 500;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            transition: all 0.2s;
-        }
-
-        .btn-primary {
-            background-color: #6366f1;
-            border-color: #6366f1;
-        }
-
-        .btn-primary:hover {
-            background-color: #4f46e5;
-            border-color: #4f46e5;
-            transform: translateY(-1px);
-        }
-
-        .btn-outline-secondary {
-            color: #6b7280;
-            border-color: #e5e7eb;
-        }
-
-        .btn-outline-secondary:hover {
-            background-color: #f9fafb;
-            border-color: #9ca3af;
-            color: #4b5563;
-            transform: translateY(-1px);
-        }
-
-        @media (min-width: 640px) {
-            .options-list {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-    </style>
 </head>
-<body>
-    <div class="wrapper">
-        <?php include 'includes/sidebar.php'; ?>
-        <div class="content">
-            <div class="container mt-4">
-                <div class="quiz-header">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <div>
-                            <h1 class="quiz-title"><?php echo htmlspecialchars($quiz['title']); ?></h1>
-                            <p class="course-title">
-                                <i class="bi bi-book"></i>
-                                <?php echo htmlspecialchars($quiz['course_title']); ?>
-                            </p>
-                        </div>
-                        <a href="view_course.php?id=<?php echo $quiz['course_id']; ?>" class="btn btn-outline-primary">
-                            <i class="bi bi-arrow-left"></i> Back to Course
-                        </a>
+<body class="bg-gray-50">
+    <?php include 'includes/sidebar.php'; ?>
+    
+    <div class="p-8 sm:ml-72">
+        <div class="container mx-auto">
+            <div class="bg-gradient-to-r from-blue-600 to-blue-800 rounded-xl p-8 shadow-md mb-8">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div>
+                        <h1 class="text-2xl font-bold text-white mb-2"><?php echo htmlspecialchars($quiz['title']); ?></h1>
+                        <p class="text-blue-100 flex items-center gap-2">
+                            <i class="bi bi-book"></i>
+                            <span><?php echo htmlspecialchars($quiz['course_title']); ?></span>
+                        </p>
                     </div>
+                    <a href="view_course.php?id=<?php echo $quiz['course_id']; ?>" 
+                       class="px-4 py-2 bg-transparent border border-white text-white rounded-lg hover:bg-white/10 flex items-center gap-2 transition text-sm font-medium">
+                        <i class="bi bi-arrow-left"></i> Back to Course
+                    </a>
                 </div>
+            </div>
 
-                <div class="quiz-content">
-                    <form method="POST" class="quiz-form" id="quizForm">
-                        <div class="question-list">
-                            <?php
-                            $questions = $conn->query("SELECT * FROM questions WHERE quiz_id = $quiz_id ORDER BY RAND()");
-                            $question_num = 1;
-                            while ($question = $questions->fetch_assoc()): 
-                                // Create options array from individual fields
-                                $options = [
-                                    'A' => $question['option_a'],
-                                    'B' => $question['option_b'],
-                                    'C' => $question['option_c'],
-                                    'D' => $question['option_d']
-                                ];
-                            ?>
-                                <div class="question-card mb-4">
-                                    <div class="question-header">
-                                        <span class="question-number">Question <?php echo $question_num; ?></span>
-                                        <div class="question-text">
-                                            <?php echo htmlspecialchars($question['question_text']); ?>
-                                        </div>
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                <form method="POST" class="quiz-form" id="quizForm">
+                    <div class="space-y-6">
+                        <?php
+                        $questions = $conn->query("SELECT * FROM questions WHERE quiz_id = $quiz_id ORDER BY RAND()");
+                        $question_num = 1;
+                        while ($question = $questions->fetch_assoc()): 
+                            // Create options array from individual fields
+                            $options = [
+                                'A' => $question['option_a'],
+                                'B' => $question['option_b'],
+                                'C' => $question['option_c'],
+                                'D' => $question['option_d']
+                            ];
+                        ?>
+                            <div class="bg-gray-50 rounded-xl border border-gray-200 p-6 hover:border-blue-300 transition">
+                                <div class="mb-4">
+                                    <span class="inline-block bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-medium mb-3">Question <?php echo $question_num; ?></span>
+                                    <div class="text-gray-800 text-lg font-medium">
+                                        <?php echo htmlspecialchars($question['question_text']); ?>
                                     </div>
-                                    
-                                    <div class="options-list">
-                                        <?php foreach ($options as $letter => $option_text): ?>
-                                            <div class="option-item">
-                                                <input type="radio" 
-                                                       class="btn-check" 
-                                                       name="answers[<?php echo $question['id']; ?>]" 
-                                                       id="q<?php echo $question['id']; ?>_<?php echo $letter; ?>" 
-                                                       value="<?php echo $letter; ?>" 
-                                                       required>
-                                                <label class="btn btn-outline-primary w-100 text-start" 
-                                                       for="q<?php echo $question['id']; ?>_<?php echo $letter; ?>">
-                                                    <span class="option-letter"><?php echo $letter; ?></span>
-                                                    <span class="option-text"><?php echo htmlspecialchars($option_text); ?></span>
-                                                </label>
-                                            </div>
-                                        <?php endforeach; ?>
+                                    <?php if (!empty($question['question_image'])): ?>
+                                    <div class="mt-3">
+                                        <?php if (strpos($question['question_image'], 'assets:') === 0): ?>
+                                            <img src="../assets/<?php echo htmlspecialchars(substr($question['question_image'], 7)); ?>" 
+                                                 alt="Question Image" 
+                                                 class="max-w-full h-auto rounded-lg border border-gray-200 max-h-64">
+                                        <?php else: ?>
+                                            <img src="../uploads/question_images/<?php echo htmlspecialchars($question['question_image']); ?>" 
+                                                 alt="Question Image" 
+                                                 class="max-w-full h-auto rounded-lg border border-gray-200 max-h-64">
+                                        <?php endif; ?>
                                     </div>
+                                    <?php endif; ?>
                                 </div>
-                            <?php 
-                                $question_num++;
-                            endwhile; 
-                            ?>
-                        </div>
+                                
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <?php foreach ($options as $letter => $option_text): 
+                                        $option_image_field = 'option_' . strtolower($letter) . '_image';
+                                        $has_image = !empty($question[$option_image_field]);
+                                    ?>
+                                        <div>
+                                            <input type="radio" 
+                                                   class="hidden peer" 
+                                                   name="answers[<?php echo $question['id']; ?>]" 
+                                                   id="q<?php echo $question['id']; ?>_<?php echo $letter; ?>" 
+                                                   value="<?php echo $letter; ?>" 
+                                                   required>
+                                            <label class="flex flex-col p-4 border-2 border-gray-200 rounded-lg cursor-pointer text-gray-800 bg-white hover:bg-gray-50 peer-checked:border-blue-500 peer-checked:bg-blue-50 transition" 
+                                                   for="q<?php echo $question['id']; ?>_<?php echo $letter; ?>">
+                                                <div class="flex items-center">
+                                                    <span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-blue-100 text-blue-700 text-sm font-medium mr-3"><?php echo $letter; ?></span>
+                                                    <span class="text-sm"><?php echo htmlspecialchars($option_text); ?></span>
+                                                </div>
+                                                <?php if ($has_image): ?>
+                                                <div class="mt-3 w-full">
+                                                    <?php if (strpos($question[$option_image_field], 'assets:') === 0): ?>
+                                                        <img src="../assets/<?php echo htmlspecialchars(substr($question[$option_image_field], 7)); ?>" 
+                                                             alt="Option <?php echo $letter; ?> Image" 
+                                                             class="max-w-full h-auto rounded-lg border border-gray-100 max-h-48">
+                                                    <?php else: ?>
+                                                        <img src="../uploads/question_images/<?php echo htmlspecialchars($question[$option_image_field]); ?>" 
+                                                             alt="Option <?php echo $letter; ?> Image" 
+                                                             class="max-w-full h-auto rounded-lg border border-gray-100 max-h-48">
+                                                    <?php endif; ?>
+                                                </div>
+                                                <?php endif; ?>
+                                            </label>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                        <?php 
+                            $question_num++;
+                        endwhile; 
+                        ?>
+                    </div>
 
-                        <div class="quiz-actions">
-                            <button type="button" class="btn btn-outline-secondary" onclick="history.back()">
-                                <i class="bi bi-x-lg"></i> Cancel
-                            </button>
-                            <button type="submit" class="btn btn-primary" id="submitQuiz">
-                                <i class="bi bi-check-lg"></i> Submit Quiz
-                            </button>
-                        </div>
-                    </form>
-                </div>
+                    <div class="flex justify-between items-center mt-8 pt-6 border-t border-gray-200">
+                        <button type="button" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition text-sm font-medium flex items-center gap-2" onclick="history.back()">
+                            <i class="bi bi-x-lg"></i> Cancel
+                        </button>
+                        <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition text-sm font-medium flex items-center gap-2" id="submitQuiz">
+                            <i class="bi bi-check-lg"></i> Submit Quiz
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
     <script>
     document.addEventListener('DOMContentLoaded', function() {
         const form = document.getElementById('quizForm');
         const submitButton = document.getElementById('submitQuiz');
 
-        // Update progress as user answers questions
+        // Check all questions
         const radioInputs = form.querySelectorAll('input[type="radio"]');
-        const totalQuestions = document.querySelectorAll('.question-card').length;
+        const totalQuestions = document.querySelectorAll('.bg-gray-50.rounded-xl').length;
         let answeredQuestions = 0;
 
         radioInputs.forEach(input => {
             input.addEventListener('change', function() {
                 const questionId = this.name.match(/\d+/)[0];
-                const questionCard = this.closest('.question-card');
+                const questionCard = this.closest('.bg-gray-50.rounded-xl');
                 const allOptionsInQuestion = questionCard.querySelectorAll('input[type="radio"]');
                 let isFirstAnswer = true;
 
@@ -372,10 +236,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         });
 
         function updateProgress() {
-            const progress = (answeredQuestions / totalQuestions) * 100;
-            document.querySelector('.progress-bar').style.width = progress + '%';
-            document.querySelector('.progress-text').textContent = 
-                `${answeredQuestions} of ${totalQuestions} questions answered`;
+            console.log(`${answeredQuestions} of ${totalQuestions} questions answered`);
         }
 
         // Confirm before submitting
@@ -388,6 +249,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
             if (!confirm('Are you sure you want to submit your quiz? You cannot change your answers after submission.')) {
                 e.preventDefault();
+            } else {
+                form.submitted = true;
             }
         });
 

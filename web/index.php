@@ -56,197 +56,185 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LMS - Login</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="../assets/css/login.css">
-    <style>
-        .login-page {
-            background-color: #f8f9fa;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        blue: {
+                            50: '#f0f5ff',
+                            100: '#e0eaff',
+                            200: '#c7d7fe',
+                            300: '#a5b9fc',
+                            400: '#8193f7',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            800: '#3730a3',
+                            900: '#312e81',
+                            950: '#1e1b4b',
+                        }
+                    }
+                }
+            }
         }
-        
-        .login-container {
-            width: 100%;
-            max-width: 420px;
-            padding: 15px;
-        }
-        
-        .login-card {
-            background: #ffffff;
-            border-radius: 15px;
-            padding: 2.5rem;
-            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.08);
-            border: 1px solid #dee2e6;
-        }
-        
-        .stats-icon {
-            width: 64px;
-            height: 64px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 1.5rem;
-            background: #f1f5ff;
-            border-radius: 12px;
-            color: #0d6efd;
-            border: 1px solid #e6effd;
-        }
-        
-        .stats-icon svg {
-            stroke: #0d6efd;
-        }
-        
-        .system-title {
-            color: #212529;
-            font-size: 1.75rem;
-            font-weight: 600;
-            margin-bottom: 0.75rem;
-        }
-        
-        .text-muted {
-            color: #6c757d !important;
-            font-size: 0.95rem;
-        }
-        
-        .input-group {
-            margin-bottom: 1.25rem;
-            border: 1px solid #dee2e6;
-            border-radius: 10px;
-            overflow: hidden;
-            background-color: #ffffff;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-        }
-        
-        .input-group-text {
-            background-color: #f8f9fa;
-            border: none;
-            border-right: 1px solid #dee2e6;
-            color: #0d6efd;
-            padding: 0.75rem 1.25rem;
-        }
-        
-        .form-control {
-            border: none;
-            padding: 0.75rem 1.25rem;
-            color: #212529;
-            background-color: #ffffff;
-            font-size: 0.95rem;
-        }
-        
-        .form-control::placeholder {
-            color: #adb5bd;
-            font-size: 0.95rem;
-        }
-        
-        .form-control:focus {
-            box-shadow: none;
-            background-color: #ffffff;
-        }
-        
-        .input-group:focus-within {
-            border-color: #86b7fe;
-            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.1);
-        }
-        
-        .action-button {
-            padding: 0.875rem;
-            font-weight: 500;
-            font-size: 1rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            background: #0d6efd;
-            border: none;
-            border-radius: 10px;
-            transition: all 0.3s ease;
-        }
-        
-        .action-button:hover {
-            background: #0b5ed7;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(13, 110, 253, 0.15);
-        }
-        
-        .alert {
-            background-color: #fff4f4;
-            border: 1px solid #ffebeb;
-            color: #dc3545;
-            border-radius: 10px;
-            padding: 1rem 1.25rem;
-            margin-bottom: 1.5rem;
-        }
-    </style>
+    </script>
 </head>
-<body class="login-page">
-    <div class="login-container">
-        <div class="login-card">
-            <div class="text-center mb-4">
-                <div class="stats-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
-                        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
-                    </svg>
+<body class="bg-blue-50 min-h-screen flex items-center justify-center">
+    <div class="w-full max-w-md px-4">
+        <div class="bg-white rounded-2xl p-10 shadow-md border border-gray-200">
+            <div class="text-center mb-8">
+                <div class="mx-auto mb-8">
+                    <img src="http://172.16.131.209/lms_project/assets/asahi_intecc.jpg" alt="Asahi Intecc" class="h-8 w-auto mx-auto">
                 </div>
-                <h1 class="system-title">Learning Management System</h1>
-                <p class="text-muted">Sign in to continue</p>
+                <h1 class="text-2xl font-semibold text-blue-900 mb-2">Learning Management System</h1>
+                <p class="text-blue-600 text-[15px]">Sign in to continue</p>
             </div>
 
             <?php if ($error): ?>
-                <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                    <?php echo htmlspecialchars($error); ?>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                <div class="bg-red-50 border border-red-100 text-red-600 rounded-xl p-4 mb-6 flex items-center gap-2 relative" style="display: none;">
+                    <i data-lucide="alert-circle" class="w-5 h-5"></i>
+                    <span><?php echo htmlspecialchars($error); ?></span>
+                    <button type="button" class="absolute top-4 right-4 text-red-400 hover:text-red-600" onclick="this.parentElement.remove()">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
                 </div>
             <?php endif; ?>
 
             <form method="POST" action="">
-                <div class="mb-4">
-                    <div class="input-group">
-                        <span class="input-group-text">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                                <circle cx="12" cy="7" r="4"></circle>
-                            </svg>
+                <div class="mb-5">
+                    <div class="flex border border-gray-200 rounded-xl overflow-hidden shadow-sm focus-within:ring-2 focus-within:ring-blue-100 focus-within:border-blue-500 transition">
+                        <span class="bg-blue-50 border-r border-gray-200 text-blue-500 px-5 flex items-center">
+                            <i data-lucide="user" class="w-5 h-5"></i>
                         </span>
                         <input type="text" 
-                               class="form-control" 
+                               class="w-full py-3 px-4 text-gray-800 bg-white focus:outline-none" 
                                name="username" 
                                placeholder="Username"
-                               required
-                               style="background-color: #ffffff; color: #212529;">
+                               required>
                     </div>
                 </div>
-                <div class="mb-4">
-                    <div class="input-group">
-                        <span class="input-group-text">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                            </svg>
+                <div class="mb-6">
+                    <div class="flex border border-gray-200 rounded-xl overflow-hidden shadow-sm focus-within:ring-2 focus-within:ring-blue-100 focus-within:border-blue-500 transition">
+                        <span class="bg-blue-50 border-r border-gray-200 text-blue-500 px-5 flex items-center">
+                            <i data-lucide="lock" class="w-5 h-5"></i>
                         </span>
                         <input type="password" 
-                               class="form-control" 
+                               class="w-full py-3 px-4 text-gray-800 bg-white focus:outline-none" 
                                name="password" 
                                placeholder="Password"
-                               required
-                               style="background-color: #ffffff; color: #212529;">
+                               required>
                     </div>
                 </div>
-                <button type="submit" class="btn btn-primary w-100 action-button">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
-                        <polyline points="10 17 15 12 10 7"></polyline>
-                        <line x1="15" y1="12" x2="3" y2="12"></line>
-                    </svg>
+                <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white py-3.5 rounded-xl font-medium flex items-center justify-center gap-2 transition transform hover:-translate-y-0.5 hover:shadow-md">
+                    <i data-lucide="log-in" class="w-5 h-5"></i>
                     Sign In
                 </button>
             </form>
+            <div class="text-center mt-6">
+                <p class="text-sm text-gray-500 bg-blue-50 p-3 rounded-lg border border-blue-100">
+                    <i data-lucide="info" class="w-4 h-4 inline-block mr-1 text-blue-500"></i>
+                    If you don't have an account, please contact the IT administrator
+                </p>
+            </div>
         </div>
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // Initialize Lucide icons
+        document.addEventListener('DOMContentLoaded', function() {
+            lucide.createIcons();
+            
+            // Initialize toast functionality
+            <?php if ($error): ?>
+                // Show error toast on login failure
+                showToast('<?php echo htmlspecialchars($error); ?>', 'error');
+            <?php endif; ?>
+        });
+        
+        // Toast notification system
+        function showToast(message, type = 'info') {
+            // Create toast container if it doesn't exist
+            let toastContainer = document.getElementById('toast-container');
+            
+            if (!toastContainer) {
+                toastContainer = document.createElement('div');
+                toastContainer.id = 'toast-container';
+                toastContainer.className = 'fixed bottom-4 right-4 z-50 flex flex-col gap-2';
+                document.body.appendChild(toastContainer);
+            }
+            
+            // Create toast element
+            const toast = document.createElement('div');
+            toast.className = 'transform transition-all duration-300 ease-in-out translate-x-full';
+            
+            // Set background color based on type
+            let bgColor, textColor, iconName;
+            switch (type) {
+                case 'success':
+                    bgColor = 'bg-green-500';
+                    textColor = 'text-white';
+                    iconName = 'check-circle';
+                    break;
+                case 'error':
+                    bgColor = 'bg-red-500';
+                    textColor = 'text-white';
+                    iconName = 'alert-circle';
+                    break;
+                case 'warning':
+                    bgColor = 'bg-amber-500';
+                    textColor = 'text-white';
+                    iconName = 'alert-triangle';
+                    break;
+                default: // info
+                    bgColor = 'bg-blue-500';
+                    textColor = 'text-white';
+                    iconName = 'info';
+            }
+            
+            // Apply styles
+            toast.className += ` ${bgColor} ${textColor} rounded-lg shadow-lg p-4 mb-2 flex items-center`;
+            
+            // Add content
+            toast.innerHTML = `
+                <i data-lucide="${iconName}" class="w-5 h-5 mr-2"></i>
+                <span>${message}</span>
+            `;
+            
+            // Add to container
+            toastContainer.appendChild(toast);
+            
+            // Initialize icon
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons({
+                    attrs: {
+                        class: ["stroke-current"]
+                    }
+                });
+            }
+            
+            // Animate in
+            setTimeout(() => {
+                toast.classList.remove('translate-x-full');
+                toast.classList.add('translate-x-0');
+            }, 10);
+            
+            // Remove after 3 seconds
+            setTimeout(() => {
+                toast.classList.remove('translate-x-0');
+                toast.classList.add('translate-x-full');
+                
+                // Remove from DOM after animation completes
+                setTimeout(() => {
+                    toast.remove();
+                }, 300);
+            }, 3000);
+        }
+    </script>
 </body>
 </html>

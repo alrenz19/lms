@@ -331,31 +331,21 @@ unset($_SESSION['new_question_id']);
                 <div class="bg-white rounded-xl shadow-md p-6 border border-gray-100 mb-8 transition hover:shadow-lg">
                     <div class="grid grid-cols-1 md:grid-cols-6 gap-6 items-center">
                         <div class="md:col-span-4">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Select Quiz to Manage</label>
                             <div class="relative">
                                 <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-indigo-500">
-                                    <i data-lucide="list" class="w-5 h-5"></i>
+                                    <i data-lucide="search" class="w-5 h-5"></i>
                                 </div>
-                                <select class="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 transition shadow-sm" 
-                                        onchange="window.location.href='manage_quiz.php?course_id=<?php echo $course_id; ?>&quiz_id=' + this.value">
-                                    <?php
-                                    $quizzes->data_seek(0);
-                                    while ($quiz = $quizzes->fetch_assoc()) {
-                                        $selected = $quiz['id'] == $current_quiz_id ? 'selected' : '';
-                                        echo "<option value='{$quiz['id']}' {$selected}>{$quiz['title']}</option>";
-                                    }
-                                    ?>
-                                </select>
+                                <input type="text" class="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 transition shadow-sm"  name="search_user" value="" placeholder="Search examinees...">
                             </div>
                         </div>
                         <div class="md:col-span-2 flex gap-3">
-                            <button class="w-full px-4 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl flex items-center justify-center gap-2 transition text-sm font-medium shadow-sm hover:shadow-md hover:-translate-y-1" 
+                            <!-- <button class="w-full px-4 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl flex items-center justify-center gap-2 transition text-sm font-medium shadow-sm hover:shadow-md hover:-translate-y-1" 
                                     onclick="openCreateQuizModal()">
                                 <i data-lucide="plus-circle" class="w-4 h-4"></i> New Quiz
-                            </button>
+                            </button> -->
                             <button class="add-question-btn w-full px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl flex items-center justify-center gap-2 transition text-sm font-medium shadow-sm hover:shadow-md hover:-translate-y-1" 
                                     onclick="openAddQuestionModal()">
-                                <i data-lucide="plus-circle" class="w-4 h-4"></i> Add Question
+                                <i data-lucide="plus-circle" class="w-4 h-4"></i> Add Examinees
                             </button>
                         </div>
                     </div>
@@ -389,8 +379,8 @@ unset($_SESSION['new_question_id']);
                                 <i data-lucide="list-checks" class="w-6 h-6"></i>
                             </div>
                             <div>
-                                <h2 class="text-xl font-bold text-gray-800">Questions (<?php echo $question_count; ?>)</h2>
-                                <p class="text-gray-500 text-sm">Manage all questions for this quiz</p>
+                                <h2 class="text-xl font-bold text-gray-800">List of Examinees</h2>
+                                <p class="text-gray-500 text-sm">Below is the list of individuals registered to take the exam.</p>
                             </div>
                         </div>
                         

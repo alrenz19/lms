@@ -19,6 +19,43 @@ if ($is_admin) {
     // Get total courses count
     $result = $conn->query("SELECT COUNT(*) as count FROM courses");
     $courses_count = $result->fetch_assoc()['count'];
+    
+    // Get admin and student counts
+    $result = $conn->query("SELECT COUNT(*) as count FROM users WHERE role = 'admin'");
+    $admin_count = $result->fetch_assoc()['count'];
+    $student_count = $users_count;
+    
+    // Get quiz count and questions count
+    $result = $conn->query("SELECT COUNT(*) as count FROM quizzes");
+    $quizzes_count = $result->fetch_assoc()['count'];
+    
+    $result = $conn->query("SELECT COUNT(*) as count FROM questions");
+    $questions_count = $result->fetch_assoc()['count'];
+    
+    // Get course completions
+    $result = $conn->query("SELECT COUNT(*) as count FROM user_progress WHERE score = 100");
+    $course_completions = $result->fetch_assoc()['count'];
+    
+    // Get average score
+    $result = $conn->query("SELECT AVG(score) as avg_score FROM user_progress WHERE score > 0");
+    $avg_row = $result->fetch_assoc();
+    $avg_score = $avg_row['avg_score'] ? round($avg_row['avg_score']) : 0;
+    
+    // Get recent activity
+    $activity_query = "
+        SELECT 
+            u.username,
+            'quiz_completed' as activity_type,
+            c.title as course_title,
+            up.updated_at as timestamp
+        FROM user_progress up
+        JOIN users u ON up.user_id = u.id
+        JOIN quizzes q ON up.quiz_id = q.id
+        JOIN courses c ON q.course_id = c.id
+        ORDER BY up.updated_at DESC
+        LIMIT 10
+    ";
+    $recent_activity = $conn->query($activity_query);
 }
 
 // Calculate overall progress across all courses
@@ -62,427 +99,485 @@ while ($course = $courses_result->fetch_assoc()) {
 $course_count = count($courses);
 $overall_progress = $course_count > 0 ? $total_progress / $course_count : 0;
 $average_score = $courses_with_score > 0 ? $total_score / $courses_with_score : 0;
+
+// For student dashboard (non-admin users)
+if (!$is_admin) {
+    // Get enrolled courses count
+    $result = $conn->query("SELECT COUNT(DISTINCT q.course_id) as count FROM quizzes q JOIN user_progress up ON q.id = up.quiz_id WHERE up.user_id = $user_id");
+    $enrolled_courses = $result->fetch_assoc()['count'];
+    
+    // Get completed quizzes count
+    $result = $conn->query("SELECT COUNT(*) as count FROM user_progress WHERE user_id = $user_id");
+    $completed_quizzes = $result->fetch_assoc()['count'];
+    
+    // Calculate course progress and quiz completion percentages
+    $result = $conn->query("SELECT 
+        (SELECT COUNT(*) FROM user_progress WHERE user_id = $user_id) as completed_quizzes,
+        (SELECT COUNT(*) FROM quizzes) as total_quizzes
+    ");
+    $progress_data = $result->fetch_assoc();
+    $total_quizzes = $progress_data['total_quizzes'] > 0 ? $progress_data['total_quizzes'] : 1; // Avoid division by zero
+    $course_progress = round(($progress_data['completed_quizzes'] / $total_quizzes) * 100);
+    $quiz_completion = $course_progress; // Both are the same in this context
+}
+
+// Include the header component
+include 'includes/header.php';
+
+// Include the dashboard card component
+include_once 'components/dashboard_card.php';
 ?>
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LMS - Dashboard</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="../assets/css/style.css">
-    <link rel="stylesheet" href="../assets/css/custom.css">
-    <link rel="stylesheet" href="../assets/css/dashboard.css">
-    <style>
-    .wrapper {
-        display: flex;
-        min-height: 100vh;
-        width: 100%;
-    }
+<div class="p-8 sm:ml-72">
+    <div class="container mx-auto">
+        <!-- Page Header -->
+        <div class="bg-gradient-to-r from-blue-600 to-blue-800 rounded-xl p-6 mb-6 shadow-sm">
+            <div class="flex items-center">
+                <div class="bg-white/10 p-3 rounded-lg mr-4">
+                    <i data-lucide="layout-dashboard" class="h-8 w-8 text-white"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold text-white">Dashboard</h1>
+                    <p class="text-blue-100"><?php echo $is_admin ? 'Admin Overview' : 'Student Overview'; ?></p>
+                </div>
+            </div>
+        </div>
 
-    .content {
-        flex: 1;
-        margin-left: 260px;
-        padding: 2rem;
-        background-color: #f9fafb;
-    }
+        <?php if ($is_admin): ?>
+        <!-- Admin Dashboard -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200 hover:shadow-md transition-all duration-300">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-gray-700 font-medium">Total Users</h3>
+                    <div class="bg-blue-100 text-blue-800 p-2 rounded-lg">
+                        <i data-lucide="users" class="w-5 h-5"></i>
+                    </div>
+                </div>
+                <div class="text-3xl font-bold text-gray-900 mb-1"><?php echo $users_count; ?></div>
+                <div class="text-sm text-gray-500 flex items-center">
+                    <i data-lucide="trending-up" class="w-4 h-4 mr-1 text-blue-500"></i>
+                    <span><?php echo $student_count; ?> new this week</span>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200 hover:shadow-md transition-all duration-300">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-gray-700 font-medium">Total Courses</h3>
+                    <div class="bg-green-100 text-green-800 p-2 rounded-lg">
+                        <i data-lucide="book-open" class="w-5 h-5"></i>
+                    </div>
+                </div>
+                <div class="text-3xl font-bold text-gray-900 mb-1"><?php echo $courses_count; ?></div>
+                <div class="text-sm text-gray-500 flex items-center">
+                    <i data-lucide="check-circle" class="w-4 h-4 mr-1 text-green-500"></i>
+                    <span><?php echo $course_completions; ?> completions</span>
+                </div>
+            </div>
 
-    @media (max-width: 768px) {
-        .content {
-            margin-left: 0;
-            padding: 1rem;
-        }
-    }
-    </style>
-</head>
-<body>
-    <div class="wrapper">
-        <?php include 'includes/sidebar.php'; ?>
-        <div class="content">
-            <div class="container mt-4">
-                <?php if ($_SESSION['role'] === 'admin'): ?>
-                    <div class="row mb-4">
-                        <div class="col-md-6 mb-4">
-                            <div class="admin-card h-100">
-                                <div class="d-flex align-items-center">
-                                    <div class="stats-icon me-3">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                                            <circle cx="9" cy="7" r="4"></circle>
-                                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                                        </svg>
-                                    </div>
-                                    <div>
-                                        <h3 class="mb-0">User Management</h3>
-                                        <p class="text-muted mb-3">Manage system users and roles</p>
-                                    </div>
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200 hover:shadow-md transition-all duration-300">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-gray-700 font-medium">Total Quizzes</h3>
+                    <div class="bg-blue-100 text-blue-800 p-2 rounded-lg">
+                        <i data-lucide="help-circle" class="w-5 h-5"></i>
+                    </div>
+                </div>
+                <div class="text-3xl font-bold text-gray-900 mb-1"><?php echo $quizzes_count; ?></div>
+                <div class="text-sm text-gray-500 flex items-center">
+                    <i data-lucide="trending-up" class="w-4 h-4 mr-1 text-blue-500"></i>
+                    <span><?php echo $questions_count; ?> added recently</span>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200 hover:shadow-md transition-all duration-300">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-gray-700 font-medium">Average Score</h3>
+                    <div class="bg-indigo-100 text-indigo-800 p-2 rounded-lg">
+                        <i data-lucide="percent" class="w-5 h-5"></i>
+                    </div>
+                </div>
+                <div class="text-3xl font-bold text-gray-900 mb-1"><?php echo $avg_score; ?>%</div>
+                <div class="text-sm text-gray-500 flex items-center">
+                    <i data-lucide="trending-up" class="w-4 h-4 mr-1 text-blue-500"></i>
+                    <span>Platform average</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Links Section -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-8">
+            <div class="p-6 border-b border-gray-200">
+                <h2 class="text-lg font-semibold text-gray-800 flex items-center">
+                    <i data-lucide="lightning-bolt" class="w-5 h-5 text-blue-600 mr-2"></i>
+                    Quick Actions
+                </h2>
+            </div>
+            <div class="p-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <a href="manage_users.php" class="bg-blue-50 hover:bg-blue-100 p-4 rounded-xl flex items-center transition-colors">
+                    <div class="bg-blue-100 text-blue-800 p-3 rounded-lg mr-4">
+                        <i data-lucide="users" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-medium text-gray-900">Manage Users</h3>
+                        <p class="text-sm text-gray-600">Add, edit or remove users</p>
+                    </div>
+                </a>
+                <a href="manage_courses.php" class="bg-green-50 hover:bg-green-100 p-4 rounded-xl flex items-center transition-colors">
+                    <div class="bg-green-100 text-green-800 p-3 rounded-lg mr-4">
+                        <i data-lucide="book-open" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-medium text-gray-900">Manage Courses</h3>
+                        <p class="text-sm text-gray-600">Create and edit courses</p>
+                    </div>
+                </a>
+                <a href="admin_user_progress.php" class="bg-amber-50 hover:bg-amber-100 p-4 rounded-xl flex items-center transition-colors">
+                    <div class="bg-amber-100 text-amber-800 p-3 rounded-lg mr-4">
+                        <i data-lucide="activity" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-medium text-gray-900">User Progress</h3>
+                        <p class="text-sm text-gray-600">Track student performance</p>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="p-6 border-b border-gray-200">
+                <h2 class="text-lg font-semibold text-gray-800 flex items-center">
+                    <i data-lucide="history" class="w-5 h-5 text-blue-600 mr-2"></i>
+                    Recent Activity
+                </h2>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="bg-gray-50">
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Activity</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Course</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date/Time</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                        <?php if ($recent_activity->num_rows === 0): ?>
+                        <tr>
+                            <td colspan="4" class="px-6 py-12 text-center">
+                                <div class="flex flex-col items-center justify-center text-gray-500">
+                                    <i data-lucide="activity-square" class="h-12 w-12 text-gray-300 mb-4"></i>
+                                    <h3 class="text-lg font-medium text-gray-900 mb-1">No recent activity</h3>
+                                    <p class="text-gray-500">Student activity will appear here</p>
                                 </div>
-                                <a href="manage_users.php" class="btn btn-primary action-button">
-                                    Manage Users
-                                </a>
-                            </div>
+                            </td>
+                        </tr>
+                        <?php else: ?>
+                            <?php while ($activity = $recent_activity->fetch_assoc()): ?>
+                            <tr class="hover:bg-blue-50/50 transition-colors">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center">
+                                        <div class="w-8 h-8 flex-shrink-0 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                                            <i data-lucide="user" class="w-4 h-4 text-blue-600"></i>
+                                        </div>
+                                        <div class="text-sm font-medium text-gray-900">
+                                            <?php echo htmlspecialchars($activity['username']); ?>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-2 py-1 text-xs font-medium rounded-full
+                                        <?php 
+                                        if ($activity['activity_type'] === 'quiz_completed') {
+                                            echo 'bg-green-100 text-green-800';
+                                        } elseif ($activity['activity_type'] === 'course_started') {
+                                            echo 'bg-blue-100 text-blue-800';
+                                        } elseif ($activity['activity_type'] === 'course_completed') {
+                                            echo 'bg-blue-100 text-blue-800';
+                                        } else {
+                                            echo 'bg-gray-100 text-gray-800';
+                                        }
+                                        ?>">
+                                        <?php 
+                                        if ($activity['activity_type'] === 'quiz_completed') {
+                                            echo 'Completed Quiz';
+                                        } elseif ($activity['activity_type'] === 'course_started') {
+                                            echo 'Started Course';
+                                        } elseif ($activity['activity_type'] === 'course_completed') {
+                                            echo 'Completed Course';
+                                        } else {
+                                            echo htmlspecialchars($activity['activity_type']);
+                                        }
+                                        ?>
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <?php echo htmlspecialchars($activity['course_title']); ?>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <?php 
+                                        $activity_date = new DateTime($activity['timestamp']);
+                                        $now = new DateTime();
+                                        $interval = $activity_date->diff($now);
+                                        
+                                        if ($interval->d == 0) {
+                                            if ($interval->h == 0) {
+                                                if ($interval->i == 0) {
+                                                    echo "Just now";
+                                                } else {
+                                                    echo $interval->i . " min ago";
+                                                }
+                                            } else {
+                                                echo $interval->h . " hours ago";
+                                            }
+                                        } else if ($interval->d == 1) {
+                                            echo "Yesterday";
+                                        } else {
+                                            echo $activity_date->format('M j, Y');
+                                        }
+                                    ?>
+                                </td>
+                            </tr>
+                            <?php endwhile; ?>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <?php else: ?>
+        <!-- Student Dashboard -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200 hover:shadow-md transition-all duration-300">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-gray-700 font-medium">My Courses</h3>
+                    <div class="bg-blue-100 text-blue-800 p-2 rounded-lg">
+                        <i data-lucide="book-open" class="w-5 h-5"></i>
+                    </div>
+                </div>
+                <div class="text-3xl font-bold text-gray-900 mb-1"><?php echo $enrolled_courses; ?></div>
+                <div class="text-sm text-gray-500 flex items-center">
+                    <i data-lucide="book" class="w-4 h-4 mr-1 text-blue-500"></i>
+                    <span>Enrolled courses</span>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200 hover:shadow-md transition-all duration-300">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-gray-700 font-medium">Completed</h3>
+                    <div class="bg-green-100 text-green-800 p-2 rounded-lg">
+                        <i data-lucide="check-circle" class="w-5 h-5"></i>
+                    </div>
+                </div>
+                <div class="text-3xl font-bold text-gray-900 mb-1"><?php echo $completed_courses; ?></div>
+                <div class="text-sm text-gray-500 flex items-center">
+                    <i data-lucide="award" class="w-4 h-4 mr-1 text-green-500"></i>
+                    <span>Completed courses</span>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200 hover:shadow-md transition-all duration-300">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-gray-700 font-medium">Quizzes Taken</h3>
+                    <div class="bg-amber-100 text-amber-800 p-2 rounded-lg">
+                        <i data-lucide="help-circle" class="w-5 h-5"></i>
+                    </div>
+                </div>
+                <div class="text-3xl font-bold text-gray-900 mb-1"><?php echo $completed_quizzes; ?></div>
+                <div class="text-sm text-gray-500 flex items-center">
+                    <i data-lucide="clipboard-list" class="w-4 h-4 mr-1 text-amber-500"></i>
+                    <span>Quizzes completed</span>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200 hover:shadow-md transition-all duration-300">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-gray-700 font-medium">Average Score</h3>
+                    <div class="bg-indigo-100 text-indigo-800 p-2 rounded-lg">
+                        <i data-lucide="percent" class="w-5 h-5"></i>
+                    </div>
+                </div>
+                <div class="text-3xl font-bold text-gray-900 mb-1"><?php echo $average_score; ?>%</div>
+                <div class="text-sm text-gray-500 flex items-center">
+                    <i data-lucide="trending-up" class="w-4 h-4 mr-1 text-blue-500"></i>
+                    <span>Your average</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Overall Progress -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-8">
+            <div class="p-6 border-b border-gray-200">
+                <h2 class="text-lg font-semibold text-gray-800 flex items-center">
+                    <i data-lucide="trending-up" class="w-5 h-5 text-blue-600 mr-2"></i>
+                    Your Progress
+                </h2>
+            </div>
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-2">
+                    <div class="text-sm font-medium text-gray-700">Overall Completion</div>
+                    <div class="text-sm font-medium text-blue-600"><?php echo $overall_progress; ?>%</div>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2.5 mb-6">
+                    <div class="bg-blue-600 h-2.5 rounded-full" style="width: <?php echo $overall_progress; ?>%"></div>
+                </div>
+                
+                <!-- Progress by Course Type -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <div class="bg-blue-50 rounded-lg p-4">
+                        <div class="flex justify-between items-center mb-2">
+                            <h3 class="text-sm font-medium text-gray-700">Course Progress</h3>
+                            <span class="text-sm font-medium text-blue-600"><?php echo $course_progress; ?>%</span>
                         </div>
-                        <div class="col-md-6 mb-4">
-                            <div class="admin-card h-100">
-                                <div class="d-flex align-items-center">
-                                    <div class="stats-icon me-3">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
-                                            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
-                                        </svg>
-                                    </div>
-                                    <div>
-                                        <h3 class="mb-0">Course Management</h3>
-                                        <p class="text-muted mb-3">Create and manage course content</p>
-                                    </div>
-                                </div>
-                                <a href="manage_courses.php" class="btn btn-primary action-button">
-                                    Manage Courses
-                                </a>
-                            </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="bg-blue-600 h-2 rounded-full" style="width: <?php echo $course_progress; ?>%"></div>
                         </div>
                     </div>
+                    
+                    <div class="bg-green-50 rounded-lg p-4">
+                        <div class="flex justify-between items-center mb-2">
+                            <h3 class="text-sm font-medium text-gray-700">Quiz Completion</h3>
+                            <span class="text-sm font-medium text-green-600"><?php echo $quiz_completion; ?>%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="bg-green-600 h-2 rounded-full" style="width: <?php echo $quiz_completion; ?>%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-amber-50 rounded-lg p-4">
+                        <div class="flex justify-between items-center mb-2">
+                            <h3 class="text-sm font-medium text-gray-700">Score Percentage</h3>
+                            <span class="text-sm font-medium text-amber-600"><?php echo $average_score; ?>%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="bg-amber-600 h-2 rounded-full" style="width: <?php echo $average_score; ?>%"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex justify-center mt-6">
+                    <a href="user_progress.php" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                        <i data-lucide="bar-chart-2" class="w-4 h-4 mr-2"></i>
+                        View Detailed Progress
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- My Courses -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-8">
+            <div class="p-6 border-b border-gray-200 flex justify-between items-center">
+                <h2 class="text-lg font-semibold text-gray-800 flex items-center">
+                    <i data-lucide="book-open" class="w-5 h-5 text-blue-600 mr-2"></i>
+                    My Courses
+                </h2>
+                <a href="view_courses.php" class="text-sm text-blue-600 hover:text-blue-800 flex items-center">
+                    <span>View All</span>
+                    <i data-lucide="chevron-right" class="w-4 h-4 ml-1"></i>
+                </a>
+            </div>
+            
+            <div class="p-6">
+                <?php if ($enrolled_courses == 0): ?>
+                <div class="flex flex-col items-center justify-center py-8 text-center">
+                    <i data-lucide="book-x" class="h-16 w-16 text-gray-300 mb-4"></i>
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">No courses enrolled yet</h3>
+                    <p class="text-gray-500 mb-6">Start your learning journey by exploring available courses</p>
+                    <a href="view_courses.php" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center">
+                        <i data-lucide="search" class="w-4 h-4 mr-2"></i>
+                        Browse Courses
+                    </a>
+                </div>
                 <?php else: ?>
-                    <div class="row">
-                        <div class="col-12 mb-4">
-                            <div class="welcome-banner">
-                                <div class="welcome-content">
-                                    <h1>Welcome back, <?php echo htmlspecialchars($_SESSION['full_name']); ?>!</h1>
-                                    <p>Continue your learning journey with our courses.</p>
-                                </div>
-                            </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <?php while ($course = $courses_result->fetch_assoc()): 
+                        $course_progress = $course['quiz_count'] > 0 ? 
+                            ($course['completed_quizzes'] / $course['quiz_count']) * 100 : 0;
+                    ?>
+                    <div class="border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300">
+                        <div class="h-32 bg-gradient-to-r from-blue-600 to-blue-800 p-4 flex items-end">
+                            <h3 class="text-lg font-semibold text-white"><?php echo htmlspecialchars($course['title']); ?></h3>
                         </div>
-
-                        <!-- Progress Overview -->
-                        <div class="col-md-4 mb-4">
-                            <div class="stats-card">
-                                <div class="stats-icon">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <line x1="12" y1="20" x2="12" y2="10"></line>
-                                        <line x1="18" y1="20" x2="18" y2="4"></line>
-                                        <line x1="6" y1="20" x2="6" y2="16"></line>
-                                    </svg>
+                        <div class="p-4">
+                            <div class="mb-4">
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="text-xs text-gray-500">Progress</span>
+                                    <span class="text-xs font-medium text-blue-600"><?php echo round($course_progress); ?>%</span>
                                 </div>
-                                <div class="stats-info">
-                                    <h3>Overall Progress</h3>
-                                    <h2><?php echo number_format($overall_progress, 1); ?>%</h2>
+                                <div class="w-full bg-gray-200 rounded-full h-1.5">
+                                    <div class="bg-blue-600 h-1.5 rounded-full" style="width: <?php echo round($course_progress); ?>%"></div>
                                 </div>
                             </div>
-                        </div>
-
-                        <div class="col-md-4 mb-4">
-                            <div class="stats-card">
-                                <div class="stats-icon">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                                    </svg>
+                            
+                            <div class="flex items-center text-xs text-gray-500 mb-4">
+                                <div class="flex items-center mr-3">
+                                    <i data-lucide="help-circle" class="w-3 h-3 mr-1 text-blue-500"></i>
+                                    <span><?php echo $course['completed_quizzes']; ?>/<?php echo $course['quiz_count']; ?> quizzes</span>
                                 </div>
-                                <div class="stats-info">
-                                    <h3>Completed Courses</h3>
-                                    <h2><?php echo $completed_courses; ?></h2>
-                                </div>
+                                <?php if ($course_progress == 100): ?>
+                                <span class="px-2 py-0.5 bg-green-100 text-green-800 rounded-full text-xs font-medium flex items-center">
+                                    <i data-lucide="check" class="w-3 h-3 mr-1"></i>
+                                    Completed
+                                </span>
+                                <?php endif; ?>
                             </div>
-                        </div>
-
-                        <div class="col-md-4 mb-4">
-                            <div class="stats-card">
-                                <div class="stats-icon">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <circle cx="12" cy="8" r="7"></circle>
-                                        <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline>
-                                    </svg>
-                                </div>
-                                <div class="stats-info">
-                                    <h3>Average Score</h3>
-                                    <h2><?php echo number_format($average_score, 1); ?>%</h2>
-                                </div>
-                            </div>
+                            
+                            <a href="view_course.php?id=<?php echo $course['id']; ?>" 
+                               class="w-full inline-flex items-center justify-center px-4 py-2 bg-blue-100 text-blue-700 
+                               rounded-lg hover:bg-blue-200 transition-colors text-sm font-medium">
+                                <?php if ($course_progress == 0): ?>
+                                <i data-lucide="play" class="w-4 h-4 mr-2"></i>
+                                Start Course
+                                <?php elseif ($course_progress == 100): ?>
+                                <i data-lucide="rotate-ccw" class="w-4 h-4 mr-2"></i>
+                                Review Course
+                                <?php else: ?>
+                                <i data-lucide="arrow-right" class="w-4 h-4 mr-2"></i>
+                                Continue Course
+                                <?php endif; ?>
+                            </a>
                         </div>
                     </div>
+                    <?php endwhile; ?>
+                </div>
                 <?php endif; ?>
             </div>
         </div>
+        <?php endif; ?>
     </div>
-    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
-        <div id="liveToast" class="toast hide" role="alert">
-            <div class="toast-header">
-                <i class="bi bi-info-circle me-2"></i>
-                <strong class="me-auto">Notification</strong>
-                <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
-            </div>
-            <div class="toast-body" id="toastMessage"></div>
-        </div>
-    </div>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Real-time search functionality
-        const searchInput = document.getElementById('searchCourses');
-        if (searchInput) {
-            const courseCards = document.querySelectorAll('[data-course-card]');
-            
-            function filterCourses(searchTerm) {
-                searchTerm = searchTerm.toLowerCase();
-                courseCards.forEach(card => {
-                    const title = card.querySelector('.course-title').textContent.toLowerCase();
-                    const description = card.querySelector('.course-description').textContent.toLowerCase();
-                    const matches = title.includes(searchTerm) || description.includes(searchTerm);
-                    card.style.display = matches ? '' : 'none';
-                });
-            }
+</div>
 
-            searchInput.addEventListener('input', (e) => {
-                filterCourses(e.target.value);
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Lucide icons
+    lucide.createIcons();
+    
+    // Real-time search functionality
+    const searchInput = document.getElementById('searchCourses');
+    if (searchInput) {
+        const courseCards = document.querySelectorAll('[data-course-card]');
+        
+        function filterCourses(searchTerm) {
+            searchTerm = searchTerm.toLowerCase();
+            courseCards.forEach(card => {
+                const title = card.querySelector('.course-title').textContent.toLowerCase();
+                const description = card.querySelector('.course-description').textContent.toLowerCase();
+                const matches = title.includes(searchTerm) || description.includes(searchTerm);
+                card.style.display = matches ? '' : 'none';
             });
-
-            // Clear search functionality
-            window.clearSearch = function() {
-                searchInput.value = '';
-                searchInput.dispatchEvent(new Event('input'));
-                searchInput.focus();
-            };
         }
-    });
-    </script>
-    <style>
-    /* Welcome Banner */
-    .welcome-banner {
-        background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-        border-radius: 12px;
-        padding: 2rem;
-        color: white;
-        margin-bottom: 2rem;
-    }
 
-    .welcome-content h1 {
-        font-size: 2rem;
-        font-weight: 600;
-        margin-bottom: 0.5rem;
-    }
+        searchInput.addEventListener('input', (e) => {
+            filterCourses(e.target.value);
+        });
 
-    .welcome-content p {
-        font-size: 1.1rem;
-        opacity: 0.9;
-        margin: 0;
+        // Clear search functionality
+        window.clearSearch = function() {
+            searchInput.value = '';
+            searchInput.dispatchEvent(new Event('input'));
+            searchInput.focus();
+        };
     }
-
-    /* Stats Cards */
-    .stats-card {
-        background: white;
-        border-radius: 12px;
-        padding: 1.5rem;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-        height: 100%;
-    }
-
-    .stats-icon {
-        width: 48px;
-        height: 48px;
-        background: rgba(99, 102, 241, 0.1);
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-bottom: 1rem;
-    }
-
-    .stats-icon svg {
-        width: 24px;
-        height: 24px;
-        color: #6366f1;
-    }
-
-    .stats-info h3 {
-        font-size: 0.875rem;
-        font-weight: 500;
-        color: #6b7280;
-        margin-bottom: 0.5rem;
-    }
-
-    .stats-info h2 {
-        font-size: 2rem;
-        font-weight: 600;
-        color: #111827;
-        margin: 0;
-    }
-
-    /* Course Cards */
-    .course-card {
-        background: white;
-        border-radius: 16px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-        transition: all 0.2s ease;
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-        border: 1px solid #e5e7eb;
-    }
-
-    .course-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 12px 20px rgba(0, 0, 0, 0.1);
-    }
-
-    .course-header {
-        padding: 1.5rem;
-        border-bottom: 1px solid #e5e7eb;
-    }
-
-    .course-icon {
-        width: 48px;
-        height: 48px;
-        background: rgba(99, 102, 241, 0.1);
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-bottom: 1rem;
-    }
-
-    .course-icon svg {
-        width: 24px;
-        height: 24px;
-        color: #6366f1;
-    }
-
-    .course-progress {
-        margin-top: 1rem;
-    }
-
-    .progress {
-        height: 8px;
-        background-color: #e5e7eb;
-        border-radius: 9999px;
-        overflow: hidden;
-    }
-
-    .progress-bar {
-        background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-        transition: width 0.3s ease;
-    }
-
-    .progress-text {
-        font-size: 0.875rem;
-        color: #6b7280;
-        margin-top: 0.5rem;
-        display: block;
-    }
-
-    .course-body {
-        padding: 1.5rem;
-        flex-grow: 1;
-    }
-
-    .course-title {
-        font-size: 1.125rem;
-        font-weight: 600;
-        color: #111827;
-        margin-bottom: 0.5rem;
-    }
-
-    .course-description {
-        font-size: 0.875rem;
-        color: #6b7280;
-        margin-bottom: 1rem;
-        display: -webkit-box;
-        -webkit-line-clamp: 3;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-    }
-
-    .course-meta {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        font-size: 0.875rem;
-        color: #6b7280;
-    }
-
-    .quiz-count, .completion-status {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-
-    .course-footer {
-        padding: 1.5rem;
-        border-top: 1px solid #e5e7eb;
-    }
-
-    .course-footer .btn {
-        width: 100%;
-    }
-
-    /* Section Header */
-    .section-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 1.5rem;
-    }
-
-    .section-header h2 {
-        font-size: 1.5rem;
-        font-weight: 600;
-        color: #111827;
-        margin: 0;
-    }
-
-    /* Admin Cards */
-    .admin-card {
-        background: white;
-        border-radius: 16px;
-        padding: 1.5rem;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-        border: 1px solid #e5e7eb;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        transition: all 0.2s ease;
-    }
-
-    .admin-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 12px 20px rgba(0, 0, 0, 0.1);
-    }
-
-    .admin-card h3 {
-        font-size: 1.25rem;
-        font-weight: 600;
-        color: #111827;
-    }
-
-    .admin-card p {
-        font-size: 0.875rem;
-        color: #6b7280;
-    }
-
-    .action-button {
-        margin-top: 1rem;
-        width: 100%;
-        background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-        border: none;
-        padding: 0.75rem 1.5rem;
-        border-radius: 8px;
-        font-weight: 500;
-        color: white;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.5rem;
-        transition: all 0.2s;
-    }
-
-    .action-button:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
-        background: linear-gradient(135deg, #5a5be6 0%, #4338ca 100%);
-        color: white;
-    }
-    </style>
+});
+</script>
 </body>
 </html>

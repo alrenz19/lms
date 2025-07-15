@@ -33,342 +33,56 @@ if (!$selected_user_id) {
     <html lang="en">
     <head>
         <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Select User - Print Preview</title>
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
-        <link rel="stylesheet" href="assets/css/dashboard.css">
-        <style>
-            /* Print Styles */
-            @page {
-                size: A4;
-                margin: 2.54cm; /* Standard 1-inch margins */
-            }
-            
-            @media print {
-                body { 
-                    margin: 0;
-                    padding: 0;
-                    font-size: 11pt; /* Standard readable font size */
-                    line-height: 1.4;
-                    background: white !important;
-                    color: black !important;
-                }
-                
-                .no-print { 
-                    display: none !important;
-                }
-                
-                .header { 
-                    margin-bottom: 25pt;
-                }
-                
-                .header h1 {
-                    font-size: 14pt;
-                    margin-bottom: 15pt;
-                }
-                
-                .student-info {
-                    display: grid;
-                    grid-template-columns: 1fr 1fr;
-                    margin-bottom: 20pt;
-                    font-size: 11pt;
-                    gap: 10pt;
-                }
-                
-                .quiz-header {
-                    background: #f8f9fa !important;
-                    padding: 12pt;
-                    margin: 15pt 0;
-                    border-left: 3pt solid #007bff;
-                }
-                
-                .quiz-header h3 {
-                    font-size: 12pt;
-                    margin: 0 0 5pt 0;
-                }
-                
-                .question { 
-                    margin-bottom: 15pt;
-                    page-break-inside: avoid;
-                    padding: 0 12pt 12pt 12pt;
-                }
-                
-                .options { 
-                    margin: 8pt 0 0 20pt;
-                    columns: 2;
-                    column-gap: 25pt;
-                }
-                
-                .option { 
-                    margin: 4pt 0;
-                    break-inside: avoid;
-                    font-size: 10pt;
-                }
-                
-                .circle {
-                    width: 12pt;
-                    height: 12pt;
-                    margin-right: 6pt;
-                    font-size: 9pt;
-                    line-height: 12pt;
-                }
-                
-                .correct {
-                    border: 2px solid #28a745;
-                    background-color: #d4edda;
-                }
-                
-                .incorrect {
-                    border: 2px solid #dc3545;
-                    background-color: #f8d7da;
-                }
-                
-                .quiz-header {
-                    background: #f8f9fa !important;
-                    padding: 10px;
-                    margin: 15px 0;
-                    border-left: 4px solid #007bff;
-                    page-break-inside: avoid;
-                }
-                
-                h1 { 
-                    font-size: 18px;
-                    margin-bottom: 10px;
-                }
-                
-                h3 { 
-                    font-size: 14px;
-                    margin: 0;
-                }
-            }
-
-            /* Dark Theme Styles */
-            .select-user-card {
-                background: rgba(42, 47, 69, 0.8);
-                backdrop-filter: blur(10px);
-                border: 1px solid rgba(255, 255, 255, 0.1);
-                border-radius: 20px;
-                padding: 2rem;
-            }
-
-            .select-user-card .card-header {
-                background: transparent;
-                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-                padding-bottom: 1rem;
-                margin-bottom: 1.5rem;
-            }
-
-            .select-user-card h4 {
-                color: white;
-                font-size: 1.25rem;
-                font-weight: 600;
-                display: flex;
-                align-items: center;
-                gap: 0.5rem;
-            }
-
-            .form-label {
-                color: rgba(255, 255, 255, 0.8);
-                font-weight: 500;
-                margin-bottom: 0.5rem;
-            }
-
-            .form-select {
-                background-color: rgba(26, 31, 55, 0.5);
-                border: 1px solid rgba(255, 255, 255, 0.1);
-                color: white;
-                border-radius: 12px;
-                padding: 0.75rem 1rem;
-            }
-
-            .form-select:focus {
-                background-color: rgba(26, 31, 55, 0.5);
-                border-color: #667eea;
-                box-shadow: 0 0 0 2px rgba(102,126,234,0.2);
-                color: white;
-            }
-
-            .form-select option {
-                background-color: #2a2f45;
-                color: white;
-            }
-
-            .alert-info {
-                background: rgba(13, 202, 240, 0.1);
-                border: 1px solid rgba(13, 202, 240, 0.2);
-                color: #0dcaf0;
-                border-radius: 12px;
-            }
-
-            /* Print Preview Styles */
-            .quiz-section {
-                background: rgba(42, 47, 69, 0.8);
-                border-radius: 15px;
-                margin-bottom: 1.5rem;
-                overflow: hidden;
-            }
-
-            .quiz-header {
-                background: rgba(26, 31, 55, 0.5);
-                padding: 1rem;
-                border-left: 4px solid #667eea;
-            }
-
-            .quiz-header h3 {
-                color: white;
-                margin-bottom: 0.5rem;
-            }
-
-            .question {
-                padding: 1rem;
-                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            }
-
-            .question:last-child {
-                border-bottom: none;
-            }
-
-            .options {
-                margin-top: 0.75rem;
-            }
-
-            .option {
-                color: rgba(255, 255, 255, 0.8);
-                margin: 0.5rem 0;
-            }
-
-            /* Light Theme Styles */
-            body {
-                background-color: #f8f9fa;
-                color: #212529;
-            }
-
-            .select-user-card {
-                background: white;
-                border: 1px solid #dee2e6;
-                border-radius: 15px;
-                padding: 2rem;
-                box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-            }
-
-            .select-user-card h4 {
-                color: #212529;
-                font-size: 1.25rem;
-                font-weight: 600;
-            }
-
-            .form-label {
-                color: #495057;
-                font-weight: 500;
-            }
-
-            .form-select {
-                background-color: white;
-                border: 1px solid #dee2e6;
-                color: #212529;
-                border-radius: 8px;
-            }
-
-            .form-select:focus {
-                border-color: #86b7fe;
-                box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
-            }
-
-            .alert-info {
-                background-color: #cff4fc;
-                border-color: #b6effb;
-                color: #055160;
-            }
-
-            .quiz-section {
-                background: white;
-                border: 1px solid #dee2e6;
-                border-radius: 15px;
-                margin-bottom: 1.5rem;
-            }
-
-            .quiz-header {
-                background: #f8f9fa;
-                border-left: 4px solid #0d6efd;
-                color: #212529;
-            }
-
-            .quiz-header h3 {
-                color: #212529;
-            }
-
-            .question {
-                border-bottom: 1px solid #dee2e6;
-                color: #212529;
-            }
-
-            .option {
-                color: #495057;
-            }
-
-            .header h1 {
-                color: #212529;
-            }
-
-            .student-info {
-                color: #495057;
-            }
-        </style>
+        <script src="https://cdn.tailwindcss.com"></script>
     </head>
-    <body class="bg-light">  <!-- Changed from bg-dark to bg-light -->
-        <div class="container mt-5">
-            <div class="row justify-content-center">
-                <div class="col-md-6">
-                    <div class="d-flex justify-content-end mb-3">
-                        <a href="manage_courses.php" class="btn btn-secondary">
-                            <i class="bi bi-arrow-left"></i> Back to Courses
-                        </a>
-                    </div>
-                    <div class="select-user-card" style="background-color: white; border: 1px solid #dee2e6; box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);">
-                        <div class="d-flex align-items-center mb-4">
-                            <div class="stats-icon me-3">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0d6efd" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                                    <circle cx="9" cy="7" r="4"></circle>
-                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                                </svg>
-                            </div>
-                            <h4 style="color: #212529;">Select User for Print Preview</h4>
-                        </div>
-
-                        <?php if (empty($users)): ?>
-                            <div class="alert alert-info" style="background-color: #cff4fc; border-color: #b6effb; color: #055160;">
-                                No users have attempted this course yet.
-                            </div>
-                        <?php else: ?>
-                            <form action="print_course.php" method="GET">
-                                <input type="hidden" name="id" value="<?php echo $course_id; ?>">
-                                <div class="mb-4">
-                                    <select class="form-select" name="user_id" id="user_id" required
-                                            style="background-color: white; color: #212529; border: 1px solid #dee2e6;">
-                                        <option value="">Choose a user...</option>
-                                        <?php foreach ($users as $user): ?>
-                                            <option value="<?php echo $user['id']; ?>">
-                                                <?php echo htmlspecialchars($user['full_name']); ?> 
-                                                (@<?php echo htmlspecialchars($user['username']); ?>)
-                                            </option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </div>
-                                <button type="submit" class="btn btn-primary w-100 action-button">
-                                    <div class="d-flex align-items-center justify-content-center w-100">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-2">
-                                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                                            <circle cx="12" cy="12" r="3"></circle>
-                                        </svg>
-                                        Preview Report
-                                    </div>
-                                </button>
-                            </form>
-                        <?php endif; ?>
-                    </div>
+    <body class="bg-gray-50">
+        <div class="container mx-auto max-w-2xl py-6 px-4">
+            <div class="flex justify-end mb-4">
+                <a href="manage_courses.php" class="inline-flex items-center px-3 py-2 bg-gray-600 text-white text-sm rounded-md hover:bg-gray-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M9.707 14.707a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 1.414L7.414 9H15a1 1 0 110 2H7.414l2.293 2.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+                    </svg>
+                    Back
+                </a>
+            </div>
+            
+            <div class="bg-white rounded-lg shadow-sm p-6">
+                <div class="flex items-center mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-600 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    <h2 class="text-lg font-semibold text-gray-800">Select Student</h2>
                 </div>
+
+                <?php if (empty($users)): ?>
+                    <div class="bg-blue-50 border-l-4 border-blue-400 p-3 text-sm">
+                        <p class="text-blue-700">No users have attempted this course yet.</p>
+                    </div>
+                <?php else: ?>
+                    <form action="print_course.php" method="GET">
+                        <input type="hidden" name="id" value="<?php echo $course_id; ?>">
+                        <div class="mb-4">
+                            <select name="user_id" id="user_id" required class="w-full px-3 py-2 rounded-md border border-gray-300 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                                <option value="">Select a student...</option>
+                                <?php foreach ($users as $user): ?>
+                                    <option value="<?php echo $user['id']; ?>">
+                                        <?php echo htmlspecialchars($user['full_name']); ?> 
+                                        (@<?php echo htmlspecialchars($user['username']); ?>)
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <button type="submit" class="w-full flex justify-center items-center px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                                <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" />
+                            </svg>
+                            Preview Report
+                        </button>
+                    </form>
+                <?php endif; ?>
             </div>
         </div>
     </body>
@@ -422,19 +136,19 @@ foreach ($results as $row) {
     if (!isset($quizzes[$row['quiz_title']])) {
         $quizzes[$row['quiz_title']] = [
             'title' => $row['quiz_title'],
-            'score' => $row['score'],
-            'progress' => $row['progress_percentage'],
-            'completion_date' => $row['completion_date'],
+            'score' => $row['score'] ?? 0,
+            'progress' => $row['progress_percentage'] ?? 0,
+            'completion_date' => $row['completion_date'] ?? null,
             'questions' => []
         ];
     }
     if ($row['question_text']) {
         $user_answers = json_decode($row['user_answers'] ?? '{}', true);
-        $question_id = $row['question_id']; // Use the correct key name
+        $question_id = $row['question_id']; 
         $user_answer = $user_answers[$question_id] ?? null;
         
         $quizzes[$row['quiz_title']]['questions'][] = [
-            'id' => $question_id, // Store the question ID
+            'id' => $question_id,
             'text' => $row['question_text'],
             'options' => [
                 'A' => $row['option_a'],
@@ -453,248 +167,330 @@ foreach ($results as $row) {
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Course Progress Report - <?php echo htmlspecialchars($course['title']); ?></title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @page {
-            size: A4;
-            margin: 1.27cm; /* 0.5-inch margins */
+        /* Base styles */
+        body {
+            font-size: 11pt;
+            line-height: 1.3;
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
         }
         
-        body {
-            background-color: #f8f9fa;
-            color: #212529;
-        }
-
-        .quiz-section {
-            background: white;
-            border: 1px solid #dee2e6;
-            border-radius: 15px;
-            margin-bottom: 1.5rem;
-            overflow: hidden;
-        }
-
-        .quiz-header {
-            background: #f8f9fa;
-            padding: 1rem;
-            border-left: 4px solid #0d6efd;
-            color: #212529;
-        }
-
-        .quiz-header h3 {
-            color: #212529;
-            margin-bottom: 0.5rem;
-        }
-
-        .question {
-            padding: 1rem;
-            border-bottom: 1px solid #dee2e6;
-            color: #212529;
-        }
-
-        .options {
-            margin-top: 0.75rem;
-            color: #212529;
-        }
-
-        .option {
-            color: #212529;
-            margin: 0.5rem 0;
-        }
-
-        .header h1 {
-            color: #212529;
-        }
-
-        .student-info {
-            color: #212529;
-        }
-
-        .student-info strong {
-            color: #495057;
-        }
-
+        /* Print-specific styles */
         @media print {
-            body { 
-                margin: 0;
-                padding: 0;
-                font-size: 9pt;
-                line-height: 1;
-                background: white !important;
-                color: black !important;
-                column-count: 2;
-                column-gap: 0.8cm;
-            }
-
-            .container {
-                max-width: none;
-                padding: 0;
-                margin: 0;
-            }
-
-            .header {
-                column-span: all;
-                margin-bottom: 12pt;
-                padding-bottom: 6pt;
-                border-bottom: 0.5pt solid #ccc;
-            }
-
-            .header h1 {
-                font-size: 12pt;
-                margin: 0;
-                font-weight: bold;
-                display: inline;
-            }
-
-            .student-info {
-                display: inline;
-                margin-left: 1cm;
-                font-size: 9pt;
-            }
-
-            .student-info p {
-                display: inline;
-                margin: 0 1em 0 0;
-            }
-
-            .quiz-section {
-                break-inside: avoid;
-                margin-bottom: 8pt;
-                border: none;
-                background: none;
-            }
-
-            .quiz-header {
-                background: none !important;
-                padding: 4pt 4pt 4pt 8pt;
-                margin: 0 0 4pt 0;
-                border-left: 2pt solid #007bff;
-            }
-
-            .quiz-header h3 {
-                font-size: 10pt;
-                margin: 0;
-                font-weight: bold;
-                display: inline-block;
-            }
-
-            .quiz-header p {
-                font-size: 9pt;
-                margin: 0;
-                display: inline-block;
-                margin-left: 8pt;
-            }
-
-            .question {
-                break-inside: avoid;
-                padding: 3pt 4pt;
-                margin-bottom: 6pt;
-                border: none;
-            }
-
-            .question p {
-                margin: 0;
-                display: inline-block;
+            html, body {
                 width: 100%;
+                height: auto;
+                margin: 0 !important;
+                padding: 0 !important;
+                background: white !important;
             }
-
-            .options {
-                display: inline-flex;
-                flex-wrap: wrap;
-                gap: 4pt;
-                margin: 2pt 0 0 12pt;
+            
+            * {
+                margin-top: 0 !important;
+                margin-bottom: 0 !important;
+                padding-top: 0 !important;
+                padding-bottom: 0 !important;
             }
-
-            .option {
-                flex: 0 0 calc(50% - 2pt);
-                font-size: 9pt;
-                margin: 0;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
+            
+            .container {
+                width: 100% !important;
+                max-width: none !important;
+                margin: 0 !important;
+                padding: 0 !important;
             }
-
-            .circle {
-                min-width: 10pt;
-                height: 10pt;
-                margin-right: 3pt;
-                font-size: 8pt;
-                line-height: 10pt;
-                text-align: center;
-                display: inline-block;
-                border-radius: 50%;
+            
+            /* Layout for main sections */
+            .quiz-section {
+                page-break-after: always;
+                page-break-inside: avoid;
+                break-after: page;
+                break-inside: avoid;
+                margin: 0 !important;
+                padding: 10pt 0 !important;
+                display: block;
             }
-
-            .correct {
-                border: 0.5pt solid #28a745;
-                background-color: #d4edda;
+            
+            .quiz-section:last-child {
+                page-break-after: auto;
+                break-after: auto;
             }
-
-            .incorrect {
-                border: 0.5pt solid #dc3545;
-                background-color: #f8d7da;
-            }
-
+            
             .no-print {
                 display: none !important;
             }
+            
+            .question {
+                page-break-inside: avoid;
+                break-inside: avoid;
+                padding: 5pt 0;
+                margin-bottom: 5pt;
+            }
+
+            .report-header {
+                margin-bottom: 10pt !important;
+                padding-bottom: 5pt !important;
+                border-bottom: 1pt solid #e5e7eb;
+            }
+            
+            .correct-answer {
+                background-color: #d1fae5 !important;
+                border-color: #10b981 !important;
+            }
+            
+            .incorrect-answer {
+                background-color: #fee2e2 !important;
+                border-color: #ef4444 !important;
+            }
+            
+            @page {
+                size: A4;
+                margin: 1.27cm;
+            }
+        }
+        
+        .answer-circle {
+            width: 22px;
+            height: 22px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            margin-right: 6px;
+            font-weight: 500;
+            font-size: 0.9rem;
         }
     </style>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
-    <div class="container my-4">
-        <div class="no-print mb-4">
-            <div class="d-flex gap-2">
-                <button onclick="window.print()" class="btn btn-primary">
-                    <i class="bi bi-printer"></i> Print Report
-                </button>
-                <a href="print_course.php?id=<?php echo $course_id; ?>" class="btn btn-outline-secondary">
-                    <i class="bi bi-arrow-left"></i> Select Different User
-                </a>
-                <a href="manage_courses.php" class="btn btn-outline-danger">
-                    <i class="bi bi-x-circle"></i> Cancel
-                </a>
-            </div>
-        </div>
-
-        <div class="header">
-            <h1><?php echo htmlspecialchars($course['title']); ?> - Progress Report</h1>
-            <div class="student-info">
-                <p><strong>Student:</strong> <?php echo htmlspecialchars($user['full_name']); ?></p>
-                <p><strong>Date:</strong> <?php echo date('F d, Y'); ?></p>
-            </div>
-        </div>
-
-        <?php foreach ($quizzes as $quiz): ?>
-            <div class="quiz-section">
-                <div class="quiz-header">
-                    <h3><?php echo htmlspecialchars($quiz['title']); ?></h3>
-                    <p>Score: <?php echo $quiz['score']; ?>/<?php echo count($quiz['questions']); ?> 
-                       </p>
+    <!-- Compact controls header -->
+    <div class="no-print bg-white border-b border-gray-200 shadow-sm">
+        <div class="max-w-5xl mx-auto px-4 py-2">
+            <div class="flex items-center justify-between flex-wrap gap-2">
+                <!-- Left side - buttons -->
+                <div class="flex items-center gap-2">
+                    <button id="printButton" class="inline-flex items-center px-3 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v2a2 2 0 002 2h6a2 2 0 002-2v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 0H7v3h6V4zm0 8H7v4h6v-4z" clip-rule="evenodd" />
+                        </svg>
+                        Print Report
+                    </button>
+                    <a href="print_course.php?id=<?php echo $course_id; ?>" class="inline-flex items-center px-3 py-1.5 bg-gray-100 text-gray-700 text-sm rounded hover:bg-gray-200">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.707-10.293a1 1 0 00-1.414-1.414l-3 3a1 1 0 000 1.414l3 3a1 1 0 001.414-1.414L9.414 11H13a1 1 0 100-2H9.414l1.293-1.293z" clip-rule="evenodd" />
+                        </svg>
+                        Select Different User
+                    </a>
+                    <a href="manage_courses.php" class="inline-flex items-center px-3 py-1.5 bg-red-50 text-red-600 text-sm rounded hover:bg-red-100">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        </svg>
+                        Cancel
+                    </a>
                 </div>
+                
+                <!-- Right side - compact quiz options -->
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center">
+                        <input class="h-3.5 w-3.5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" 
+                               type="checkbox" id="printAllQuizzes" checked>
+                        <label class="ml-1.5 text-xs text-gray-700" for="printAllQuizzes">
+                            Print all quizzes
+                        </label>
+                    </div>
+                    <div class="flex items-center">
+                        <input class="h-3.5 w-3.5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" 
+                               type="checkbox" id="pageBreaksAfterQuiz" checked>
+                        <label class="ml-1.5 text-xs text-gray-700" for="pageBreaksAfterQuiz">
+                            Add page break after each quiz
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Quiz selection dropdown -->
+            <div id="quizSelectionContainer" class="mt-2 pb-2 hidden">
+                <div class="text-xs text-gray-500 mb-1">Select quizzes to print:</div>
+                <div class="flex flex-wrap gap-2">
+                    <?php foreach ($quizzes as $index => $quiz): ?>
+                    <div class="flex items-center">
+                        <input class="h-3.5 w-3.5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded quiz-checkbox" 
+                               type="checkbox" id="quiz<?php echo $index; ?>" 
+                               value="<?php echo htmlspecialchars($quiz['title']); ?>" checked>
+                        <label class="ml-1.5 text-xs text-gray-700" for="quiz<?php echo $index; ?>">
+                            <?php echo htmlspecialchars($quiz['title']); ?>
+                        </label>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        </div>
+    </div>
 
-                <?php foreach ($quiz['questions'] as $index => $question): ?>
-                    <div class="question">
-                        <p><strong><?php echo $index + 1; ?>.</strong> 
-                           <?php echo htmlspecialchars($question['text']); ?></p>
-                        <div class="options">
-                            <?php foreach ($question['options'] as $letter => $option): ?>
-                                <div class="option">
-                                    <span class="circle <?php 
-                                        if ($letter === $question['correct']) {
-                                            echo 'correct';
-                                        } elseif ($letter === $question['user_answer'] && $letter !== $question['correct']) {
-                                            echo 'incorrect';
-                                        }
-                                    ?>"><?php echo $letter; ?></span>
-                                    <?php echo htmlspecialchars($option); ?>
-                                </div>
-                            <?php endforeach; ?>
+    <!-- Printable content with max width for better screen viewing -->
+    <div class="max-w-4xl mx-auto bg-white my-4 shadow-sm">
+        <?php foreach ($quizzes as $index => $quiz): ?>
+            <div class="quiz-section" data-quiz-title="<?php echo htmlspecialchars($quiz['title']); ?>">
+                <?php if ($index === 0): ?>
+                <!-- Report Header - Only on first quiz -->
+                <div class="report-header px-6 pt-6 pb-4">
+                    <h1 class="text-xl font-bold text-gray-800"><?php echo htmlspecialchars($course['title']); ?> - Progress Report</h1>
+                    <div class="flex flex-wrap gap-x-6 mt-1 text-sm text-gray-600">
+                        <p><span class="font-semibold">Student:</span> <?php echo htmlspecialchars($user['full_name']); ?></p>
+                        <p><span class="font-semibold">Date:</span> <?php echo date('F d, Y'); ?></p>
+                    </div>
+                </div>
+                <?php else: ?>
+                <!-- Repeat Header for subsequent pages -->
+                <div class="report-header px-6 pt-6 pb-4">
+                    <h1 class="text-xl font-bold text-gray-800"><?php echo htmlspecialchars($course['title']); ?> - Progress Report</h1>
+                    <div class="flex flex-wrap gap-x-6 mt-1 text-sm text-gray-600">
+                        <p><span class="font-semibold">Student:</span> <?php echo htmlspecialchars($user['full_name']); ?></p>
+                        <p><span class="font-semibold">Date:</span> <?php echo date('F d, Y'); ?></p>
+                    </div>
+                </div>
+                <?php endif; ?>
+                
+                <!-- Quiz Content -->
+                <div class="px-6 pb-6">
+                    <!-- Quiz Header -->
+                    <div class="bg-blue-50 px-3 py-2 border-l-4 border-blue-500 mb-4">
+                        <div class="flex items-center justify-between">
+                            <h2 class="text-md font-semibold text-gray-800"><?php echo htmlspecialchars($quiz['title']); ?></h2>
+                            <p class="text-sm text-gray-600">
+                                Score: <?php echo $quiz['score']; ?>/<?php echo count($quiz['questions']); ?>
+                            </p>
                         </div>
                     </div>
-                <?php endforeach; ?>
+                    
+                    <!-- Quiz Questions -->
+                    <div class="space-y-4">
+                        <?php foreach ($quiz['questions'] as $qIndex => $question): ?>
+                            <div class="question">
+                                <p class="font-medium text-gray-800 text-sm mb-2">
+                                    <span class="mr-1"><?php echo $qIndex + 1; ?>.</span>
+                                    <?php echo htmlspecialchars($question['text']); ?>
+                                </p>
+                                
+                                <div class="ml-5 grid grid-cols-2 gap-x-4 gap-y-1">
+                                    <?php foreach ($question['options'] as $letter => $option): ?>
+                                        <div class="flex items-center text-sm">
+                                            <span class="answer-circle border <?php 
+                                                if ($letter === $question['correct']) {
+                                                    echo 'bg-green-100 border-green-500 text-green-800 correct-answer';
+                                                } elseif ($letter === $question['user_answer'] && $letter !== $question['correct']) {
+                                                    echo 'bg-red-100 border-red-500 text-red-800 incorrect-answer';
+                                                } else {
+                                                    echo 'bg-gray-100 border-gray-300 text-gray-600';
+                                                }
+                                            ?>"><?php echo $letter; ?></span>
+                                            <?php echo htmlspecialchars($option); ?>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
             </div>
         <?php endforeach; ?>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const printAllQuizzesCheckbox = document.getElementById('printAllQuizzes');
+            const pageBreaksCheckbox = document.getElementById('pageBreaksAfterQuiz');
+            const quizCheckboxes = document.querySelectorAll('.quiz-checkbox');
+            const quizSections = document.querySelectorAll('.quiz-section');
+            const printButton = document.getElementById('printButton');
+            const quizSelectionContainer = document.getElementById('quizSelectionContainer');
+            
+            // Ensure checkboxes are properly initialized
+            printAllQuizzesCheckbox.checked = true;
+            pageBreaksCheckbox.checked = true;
+            
+            // Toggle quiz selection visibility
+            printAllQuizzesCheckbox.addEventListener('change', function() {
+                quizSelectionContainer.classList.toggle('hidden', this.checked);
+                toggleQuizCheckboxes(this.checked);
+            });
+            
+            // Toggle quiz checkboxes and their visibility
+            function toggleQuizCheckboxes(isChecked) {
+                quizCheckboxes.forEach(function(checkbox) {
+                    checkbox.checked = isChecked;
+                    checkbox.disabled = isChecked;
+                });
+                
+                // Show/hide quiz sections based on the main checkbox
+                quizSections.forEach(function(section) {
+                    section.style.display = isChecked ? 'block' : 'none';
+                });
+            }
+            
+            // Apply page break styles
+            function applyPageBreaks() {
+                const usePageBreaks = pageBreaksCheckbox.checked;
+                quizSections.forEach(function(section, index) {
+                    if (usePageBreaks && index < quizSections.length - 1) {
+                        section.style.pageBreakAfter = 'always';
+                        section.style.breakAfter = 'page';
+                    } else {
+                        section.style.pageBreakAfter = 'auto';
+                        section.style.breakAfter = 'auto';
+                    }
+                });
+            }
+            
+            // Apply page breaks initially
+            applyPageBreaks();
+            
+            // Toggle individual quiz sections
+            quizCheckboxes.forEach(function(checkbox) {
+                checkbox.addEventListener('change', function() {
+                    const quizTitle = this.value;
+                    const isChecked = this.checked;
+                    
+                    quizSections.forEach(function(section) {
+                        if (section.dataset.quizTitle === quizTitle) {
+                            section.style.display = isChecked ? 'block' : 'none';
+                        }
+                    });
+                });
+            });
+            
+            // Toggle page breaks
+            pageBreaksCheckbox.addEventListener('change', function() {
+                applyPageBreaks();
+            });
+            
+            // Fix the print functionality to prevent double dialogs
+            printButton.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation(); // Prevent event bubbling
+                
+                // Reset all margins to prevent blank space
+                document.body.style.margin = '0';
+                document.body.style.padding = '0';
+                
+                // Force all elements to have no extra margins
+                document.querySelectorAll('.quiz-section').forEach(function(el) {
+                    el.style.paddingTop = '0';
+                    el.style.paddingBottom = '10pt';
+                    el.style.marginTop = '0';
+                    el.style.marginBottom = '0';
+                });
+                
+                applyPageBreaks();
+                
+                // Use a single print call with timeout
+                setTimeout(window.print, 100);
+            });
+        });
+    </script>
 </body>
-</html>
+</html> 

@@ -1,511 +1,405 @@
-<?php
-session_start();
-require_once '../config.php';
-
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
-    header("Location: index.php");
-    exit;
-}
-
-$course_id = $_GET['id'] ?? 0;
-
-// Get course details
-$stmt = $conn->prepare("SELECT * FROM courses WHERE id = ?");
-$stmt->bind_param("i", $course_id);
-$stmt->execute();
-$course = $stmt->get_result()->fetch_assoc();
-
-if (!$course) {
-    header("Location: manage_courses.php");
-    exit;
-}
-
-// Get video information if exists
-$video_info = null;
-$stmt = $conn->prepare("SELECT * FROM course_videos WHERE course_id = ?");
-$stmt->bind_param("i", $course_id);
-$stmt->execute();
-$video_result = $stmt->get_result();
-if ($video_result->num_rows > 0) {
-    $video_info = $video_result->fetch_assoc();
-}
-
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    if (isset($_POST['update_course'])) {
-        $title = $conn->real_escape_string($_POST['title']);
-        $description = $conn->real_escape_string($_POST['description']);
-        
-        // Handle video upload
-        if (isset($_FILES['course_video']) && $_FILES['course_video']['error'] == 0) {
-            $video = $_FILES['course_video'];
-            $video_tmp = $video['tmp_name'];
-            $file_size = $video['size'] / (1024 * 1024); // Convert to MB
-            
-            // Validate file size (250MB limit)
-            if ($file_size > 250) {
-                $_SESSION['error'] = "Video file size must not exceed 250MB. Current size: " . round($file_size, 2) . "MB";
-                header("Location: edit_course.php?id=" . $course_id);
-                exit;
-            }
-            
-            // Create video directory if it doesn't exist
-            $video_dir = "\\\\172.16.81.209\\it\\IT MITCH\\LMS\\VIDEO";
-            if (!file_exists($video_dir)) {
-                if (!mkdir($video_dir, 0777, true)) {
-                    $_SESSION['error'] = "Failed to create video directory. Please contact administrator.";
-                    header("Location: edit_course.php?id=" . $course_id);
-                    exit;
-                }
-            }
-            
-            try {
-                $conn->begin_transaction();
-                
-                // Generate unique filename
-                $video_filename = uniqid() . '_' . preg_replace("/[^a-zA-Z0-9.]/", "_", $video['name']);
-                $video_path = $video_dir . '\\' . $video_filename;
-                
-                // First try to delete old video if exists
-                if ($video_info) {
-                    $old_video_path = $video_info['video_url'];
-                    if (file_exists($old_video_path)) {
-                        if (!unlink($old_video_path)) {
-                            throw new Exception("Failed to delete old video file");
-                        }
-                    }
-                    // Delete old record
-                    $stmt = $conn->prepare("DELETE FROM course_videos WHERE course_id = ?");
-                    $stmt->bind_param("i", $course_id);
-                    if (!$stmt->execute()) {
-                        throw new Exception("Failed to delete old video record");
-                    }
-                }
-                
-                // Move new video file
-                if (!move_uploaded_file($video_tmp, $video_path)) {
-                    throw new Exception("Failed to move uploaded file: " . error_get_last()['message']);
-                }
-                
-                // Update course_videos table
-                $stmt = $conn->prepare("INSERT INTO course_videos (course_id, video_url, file_size) VALUES (?, ?, ?)");
-                $stmt->bind_param("isi", $course_id, $video_path, $file_size);
-                if (!$stmt->execute()) {
-                    throw new Exception("Failed to update database with video information");
-                }
-                
-                // Update has_video in courses table
-                $stmt = $conn->prepare("UPDATE courses SET has_video = 1 WHERE id = ?");
-                $stmt->bind_param("i", $course_id);
-                if (!$stmt->execute()) {
-                    throw new Exception("Failed to update course video status");
-                }
-                
-                $conn->commit();
-                $_SESSION['success'] = "Course updated successfully with new video!";
-                
-            } catch (Exception $e) {
-                $conn->rollback();
-                // Clean up new video file if it was uploaded
-                if (isset($video_path) && file_exists($video_path)) {
-                    unlink($video_path);
-                }
-                $_SESSION['error'] = "Error updating video: " . $e->getMessage();
-                header("Location: edit_course.php?id=" . $course_id);
-                exit;
-            }
-        }
-        
-        $sql = "UPDATE courses SET title = ?, description = ? WHERE id = ?";
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param("ssi", $title, $description, $course_id);
-        
-        if ($stmt->execute()) {
-            if (!isset($_SESSION['error'])) {
-                $_SESSION['success'] = "Course updated successfully!";
-            }
-            header("Location: edit_course.php?id=" . $course_id);
-            exit;
-        }
-    } elseif (isset($_POST['remove_video'])) {
-        try {
-            $conn->begin_transaction();
-
-            // Get current video info
-            if ($video_info) {
-                // Delete physical file
-                $old_video_path = $video_info['video_url'];
-                if (file_exists($old_video_path)) {
-                    if (!unlink($old_video_path)) {
-                        throw new Exception("Failed to delete video file");
-                    }
-                }
-
-                // Delete from course_videos table
-                $stmt = $conn->prepare("DELETE FROM course_videos WHERE course_id = ?");
-                $stmt->bind_param("i", $course_id);
-                if (!$stmt->execute()) {
-                    throw new Exception("Failed to delete video record from database");
-                }
-
-                // Update has_video in courses table
-                $stmt = $conn->prepare("UPDATE courses SET has_video = 0 WHERE id = ?");
-                $stmt->bind_param("i", $course_id);
-                if (!$stmt->execute()) {
-                    throw new Exception("Failed to update course video status");
-                }
-
-                $conn->commit();
-                $_SESSION['success'] = "Video removed successfully!";
-            } else {
-                throw new Exception("No video found to remove");
-            }
-        } catch (Exception $e) {
-            $conn->rollback();
-            $_SESSION['error'] = "Failed to remove video: " . $e->getMessage();
-        }
-        header("Location: edit_course.php?id=" . $course_id);
-        exit;
-    }
-}
+<?php 
+require_once __DIR__ . '/controller/course_update.php';
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit Course - LMS</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'blue': {
+                            50: '#f0f5ff',
+                            100: '#e0eaff',
+                            200: '#c7d7fe',
+                            300: '#a5b9fc',
+                            400: '#8193f7',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            800: '#3730a3',
+                            900: '#312e81',
+                            950: '#1e1b4b',
+                        },
+                        'green': {
+                            50: '#ecfdf5',
+                            100: '#d1fae5',
+                            500: '#10b981',
+                            600: '#059669',
+                            700: '#047857'
+                        },
+                        'red': {
+                            50: '#fef2f2',
+                            100: '#fee2e2',
+                            500: '#ef4444',
+                            600: '#dc2626',
+                            700: '#b91c1c'
+                        },
+                        'amber': {
+                            50: '#fffbeb',
+                            100: '#fef3c7',
+                            500: '#f59e0b',
+                            600: '#d97706',
+                            700: '#b45309'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
     <link rel="stylesheet" href="../assets/css/style.css">
-    <link rel="stylesheet" href="../assets/css/custom.css">
-    <link rel="stylesheet" href="../assets/css/dashboard.css">
-    <style>
-        .edit-course-header {
-            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-            border-radius: 12px;
-            padding: 2rem;
-            margin-bottom: 2rem;
-            color: white;
-        }
-
-        .page-title {
-            font-size: 2rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-            color: white;
-        }
-
-        .edit-course-form {
-            background: white;
-            border-radius: 12px;
-            padding: 2rem;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-        }
-
-        .form-section {
-            margin-bottom: 2rem;
-            padding-bottom: 2rem;
-            border-bottom: 1px solid #e5e7eb;
-        }
-
-        .form-section:last-child {
-            margin-bottom: 0;
-            padding-bottom: 0;
-            border-bottom: none;
-        }
-
-        .section-title {
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: #111827;
-            margin-bottom: 1.5rem;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-
-        .section-title i {
-            color: #6366f1;
-        }
-
-        .form-label {
-            font-weight: 500;
-            color: #374151;
-            margin-bottom: 0.5rem;
-        }
-
-        .form-control {
-            border-radius: 8px;
-            border: 1px solid #d1d5db;
-            padding: 0.75rem 1rem;
-            font-size: 0.875rem;
-            transition: all 0.2s;
-        }
-
-        .form-control:focus {
-            border-color: #6366f1;
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
-        }
-
-        .video-info-card {
-            background: #f9fafb;
-            border-radius: 8px;
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .video-info-title {
-            font-size: 0.875rem;
-            font-weight: 600;
-            color: #374151;
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .video-info-content {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            color: #6b7280;
-            font-size: 0.875rem;
-        }
-
-        .video-actions {
-            margin-top: 1rem;
-            display: flex;
-            gap: 1rem;
-        }
-
-        .btn {
-            padding: 0.75rem 1.5rem;
-            font-weight: 500;
-            border-radius: 8px;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            transition: all 0.2s;
-        }
-
-        .btn-primary {
-            background-color: #6366f1;
-            border-color: #6366f1;
-        }
-
-        .btn-primary:hover {
-            background-color: #4f46e5;
-            border-color: #4f46e5;
-            transform: translateY(-1px);
-        }
-
-        .btn-outline-primary {
-            color: #6366f1;
-            border-color: #6366f1;
-        }
-
-        .btn-outline-primary:hover {
-            background-color: #6366f1;
-            color: white;
-            transform: translateY(-1px);
-        }
-
-        .alert {
-            border: none;
-            border-radius: 8px;
-            padding: 1rem 1.5rem;
-            margin-bottom: 1.5rem;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-
-        .alert-info {
-            background-color: #eff6ff;
-            color: #1e40af;
-        }
-
-        .alert-warning {
-            background-color: #fffbeb;
-            color: #92400e;
-        }
-
-        .video-upload-section {
-            display: none;
-        }
-
-        .video-upload-section.active {
-            display: block;
-        }
-
-        .requirements-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-
-        .requirements-list li {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            color: #6b7280;
-            font-size: 0.875rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .requirements-list li:last-child {
-            margin-bottom: 0;
-        }
-
-        .requirements-list i {
-            color: #6366f1;
-        }
-    </style>
 </head>
-<body>
-    <div class="wrapper">
-        <?php include 'includes/sidebar.php'; ?>
-        <div class="content">
-            <div class="container mt-4">
-                <div class="edit-course-header">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h1 class="page-title">
-                                <i class="bi bi-pencil-square"></i> Edit Course
-                            </h1>
-                            <p class="mb-0">Update course information and manage course content</p>
+<body class="bg-blue-50">
+    <?php include 'includes/sidebar.php'; ?>
+    
+    <div class="p-8 sm:ml-72">
+        <div class="container mx-auto">
+            <div class="bg-gradient-to-r from-blue-600 to-blue-800 rounded-xl p-6 mb-8 shadow-md">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h1 class="text-2xl font-bold text-white flex items-center gap-2">
+                            <i data-lucide="pencil" class="w-6 h-6"></i> Edit Course
+                        </h1>
+                        <p class="text-blue-100">Update course information and manage course content</p>
+                    </div>
+                    <a href="manage_courses.php" class="px-4 py-2.5 bg-white text-blue-600 rounded-lg flex items-center gap-2 transition-all duration-200 font-medium shadow-sm">
+                        <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                        <span>Back to Courses</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Alert messages -->
+            <?php if (isset($_SESSION['success'])): ?>
+                <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6 rounded-lg flex items-center gap-2" role="alert" style="display: none;">
+                    <i data-lucide="check-circle" class="w-5 h-5 text-green-500"></i>
+                    <span><?php echo $_SESSION['success']; ?></span>
+                </div>
+            <?php endif; ?>
+
+            <?php if (isset($_SESSION['error'])): ?>
+                <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded-lg flex items-center gap-2" role="alert" style="display: none;">
+                    <i data-lucide="alert-circle" class="w-5 h-5 text-red-500"></i>
+                    <span><?php echo $_SESSION['error']; ?></span>
+                </div>
+            <?php endif; ?>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Course Details Card -->
+                <div class="lg:col-span-2">
+                    <div class="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden">
+                        <div class="p-6 border-b border-gray-200">
+                            <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                                <i data-lucide="book-open" class="w-5 h-5 text-blue-600"></i>
+                                Course Details
+                            </h2>
                         </div>
-                        <a href="manage_courses.php" class="btn btn-outline-light">
-                            <i class="bi bi-arrow-left"></i> Back to Courses
-                        </a>
+                        
+                        <form method="POST" enctype="multipart/form-data">
+                            <div class="p-6 space-y-6">
+                                <div>
+                                    <label for="title" class="block text-sm font-medium text-gray-700 mb-1">Course Title</label>
+                                    <input type="text" 
+                                           class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition" 
+                                           id="title" 
+                                           name="title" 
+                                           value="<?php echo htmlspecialchars($course['title']); ?>" 
+                                           required>
+                                </div>
+                                
+                                <div>
+                                    <label for="description" class="block text-sm font-medium text-gray-700 mb-1">Course Description</label>
+                                    <textarea 
+                                        class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition" 
+                                        id="description" 
+                                        name="description" 
+                                        rows="5" 
+                                        required><?php echo htmlspecialchars($course['description']); ?></textarea>
+                                </div>
+                                
+                                <div>
+                                    <label for="course_video" class="block text-sm font-medium text-gray-700 mb-1">Course Video</label>
+                                    <?php if ($video_info): ?>
+                                        <div class="mb-4">
+                                            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-4">
+                                                <i data-lucide="video" class="w-8 h-8 text-blue-600 mt-1"></i>
+                                                <div>
+                                                    <p class="text-sm text-gray-700">Current video: <span class="font-semibold"><?php echo basename($video_info['video_url']); ?></span></p>
+                                                    <p class="text-xs text-gray-500">Size: <?php echo round($video_info['file_size'], 2); ?> MB</p>
+                                                    <div class="flex gap-2 mt-3">
+                                                        <a href="get_video.php?course_id=<?php echo $course_id; ?>" class="px-3 py-1.5 text-xs font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-1">
+                                                            <i data-lucide="play" class="w-3 h-3"></i> Play
+                                                        </a>
+                                                        <button type="submit" name="remove_video" class="px-3 py-1.5 text-xs font-medium bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition flex items-center gap-1">
+                                                            <i data-lucide="trash-2" class="w-3 h-3"></i> Remove
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    <?php endif; ?>
+                                    
+                                    <div class="space-y-4">
+                                        <!-- Toggle between Upload and Paste Link -->
+                                        <div class="flex space-x-2">
+                                            <button type="button" id="uploadTab" class="px-4 py-2 bg-blue-500 text-white rounded focus:outline-none">Upload Video</button>
+                                            <button type="button" id="linkTab" class="px-4 py-2 bg-gray-200 text-gray-700 rounded focus:outline-none">Paste Video Link</button>
+                                        </div>
+
+                                        <!-- Upload Section -->
+                                        <div id="uploadSection" class="border-2 border-dashed border-gray-300 rounded-lg p-6 flex flex-col items-center justify-center bg-gray-50 hover:bg-gray-100 transition cursor-pointer relative">
+                                            <input type="file" 
+                                                id="course_video" 
+                                                name="course_video" 
+                                                accept="video/*, application/pdf" 
+                                                class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+                                            <i data-lucide="upload-cloud" class="w-10 h-10 text-blue-500 mb-4"></i>
+                                            <p class="text-sm font-medium text-gray-700">
+                                                Drag and drop a video or pdf file here, or click to select
+                                            </p>
+                                            <p class="text-xs text-gray-500 mt-1">
+                                                Max file size: 250MB
+                                            </p>
+                                            <div id="file-name" class="text-sm text-blue-600 mt-2 hidden"></div>
+                                        </div>
+
+                                        <!-- Link Section -->
+                                        <div id="linkSection" class="hidden">
+                                            <label for="video_link" class="block text-sm font-medium text-gray-700 mb-1">Paste Video Link</label>
+                                            <input type="url" 
+                                                id="video_link" 
+                                                name="video_link" 
+                                                placeholder="https://example.com/video.mp4" 
+                                                class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end">
+                                <button type="submit" name="update_course" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition flex items-center gap-2 text-sm font-medium">
+                                    <i data-lucide="save" class="w-4 h-4"></i> Update Course
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
+                
+                <!-- Course Management Sidebar -->
+                <div>
+                    <div class="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden mb-6">
+                        <div class="p-6 border-b border-gray-200">
+                            <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                                <i data-lucide="list-checks" class="w-5 h-5 text-blue-600"></i>
+                                Course Management
+                            </h2>
+                        </div>
+                        <div class="p-6 space-y-4">
+                            <a href="manage_quiz.php?course_id=<?php echo $course_id; ?>" class="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-all group">
+                                <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center group-hover:bg-blue-200 transition-all">
+                                    <i data-lucide="help-circle" class="w-5 h-5 text-blue-600"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-sm font-medium text-gray-900">Manage Quizzes</h3>
+                                    <p class="text-xs text-gray-500">Add or edit quizzes for this course</p>
+                                </div>
+                            </a>
 
-                <?php if (isset($_SESSION['error']) || isset($_SESSION['success'])): ?>
-                    <div class="alert alert-<?php echo isset($_SESSION['error']) ? 'warning' : 'success'; ?> alert-dismissible fade show">
-                        <i class="bi bi-<?php echo isset($_SESSION['error']) ? 'exclamation-triangle' : 'check-circle'; ?>-fill"></i>
-                        <?php 
-                            echo isset($_SESSION['error']) ? $_SESSION['error'] : $_SESSION['success'];
-                            unset($_SESSION['error']);
-                            unset($_SESSION['success']);
-                        ?>
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            <a href="manage_quiz.php?course_id=<?php echo $course_id; ?>" class="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-all group">
+                                <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center group-hover:bg-blue-200 transition-all">
+                                    <i data-lucide="users" class="w-5 h-5 text-blue-600"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-sm font-medium text-gray-900">Manage examinees</h3>
+                                    <p class="text-xs text-gray-500">Add or edit examinees for this course</p>
+                                </div>
+                            </a>
+                            
+                            <a href="print_course.php?id=<?php echo $course_id; ?>" target="_blank" class="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-all group">
+                                <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center group-hover:bg-blue-200 transition-all">
+                                    <i data-lucide="printer" class="w-5 h-5 text-blue-600"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-sm font-medium text-gray-900">Print Course</h3>
+                                    <p class="text-xs text-gray-500">Print course details and quizzes</p>
+                                </div>
+                            </a>
+                            
+                            <a href="view_course.php?id=<?php echo $course_id; ?>" class="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-all group">
+                                <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center group-hover:bg-blue-200 transition-all">
+                                    <i data-lucide="eye" class="w-5 h-5 text-blue-600"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-sm font-medium text-gray-900">View Course</h3>
+                                    <p class="text-xs text-gray-500">Preview the course as a student</p>
+                                </div>
+                            </a>
+                        </div>
                     </div>
-                <?php endif; ?>
-
-                <div class="edit-course-form">
-                    <form method="POST" enctype="multipart/form-data">
-                        <div class="form-section">
-                            <h2 class="section-title">
-                                <i class="bi bi-info-circle"></i>
-                                Basic Information
+                    
+                    <!-- Danger Zone -->
+                    <div class="bg-red-50 rounded-xl border border-red-200 shadow-sm overflow-hidden">
+                        <div class="p-6 border-b border-red-200">
+                            <h2 class="text-lg font-semibold text-red-800 flex items-center gap-2">
+                                <i data-lucide="alert-triangle" class="w-5 h-5 text-red-600"></i>
+                                Danger Zone
                             </h2>
-                            <div class="mb-4">
-                                <label for="title" class="form-label">Course Title</label>
-                                <input type="text" class="form-control" id="title" name="title" 
-                                       value="<?php echo htmlspecialchars($course['title']); ?>" required>
-                            </div>
-                            <div class="mb-4">
-                                <label for="description" class="form-label">Course Description</label>
-                                <textarea class="form-control" id="description" name="description" 
-                                          rows="5" required><?php echo htmlspecialchars($course['description']); ?></textarea>
-                            </div>
                         </div>
-
-                        <div class="form-section">
-                            <h2 class="section-title">
-                                <i class="bi bi-camera-video"></i>
-                                Course Video
-                            </h2>
-
-                            <?php if ($video_info): ?>
-                                <div class="video-info-card">
-                                    <div class="video-info-title">
-                                        <i class="bi bi-play-circle"></i>
-                                        Current Video
-                                    </div>
-                                    <div class="video-info-content">
-                                        <i class="bi bi-file-earmark-play"></i>
-                                        <span>Size: <?php echo round($video_info['file_size'], 2); ?> MB</span>
-                                    </div>
-                                    <div class="video-actions">
-                                        <button type="button" class="btn btn-outline-primary" onclick="toggleVideoUpload()">
-                                            <i class="bi bi-arrow-repeat"></i> Replace Video
-                                        </button>
-                                        <button type="button" class="btn btn-outline-danger" onclick="removeVideo()">
-                                            <i class="bi bi-trash"></i> Remove Video
-                                        </button>
-                                    </div>
-                                </div>
-                            <?php endif; ?>
-
-                            <div class="video-upload-section <?php echo !$video_info ? 'active' : ''; ?>" id="videoUploadSection">
-                                <div class="alert alert-info">
-                                    <i class="bi bi-info-circle"></i>
-                                    <div>
-                                        <strong>Video Requirements:</strong>
-                                        <ul class="requirements-list mt-2">
-                                            <li><i class="bi bi-check-circle"></i> Maximum file size: 250MB</li>
-                                            <li><i class="bi bi-check-circle"></i> Accepted formats: MP4, WebM</li>
-                                            <li><i class="bi bi-check-circle"></i> Recommended resolution: 1280x720 or higher</li>
-                                        </ul>
-                                    </div>
-                                </div>
-
-                                <div class="mb-3">
-                                    <input type="hidden" name="MAX_FILE_SIZE" value="262144000" />
-                                    <input type="file" class="form-control" id="course_video" name="course_video" 
-                                           accept="video/mp4,video/webm">
-                                </div>
-                            </div>
+                        <div class="p-6">
+                            <a href="delete_course.php?id=<?php echo $course_id; ?>" onclick="return confirm('Are you sure you want to delete this course? This action cannot be undone.')" 
+                               class="w-full flex items-center justify-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition text-sm font-medium">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i> Delete Course
+                            </a>
+                            <p class="text-xs text-red-500 mt-2">
+                                This will permanently delete the course and all associated quizzes and student progress.
+                            </p>
                         </div>
-
-                        <div class="d-flex justify-content-end gap-2">
-                            <a href="manage_courses.php" class="btn btn-outline-secondary">Cancel</a>
-                            <button type="submit" name="update_course" class="btn btn-primary">
-                                <i class="bi bi-save"></i> Update Course
-                            </button>
-                        </div>
-                    </form>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-    function toggleVideoUpload() {
-        const uploadSection = document.getElementById('videoUploadSection');
-        uploadSection.classList.toggle('active');
-    }
-
-    function removeVideo() {
-        if (confirm('Are you sure you want to remove the current video? This action cannot be undone.')) {
-            // Add form submission logic for video removal
-            const form = document.createElement('form');
-            form.method = 'POST';
-            const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = 'remove_video';
-            input.value = '1';
-            form.appendChild(input);
-            document.body.appendChild(form);
-            form.submit();
-        }
-    }
-
-    // File size validation
-    document.getElementById('course_video').addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (file) {
-            const fileSize = file.size / (1024 * 1024); // Convert to MB
-            if (fileSize > 250) {
-                alert('File size exceeds 250MB limit. Please choose a smaller file.');
-                this.value = ''; // Clear the file input
+        // Initialize Lucide icons
+        lucide.createIcons();
+        
+        // File upload preview
+        document.getElementById('course_video').addEventListener('change', function(e) {
+            var fileName = e.target.files[0] ? e.target.files[0].name : '';
+            var fileNameDisplay = document.getElementById('file-name');
+            
+            if (fileName) {
+                fileNameDisplay.textContent = 'Selected: ' + fileName;
+                fileNameDisplay.classList.remove('hidden');
+            } else {
+                fileNameDisplay.classList.add('hidden');
             }
+        });
+        
+        // Initialize toast notifications
+        <?php if (isset($_SESSION['success'])): ?>
+            showToast('<?php echo addslashes($_SESSION['success']); ?>', 'success');
+            <?php unset($_SESSION['success']); ?>
+        <?php endif; ?>
+        
+        <?php if (isset($_SESSION['error'])): ?>
+            showToast('<?php echo addslashes($_SESSION['error']); ?>', 'error');
+            <?php unset($_SESSION['error']); ?>
+        <?php endif; ?>
+        
+        // Toast notification system
+        function showToast(message, type = 'info') {
+            // Create toast container if it doesn't exist
+            let toastContainer = document.getElementById('toast-container');
+            
+            if (!toastContainer) {
+                toastContainer = document.createElement('div');
+                toastContainer.id = 'toast-container';
+                toastContainer.className = 'fixed bottom-4 right-4 z-50 flex flex-col gap-2';
+                document.body.appendChild(toastContainer);
+            }
+            
+            // Create toast element
+            const toast = document.createElement('div');
+            toast.className = 'transform transition-all duration-300 ease-in-out translate-x-full';
+            
+            // Set background color based on type
+            let bgColor, textColor, iconName;
+            switch (type) {
+                case 'success':
+                    bgColor = 'bg-green-500';
+                    textColor = 'text-white';
+                    iconName = 'check-circle';
+                    break;
+                case 'error':
+                    bgColor = 'bg-red-500';
+                    textColor = 'text-white';
+                    iconName = 'alert-circle';
+                    break;
+                case 'warning':
+                    bgColor = 'bg-amber-500';
+                    textColor = 'text-white';
+                    iconName = 'alert-triangle';
+                    break;
+                default: // info
+                    bgColor = 'bg-blue-500';
+                    textColor = 'text-white';
+                    iconName = 'info';
+            }
+            
+            // Apply styles
+            toast.className += ` ${bgColor} ${textColor} rounded-lg shadow-lg p-4 mb-2 flex items-center`;
+            
+            // Add content
+            toast.innerHTML = `
+                <i data-lucide="${iconName}" class="w-5 h-5 mr-2"></i>
+                <span>${message}</span>
+            `;
+            
+            // Add to container
+            toastContainer.appendChild(toast);
+            
+            // Initialize icon
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons({
+                    attrs: {
+                        class: ["stroke-current"]
+                    }
+                });
+            }
+            
+            // Animate in
+            setTimeout(() => {
+                toast.classList.remove('translate-x-full');
+                toast.classList.add('translate-x-0');
+            }, 10);
+            
+            // Remove after 3 seconds
+            setTimeout(() => {
+                toast.classList.remove('translate-x-0');
+                toast.classList.add('translate-x-full');
+                
+                // Remove from DOM after animation completes
+                setTimeout(() => {
+                    toast.remove();
+                }, 300);
+            }, 3000);
         }
-    });
     </script>
+
+    <!--javascript to switch between hyperlink or video -->
+
+    <script>
+        const uploadTab = document.getElementById('uploadTab');
+        const linkTab = document.getElementById('linkTab');
+        const uploadSection = document.getElementById('uploadSection');
+        const linkSection = document.getElementById('linkSection');
+
+        uploadTab.addEventListener('click', () => {
+            uploadSection.classList.remove('hidden');
+            linkSection.classList.add('hidden');
+            uploadTab.classList.add('bg-blue-500', 'text-white');
+            uploadTab.classList.remove('bg-gray-200', 'text-gray-700');
+            linkTab.classList.remove('bg-blue-500', 'text-white');
+            linkTab.classList.add('bg-gray-200', 'text-gray-700');
+        });
+
+        linkTab.addEventListener('click', () => {
+            linkSection.classList.remove('hidden');
+            uploadSection.classList.add('hidden');
+            linkTab.classList.add('bg-blue-500', 'text-white');
+            linkTab.classList.remove('bg-gray-200', 'text-gray-700');
+            uploadTab.classList.remove('bg-blue-500', 'text-white');
+            uploadTab.classList.add('bg-gray-200', 'text-gray-700');
+        });
+    </script>
+
 </body>
 </html>

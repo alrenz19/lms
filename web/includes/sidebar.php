@@ -3,144 +3,97 @@ $current_page = basename($_SERVER['PHP_SELF']);
 $is_in_includes = strpos($_SERVER['PHP_SELF'], '/includes/') !== false;
 $base_path = $is_in_includes ? '..' : '.';
 ?>
-<div class="sidebar">
-    <div class="logo">
-        <a href="<?php echo $base_path; ?>/index.php">
-            <i class="bi bi-book"></i>
-            <span>LMS System</span>
-        </a>
-    </div>
-    <nav>
-        <ul>
+<!-- Add Lucide icons -->
+<script src="https://unpkg.com/lucide@latest"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+<!-- Sidebar -->
+<aside id="sidebar" class="fixed top-0 left-0 z-40 w-64 h-screen transition-transform bg-blue-900 text-white">
+    <div class="h-full px-3 py-4 overflow-y-auto">
+        <div class="flex items-center mb-8 px-2">
+            <i data-lucide="book-open" class="h-7 w-7 text-white mr-3"></i>
+            <span class="self-center text-xl font-semibold whitespace-nowrap">LMS System</span>
+        </div>
+        
+        <div class="mb-6 px-2">
+            <div class="text-xs uppercase tracking-wider text-blue-300 mb-1">
+                <?php echo $_SESSION['role'] === 'admin' ? 'ADMIN' : 'USER'; ?>
+            </div>
+            <div class="font-medium">
+                <?php echo htmlspecialchars($_SESSION['full_name'] ?? 'System Administrator'); ?>
+            </div>
+        </div>
+        
+        <ul class="space-y-2 font-medium">
             <li>
-                <a href="<?php echo $base_path; ?>/dashboard.php" class="<?php echo $current_page == 'dashboard.php' ? 'active' : ''; ?>">
-                    <i class="bi bi-speedometer2"></i>
-                    <span>Dashboard</span>
+                <a href="dashboard.php" class="flex items-center p-2 rounded-lg hover:bg-blue-800 group <?php echo $current_page === 'dashboard.php' ? 'bg-blue-800' : ''; ?>">
+                    <i data-lucide="layout-dashboard" class="w-5 h-5 text-blue-200 transition duration-75 group-hover:text-white <?php echo $current_page === 'dashboard.php' ? 'text-white' : ''; ?>"></i>
+                    <span class="ml-3">Dashboard</span>
                 </a>
             </li>
             <?php if ($_SESSION['role'] === 'admin'): ?>
             <li>
-                <a href="<?php echo $base_path; ?>/manage_courses.php" class="<?php echo $current_page == 'manage_courses.php' ? 'active' : ''; ?>">
-                    <i class="bi bi-journal-text"></i>
-                    <span>Manage Courses</span>
+                <a href="manage_courses.php" class="flex items-center p-2 rounded-lg hover:bg-blue-800 group <?php echo $current_page === 'manage_courses.php' ? 'bg-blue-800' : ''; ?>">
+                    <i data-lucide="book-open" class="w-5 h-5 text-blue-200 transition duration-75 group-hover:text-white <?php echo $current_page === 'manage_courses.php' ? 'text-white' : ''; ?>"></i>
+                    <span class="ml-3">Manage Courses</span>
                 </a>
             </li>
             <li>
-                <a href="<?php echo $base_path; ?>/manage_users.php" class="<?php echo $current_page == 'manage_users.php' ? 'active' : ''; ?>">
-                    <i class="bi bi-people"></i>
-                    <span>Manage Users</span>
+                <a href="manage_users.php" class="flex items-center p-2 rounded-lg hover:bg-blue-800 group <?php echo $current_page === 'manage_users.php' ? 'bg-blue-800' : ''; ?>">
+                    <i data-lucide="users" class="w-5 h-5 text-blue-200 transition duration-75 group-hover:text-white <?php echo $current_page === 'manage_users.php' ? 'text-white' : ''; ?>"></i>
+                    <span class="ml-3">Manage Users</span>
                 </a>
             </li>
             <li>
-                <a href="<?php echo $base_path; ?>/admin_user_progress.php" class="<?php echo $current_page == 'admin_user_progress.php' ? 'active' : ''; ?>">
-                    <i class="bi bi-graph-up"></i>
-                    <span>User Progress</span>
+                <a href="admin_user_progress.php" class="flex items-center p-2 rounded-lg hover:bg-blue-800 group <?php echo $current_page === 'admin_user_progress.php' ? 'bg-blue-800' : ''; ?>">
+                    <i data-lucide="bar-chart-2" class="w-5 h-5 text-blue-200 transition duration-75 group-hover:text-white <?php echo $current_page === 'admin_user_progress.php' ? 'text-white' : ''; ?>"></i>
+                    <span class="ml-3">User Progress</span>
                 </a>
             </li>
             <?php else: ?>
             <li>
-                <a href="<?php echo $base_path; ?>/user_progress.php" class="<?php echo $current_page == 'user_progress.php' ? 'active' : ''; ?>">
-                    <i class="bi bi-graph-up"></i>
-                    <span>My Progress</span>
+                <a href="view_courses.php" class="flex items-center p-2 rounded-lg hover:bg-blue-800 group <?php echo $current_page === 'view_courses.php' ? 'bg-blue-800' : ''; ?>">
+                    <i data-lucide="book-open" class="w-5 h-5 text-blue-200 transition duration-75 group-hover:text-white <?php echo $current_page === 'view_courses.php' ? 'text-white' : ''; ?>"></i>
+                    <span class="ml-3">My Courses</span>
+                </a>
+            </li>
+            <li>
+                <a href="user_progress.php" class="flex items-center p-2 rounded-lg hover:bg-blue-800 group <?php echo $current_page === 'user_progress.php' ? 'bg-blue-800' : ''; ?>">
+                    <i data-lucide="activity" class="w-5 h-5 text-blue-200 transition duration-75 group-hover:text-white <?php echo $current_page === 'user_progress.php' ? 'text-white' : ''; ?>"></i>
+                    <span class="ml-3">My Progress</span>
                 </a>
             </li>
             <?php endif; ?>
             <li>
-                <a href="<?php echo $base_path; ?>/logout.php">
-                    <i class="bi bi-box-arrow-right"></i>
-                    <span>Logout</span>
+                <a href="logout.php" class="flex items-center p-2 rounded-lg hover:bg-blue-800 group text-red-300 hover:text-red-200">
+                    <i data-lucide="log-out" class="w-5 h-5 transition duration-75 group-hover:text-red-200"></i>
+                    <span class="ml-3">Logout</span>
                 </a>
             </li>
         </ul>
-    </nav>
+    </div>
+</aside>
+
+<!-- Mobile menu button -->
+<div class="fixed top-4 left-4 z-50 block md:hidden">
+    <button type="button" class="toggle-sidebar inline-flex items-center p-2 text-sm text-white bg-blue-800 rounded-lg hover:bg-blue-700">
+        <i data-lucide="menu" class="w-6 h-6"></i>
+    </button>
 </div>
 
-<style>
-.sidebar {
-    width: 280px;
-    height: 100vh;
-    background: white;
-    border-right: 1px solid #e5e7eb;
-    position: fixed;
-    top: 0;
-    left: 0;
-    display: flex;
-    flex-direction: column;
-    padding: 1.5rem;
-}
-
-.sidebar .logo {
-    margin-bottom: 2rem;
-}
-
-.sidebar .logo a {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    text-decoration: none;
-    color: #111827;
-    font-size: 1.25rem;
-    font-weight: 600;
-}
-
-.sidebar .logo i {
-    font-size: 1.5rem;
-    color: #6366f1;
-}
-
-.sidebar nav ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-
-.sidebar nav li {
-    margin-bottom: 0.5rem;
-}
-
-.sidebar nav a {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.75rem 1rem;
-    text-decoration: none;
-    color: #6b7280;
-    border-radius: 8px;
-    transition: all 0.2s;
-    font-size: 0.875rem;
-    font-weight: 500;
-}
-
-.sidebar nav a:hover {
-    background: #f3f4f6;
-    color: #6366f1;
-}
-
-.sidebar nav a.active {
-    background: rgba(99, 102, 241, 0.1);
-    color: #6366f1;
-}
-
-.sidebar nav a i {
-    font-size: 1.25rem;
-}
-
-.content {
-    margin-left: 280px;
-    padding: 2rem;
-}
-
-@media (max-width: 768px) {
-    .sidebar {
-        width: 100%;
-        height: auto;
-        position: relative;
-        padding: 1rem;
-    }
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Lucide icons
+    lucide.createIcons();
     
-    .content {
-        margin-left: 0;
-        padding: 1rem;
+    // Toggle sidebar on mobile
+    const toggleBtn = document.querySelector('.toggle-sidebar');
+    const sidebar = document.getElementById('sidebar');
+    
+    if (toggleBtn && sidebar) {
+        toggleBtn.addEventListener('click', function() {
+            sidebar.classList.toggle('-translate-x-full');
+        });
     }
-}
-</style>
+});
+</script>

@@ -11,7 +11,12 @@ $user_id = $_GET['id'] ?? 0;
 
 // Prevent deleting your own account
 if ($user_id == $_SESSION['user_id']) {
-    header("Location: manage_users.php?error=self_delete");
+    // Store toast info in session to display after redirect
+    $_SESSION['toast'] = [
+        'message' => 'You cannot delete your own account',
+        'type' => 'error'
+    ];
+    header("Location: manage_users.php");
     exit;
 }
 
@@ -31,11 +36,23 @@ try {
 
     // Commit transaction
     $conn->commit();
-    header("Location: manage_users.php?success=deleted");
+    
+    // Store toast info in session to display after redirect
+    $_SESSION['toast'] = [
+        'message' => 'User deleted successfully',
+        'type' => 'success'
+    ];
+    header("Location: manage_users.php");
 } catch (Exception $e) {
     // Rollback on error
     $conn->rollback();
-    header("Location: manage_users.php?error=delete_failed");
+    
+    // Store toast info in session to display after redirect
+    $_SESSION['toast'] = [
+        'message' => 'Failed to delete user',
+        'type' => 'error'
+    ];
+    header("Location: manage_users.php");
 }
 exit;
 ?>

@@ -2,43 +2,57 @@
 session_start();
 require_once '../config.php';
 
-header('Content-Type: application/json');
-
+// Security check
 if (!isset($_SESSION['user_id'])) {
-    echo json_encode(['success' => false, 'message' => 'Not authenticated']);
+    echo json_encode(['success' => false, 'message' => 'Unauthorized access']);
     exit;
 }
 
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    echo json_encode(['success' => false, 'message' => 'Invalid request method']);
+// Check if all required parameters are provided
+if (!isset($_POST['video_id']) || !isset($_POST['user_id']) || !isset($_POST['course_id'])) {
+    echo json_encode(['success' => false, 'message' => 'Missing required parameters']);
     exit;
 }
 
-$video_id = isset($_POST['video_id']) ? intval($_POST['video_id']) : 0;
+$video_id = (int)$_POST['video_id'];
+$user_id = (int)$_POST['user_id'];
+$course_id = (int)$_POST['course_id'];
 
-if (!$video_id) {
-    echo json_encode(['success' => false, 'message' => 'Video ID not provided']);
+// Additional security check - verify user_id from POST matches session user_id
+if ($user_id !== $_SESSION['user_id']) {
+    echo json_encode(['success' => false, 'message' => 'User ID mismatch']);
     exit;
 }
 
-// First, check if a record exists
-$stmt = $conn->prepare("SELECT id FROM user_video_progress WHERE user_id = ? AND video_id = ?");
-$stmt->bind_param("ii", $_SESSION['user_id'], $video_id);
+// Verify the video exists and belongs to the specified course
+$stmt = $conn->prepare("SELECT id FROM course_videos WHERE id = ? AND course_id = ?");
+$stmt->bind_param("ii", $video_id, $course_id);
+$stmt->execute();
+$result = $stmt->get_result();
+
+if ($result->num_rows === 0) {
+    echo json_encode(['success' => false, 'message' => 'Video not found']);
+    exit;
+}
+
+// Check if record already exists
+$stmt = $conn->prepare("SELECT * FROM user_video_progress WHERE user_id = ? AND video_id = ?");
+$stmt->bind_param("ii", $user_id, $video_id);
 $stmt->execute();
 $result = $stmt->get_result();
 
 if ($result->num_rows > 0) {
     // Update existing record
-    $stmt = $conn->prepare("UPDATE user_video_progress SET watched = 1, updated_at = CURRENT_TIMESTAMP WHERE user_id = ? AND video_id = ?");
+    $stmt = $conn->prepare("UPDATE user_video_progress SET watched = 1, updated_at = NOW() WHERE user_id = ? AND video_id = ?");
+    $stmt->bind_param("ii", $user_id, $video_id);
 } else {
-    // Create new record
+    // Insert new record
     $stmt = $conn->prepare("INSERT INTO user_video_progress (user_id, video_id, watched) VALUES (?, ?, 1)");
+    $stmt->bind_param("ii", $user_id, $video_id);
 }
 
-$stmt->bind_param("ii", $_SESSION['user_id'], $video_id);
-
 if ($stmt->execute()) {
-    echo json_encode(['success' => true]);
+    echo json_encode(['success' => true, 'message' => 'Video progress updated successfully']);
 } else {
-    echo json_encode(['success' => false, 'message' => 'Failed to update progress']);
+    echo json_encode(['success' => false, 'message' => 'Failed to update video progress: ' . $conn->error]);
 } 
