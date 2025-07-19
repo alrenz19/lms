@@ -167,10 +167,6 @@ unset($_SESSION['new_question_id']);
     <link rel="stylesheet" href="../assets/css/style.css">
     <style>
         /* Ensure sidebar consistency with dashboard */
-        #sidebar {
-            background-color: #1e3a8a !important; /* bg-blue-900 equivalent */
-        }
-        
         /* Updated styling to match dashboard */
         .quiz-banner {
             background-image: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%);
