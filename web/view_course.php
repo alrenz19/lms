@@ -286,7 +286,7 @@ $can_access_quizzes = !$video_info || ($video_progress !== null);
                         <div class="p-0">
                             <div class="relative w-full pt-[56.25%]">
                                 <video id="courseVideo" class="absolute top-0 left-0 w-full h-full object-contain" controls>
-                                    <source src="get_video.php?id=<?php echo $video_info['id']; ?>" type="video/mp4">
+                                    <source src="get_video.php?course_id=<?php echo $course_id; ?>" type="video/mp4">
                                     Your browser does not support the video tag.
                                 </video>
                             </div>
