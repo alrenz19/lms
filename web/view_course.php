@@ -260,25 +260,6 @@ $can_access_quizzes = !$video_info || ($video_progress !== null);
                 </div>
             </div>
 
-            <!-- Watch video to unlock Modal -->
-            <div id="unlockVideoModal" tabindex="-1" aria-hidden="true" class="fixed top-0 left-0 right-0 z-50 hidden w-full p-4 overflow-x-hidden overflow-y-auto md:inset-0 h-[calc(100%-1rem)] max-h-full bg-black/70 backdrop-blur-sm flex items-center justify-center">
-                <div class="relative w-[300px] h-[170px] rounded-lg bg-white">
-                    <div class="bg-gradient-to-r from-blue-600 to-blue-800 p-2 rounded-lg flex items-center justify-between">
-                        <h3 class="text-xl font-semibold text-white flex items-center gap-2">
-                            Information
-                        </h3>
-                        <button type="button" data-modal-hide="unlockVideoModal" class="text-white/80 hover:text-white bg-gray-500 hover:bg-gray-400 rounded-lg text-sm w-8 h-8 inline-flex justify-center items-center transition-colors">
-                        <i class="bi bi-x-lg"></i><span class="sr-only">Close modal</span>
-                        </button>
-                    </div>
-                    <div class="relative p-5">
-                        <h3 class="text-base text-center font-semibold text-gray-900 flex items-center gap-2">
-                            The order of the course content is determined. You must complete previous the module before proceeding.
-                        </h3>
-                    </div>
-                </div>
-            </div>
-
             <!-- Course Content Section -->
             <div class="mt-12">
                 <div class="flex items-center mb-6">
@@ -336,7 +317,7 @@ $can_access_quizzes = !$video_info || ($video_progress !== null);
                                     <?php if (!$video_progress): ?>
                                     <div class="relative w-full pt-[24.25%] pb-[24%] place-content-center">
                                         <h3 class="text-base text-center font-semibold text-gray-900 gap-2">
-                                            The order of the course content is determined. <br />You must complete the module before proceeding.
+                                            The order of the course content is determined. <br />You must complete the previous module before proceeding.
                                         </h3>
                                     </div>
                                     <?php else: ?>
@@ -451,70 +432,6 @@ $can_access_quizzes = !$video_info || ($video_progress !== null);
                 });
             }, 300);
             
-            // Video modal functionality
-            const openVideoButtons = document.querySelectorAll('[data-modal-target="videoModal"]');
-            const closeVideoButtons = document.querySelectorAll('[data-modal-hide="videoModal"]');
-            const openUnlockVideoButtons = document.querySelectorAll('[data-modal-target="unlockVideoModal"]');
-            const closeUnlockVideoButtons = document.querySelectorAll('[data-modal-hide="unlockVideoModal"]');
-            const videoModal = document.getElementById('videoModal');
-            const unlockVideoModal = document.getElementById('unlockVideoModal')
-            const courseVideo = document.getElementById('courseVideo');
-            
-            if (videoModal) {
-                openVideoButtons.forEach(button => {
-                    button.addEventListener('click', () => {
-                        videoModal.classList.remove('hidden');
-                    });
-                });
-
-                closeVideoButtons.forEach(button => {
-                    button.addEventListener('click', () => {
-                        videoModal.classList.add('hidden');
-                        if (courseVideo) courseVideo.pause();
-                    });
-                });
-
-                videoModal.addEventListener('click', (e) => {
-                    if (e.target === videoModal) {
-                        videoModal.classList.add('hidden');
-                        if (courseVideo) courseVideo.pause();
-                    }
-                });
-
-                document.addEventListener('keydown', (e) => {
-                    if (e.key === 'Escape' && !videoModal.classList.contains('hidden')) {
-                        videoModal.classList.add('hidden');
-                        if (courseVideo) courseVideo.pause();
-                    }
-                });
-            }
-
-            if (unlockVideoModal) {
-                openUnlockVideoButtons.forEach(button => {
-                    button.addEventListener('click', () => {
-                        unlockVideoModal.classList.remove('hidden');
-                    });
-                });
-
-                closeUnlockVideoButtons.forEach(button => {
-                    button.addEventListener('click', () => {
-                        unlockVideoModal.classList.add('hidden');
-                    });
-                });
-
-                unlockVideoModal.addEventListener('click', (e) => {
-                    if (e.target === unlockVideoModal) {
-                        unlockVideoModal.classList.add('hidden');
-                    }
-                });
-
-                document.addEventListener('keydown', (e) => {
-                    if (e.key === 'Escape' && !unlockVideoModal.classList.contains('hidden')) {
-                        unlockVideoModal.classList.add('hidden');
-                    }
-                });
-            }
-
             const buttons = document.querySelectorAll('.tab-btn');
             const tabs = document.querySelectorAll('.tab-content');
 
