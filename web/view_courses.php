@@ -70,32 +70,42 @@ $courses = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
         <?php else: ?>
         
         <!-- Courses grid -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="coursesGrid">
+        <div class="grid grid-cols-1 gap-6" id="coursesGrid">
             <?php foreach ($courses as $course): ?>
             <div class="course-card bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200 hover:shadow-md transition-shadow duration-200" 
                  data-progress="<?php echo round($course['progress']); ?>"
                  data-title="<?php echo htmlspecialchars($course['title']); ?>"
                  data-description="<?php echo htmlspecialchars($course['description']); ?>">
                 <div class="h-2 bg-blue-600"></div>
-                <div class="p-6">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-2"><?php echo htmlspecialchars($course['title']); ?></h3>
-                    <p class="text-sm text-gray-600 mb-4 line-clamp-2"><?php echo htmlspecialchars($course['description']); ?></p>
-                    
-                    <!-- Progress bar -->
-                    <div class="mb-4">
-                        <div class="w-full bg-gray-200 rounded-full h-2.5">
-                            <div class="bg-blue-600 h-2.5 rounded-full" style="width: <?php echo round($course['progress']); ?>%"></div>
-                        </div>
-                        <div class="flex justify-between items-center mt-2">
-                            <span class="text-xs font-medium text-gray-500"><?php echo round($course['progress']); ?>% complete</span>
-                            <span class="text-xs font-medium text-gray-500"><?php echo $course['completed_quizzes']; ?>/<?php echo $course['quiz_count']; ?> quizzes</span>
-                        </div>
+                <div class="p-6 grid md:grid-cols-3 max-md:grid-rows-2 lg:grid-cols-4">
+                    <!-- Course Images -->
+                    <div class="col-span-1 max-md:col-span-2 row-span-1 lg:col-span-1 max-md:text-center place-content-center">
+                        <img src="book image.jpg" alt="Open Book" class="h-[150px] hx-auto mx-auto">
                     </div>
                     
-                    <a href="view_course.php?id=<?php echo $course['id']; ?>" class="block w-full text-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors flex items-center justify-center">
-                        <i data-lucide="<?php echo $course['progress'] == 100 ? 'check-circle' : 'play'; ?>" class="w-4 h-4 mr-2"></i>
-                        <?php echo $course['progress'] == 100 ? 'Review Course' : 'Continue Learning'; ?>
-                    </a>
+                    <div class="col-span-2 lg:col-span-3">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2"><?php echo htmlspecialchars($course['title']); ?></h3>
+                        <p class="text-sm text-gray-600 mb-4 line-clamp-2"><?php echo htmlspecialchars($course['description']); ?></p>
+                        <div class="grid grid-cols-4 row-span-1 gap-6">
+                            <!-- Progress bar -->
+                            <div class="col-span-3 place-content-center">
+                                <div class="w-full bg-gray-200 rounded-full h-4">
+                                    <div class="bg-blue-600 h-4 rounded-full" style="width: <?php echo round($course['progress']); ?>%"></div>
+                                </div>
+                                <div class="flex justify-between items-center mt-2">
+                                    <span class="text-xs font-medium text-gray-500"><?php echo round($course['progress']); ?>% complete</span>
+                                    <span class="text-xs font-medium text-gray-500"><?php echo $course['completed_quizzes']; ?>/<?php echo $course['quiz_count']; ?> quizzes</span>
+                                </div>
+                            </div>
+                            <!-- Button -->
+                            <a href="view_course.php?id=<?php echo $course['id']; ?>" class="place-content-center col-span-1 block w-full text-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors flex items-center justify-center">
+                                <i data-lucide="<?php echo $course['progress'] == 100 ? 'check-circle' : 'play'; ?>" class="w-4 h-4 mr-2"></i>
+                                <div class="max-md:hidden">
+                                    <?php echo $course['progress'] == 100 ? 'Review' : 'Continue'; ?>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
                 </div>
             </div>
             <?php endforeach; ?>
