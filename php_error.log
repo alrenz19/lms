@@ -1,0 +1,16 @@
+[30-Jul-2025 08:03:15 Europe/Berlin] PHP Fatal error:  Uncaught ArgumentCountError: The number of elements in the type definition string must match the number of bind variables in C:\xampp\htdocs\lms\web\server_controller\video_controller.php:93
+Stack trace:
+#0 C:\xampp\htdocs\lms\web\server_controller\video_controller.php(93): mysqli_stmt->bind_param('isssi', 86, 'dasdsad', '/uploads/module...', 345521)
+#1 C:\xampp\htdocs\lms\web\server_controller\video_controller.php(36): ModuleHandler->saveSingleModule('dasdsad', 'test 1', 'JF96E7142511.pd...', 'C:\\xampp\\tmp\\ph...', 345521, 0)
+#2 C:\xampp\htdocs\lms\web\server_controller\manage_course_controller.php(108): ModuleHandler->saveModules()
+#3 C:\xampp\htdocs\lms\web\server_controller\manage_course_controller.php(50): handleCourseAdd(Object(mysqli))
+#4 {main}
+  thrown in C:\xampp\htdocs\lms\web\server_controller\video_controller.php on line 93
+[30-Jul-2025 08:03:51 Europe/Berlin] PHP Fatal error:  Uncaught ArgumentCountError: The number of elements in the type definition string must match the number of bind variables in C:\xampp\htdocs\lms\web\server_controller\video_controller.php:93
+Stack trace:
+#0 C:\xampp\htdocs\lms\web\server_controller\video_controller.php(93): mysqli_stmt->bind_param('isssi', 87, 'dasdsad sd', '/uploads/module...', 345521)
+#1 C:\xampp\htdocs\lms\web\server_controller\video_controller.php(36): ModuleHandler->saveSingleModule('dasdsad sd', '', 'JF96E7142511.pd...', 'C:\\xampp\\tmp\\ph...', 345521, 0)
+#2 C:\xampp\htdocs\lms\web\server_controller\manage_course_controller.php(108): ModuleHandler->saveModules()
+#3 C:\xampp\htdocs\lms\web\server_controller\manage_course_controller.php(50): handleCourseAdd(Object(mysqli))
+#4 {main}
+  thrown in C:\xampp\htdocs\lms\web\server_controller\video_controller.php on line 93

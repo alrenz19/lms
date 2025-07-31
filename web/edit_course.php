@@ -1,5 +1,5 @@
 <?php 
-require_once __DIR__ . '/controller/course_update.php';
+require_once __DIR__ . '/server_controller/course_update.php';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -124,7 +124,7 @@ require_once __DIR__ . '/controller/course_update.php';
                                 </div>
                                 
                                 <div>
-                                    <label for="course_video" class="block text-sm font-medium text-gray-700 mb-1">Course Video</label>
+                                    <label for="course_video" class="block text-sm font-medium text-gray-700 mb-1">Course Module</label>
                                     <?php if ($video_info): ?>
                                         <div class="mb-4">
                                             <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-4">
@@ -146,11 +146,11 @@ require_once __DIR__ . '/controller/course_update.php';
                                     <?php endif; ?>
                                     
                                     <div class="space-y-4">
-                                        <!-- Toggle between Upload and Paste Link -->
+                                        <!-- Toggle between Upload and Paste Link
                                         <div class="flex space-x-2">
                                             <button type="button" id="uploadTab" class="px-4 py-2 bg-blue-500 text-white rounded focus:outline-none">Upload Video</button>
                                             <button type="button" id="linkTab" class="px-4 py-2 bg-gray-200 text-gray-700 rounded focus:outline-none">Paste Video Link</button>
-                                        </div>
+                                        </div> -->
 
                                         <!-- Upload Section -->
                                         <div id="uploadSection" class="border-2 border-dashed border-gray-300 rounded-lg p-6 flex flex-col items-center justify-center bg-gray-50 hover:bg-gray-100 transition cursor-pointer relative">
@@ -170,14 +170,14 @@ require_once __DIR__ . '/controller/course_update.php';
                                         </div>
 
                                         <!-- Link Section -->
-                                        <div id="linkSection" class="hidden">
+                                        <!-- <div id="linkSection" class="hidden">
                                             <label for="video_link" class="block text-sm font-medium text-gray-700 mb-1">Paste Video Link</label>
                                             <input type="url" 
                                                 id="video_link" 
                                                 name="video_link" 
                                                 placeholder="https://example.com/video.mp4" 
                                                 class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300">
-                                        </div>
+                                        </div> -->
                                     </div>
                                 </div>
                             </div>
@@ -376,7 +376,7 @@ require_once __DIR__ . '/controller/course_update.php';
 
     <!--javascript to switch between hyperlink or video -->
 
-    <script>
+    <!-- <script>
         const uploadTab = document.getElementById('uploadTab');
         const linkTab = document.getElementById('linkTab');
         const uploadSection = document.getElementById('uploadSection');
@@ -399,7 +399,7 @@ require_once __DIR__ . '/controller/course_update.php';
             uploadTab.classList.remove('bg-blue-500', 'text-white');
             uploadTab.classList.add('bg-gray-200', 'text-gray-700');
         });
-    </script>
+    </script> -->
 
 </body>
 </html>
