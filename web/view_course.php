@@ -191,6 +191,12 @@ $can_access_quizzes = !$video_info || ($video_progress !== null);
         .video-play-button:hover::before {
             left: 100%;
         }
+        .tab-btn:hover{
+            background-color: #f6f9ff;
+        }
+        .active-tab{
+            background-color: #eff4ff;
+        }
     </style>
 </head>
 <body class="bg-blue-50">
@@ -209,17 +215,6 @@ $can_access_quizzes = !$video_info || ($video_progress !== null);
                     <div class="flex-1">
                         <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-4">
                             <h1 class="text-3xl font-bold mb-0"><?php echo htmlspecialchars($course['title']); ?></h1>
-                            <?php if ($video_info): ?>
-                                <button type="button" class="video-play-button px-5 py-2.5 bg-white rounded-full text-blue-700 font-medium flex items-center gap-2 hover:bg-opacity-90 transition-colors shadow-sm" data-modal-target="videoModal" data-modal-toggle="videoModal">
-                                    <i class="bi bi-play-fill text-lg"></i> Watch Video
-                                </button>
-                                <?php if (!$video_progress): ?>
-                                    <span class="inline-flex items-center px-3.5 py-1.5 rounded-full text-sm font-medium bg-amber-100 text-amber-800 shadow-sm">
-                                        <i class="bi bi-exclamation-triangle mr-1.5"></i>
-                                        Watch video to unlock quizzes
-                                    </span>
-                                <?php endif; ?>
-                            <?php endif; ?>
                         </div>
                         <p class="text-blue-100 text-lg mb-8 max-w-3xl leading-relaxed"><?php echo htmlspecialchars($course['description']); ?></p>
                     </div>
@@ -265,36 +260,80 @@ $can_access_quizzes = !$video_info || ($video_progress !== null);
                 </div>
             </div>
 
-            <?php if ($video_info): ?>
-            <!-- Video Modal -->
-            <div id="videoModal" tabindex="-1" aria-hidden="true" class="fixed top-0 left-0 right-0 z-50 hidden w-full p-4 overflow-x-hidden overflow-y-auto md:inset-0 h-[calc(100%-1rem)] max-h-full bg-black/70 backdrop-blur-sm flex items-center justify-center">
-                <div class="relative w-full max-w-4xl max-h-full">
-                    <!-- Modal content -->
-                    <div class="relative bg-gray-900 rounded-2xl shadow-2xl border border-gray-800">
-                        <!-- Modal header -->
-                        <div class="bg-gradient-to-r from-blue-600 to-blue-800 p-5 rounded-t-2xl flex items-center justify-between">
-                            <h3 class="text-xl font-semibold text-white flex items-center gap-2">
-                                <i class="bi bi-play-circle-fill"></i>
-                                <?php echo htmlspecialchars($course['title']); ?> - Course Video
-                            </h3>
-                            <button type="button" class="text-white/80 hover:text-white bg-white/10 hover:bg-white/20 rounded-lg text-sm w-8 h-8 inline-flex justify-center items-center transition-colors" data-modal-hide="videoModal">
-                                <i class="bi bi-x-lg"></i>
-                                <span class="sr-only">Close modal</span>
-                            </button>
+            <!-- Course Content Section -->
+            <div class="mt-12">
+                <div class="flex items-center mb-6">
+                    <div class="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center mr-3 text-blue-600">
+                        <i class="bi bi-journal-check text-xl"></i>
+                    </div>
+                    <h5 class="text-2xl font-bold text-gray-800">Course Content</h5>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                    <div class="col-span-1">
+                        <div class="quiz-card bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
+                            <div class="p-6">
+                                <h3 class="text-xl font-bold text-gray-900 mb-4"><?php echo htmlspecialchars($course['title']); ?></h3>
+                                    <div class="col-span-3 place-content-center">
+                                        <div class="flex justify-between items-center mt-2 mb-2">
+                                            <span class="text-xs font-medium text-gray-500"><?php echo round($progress['overall_progress']); ?>% complete</span>
+                                        </div>
+                                        <div class="w-full bg-gray-200 rounded-full h-4 mb-7">
+                                            <div class="bg-blue-600 h-4 rounded-full" style="width: <?php echo round($progress['overall_progress']); ?>%"></div>
+                                        </div>
+                                    </div>
+                                    
+                                    <?php if ($video_info): ?>
+                                        <button type="button" class="tab-btn active-tab w-full py-2.5 rounded-sm font-medium flex items-center gap-2" data-modal-target="videoModal" data-modal-toggle="videoModal" data-tab="module1">
+                                            1. <?php echo htmlspecialchars($course['title']); ?>
+                                            <?php if ($video_progress): ?>
+                                            <i class="bi bi-check-lg text-green-500"></i>
+                                            <?php endif; ?>
+                                        </button>
+                                        <button type="button" data-tab="module2" class="tab-btn w-full py-2.5 rounded-sm font-medium flex items-center gap-2">
+                                        2. <?php echo htmlspecialchars($course['title']); ?>
+                                        </button>
+                                    <?php endif; ?>
+                            </div>
                         </div>
-                        <!-- Modal body -->
-                        <div class="p-0">
-                            <div class="relative w-full pt-[56.25%]">
-                                <video id="courseVideo" class="absolute top-0 left-0 w-full h-full object-contain" controls>
-                                    <source src="get_video.php?id=<?php echo $video_info['id']; ?>" type="video/mp4">
-                                    Your browser does not support the video tag.
-                                </video>
+                    </div>
+
+                    <!-- Course Content Videos/PDF -->
+                    <div class="col-span-2">
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 p-6">
+                            <h4 class="text-xl font-medium text-gray-900 mb-4">Module description</h4>
+                            <div id="module1" class="tab-content">
+                                <div class="p-0">
+                                    <div class="relative w-full pt-[56.25%]">
+                                        <video id="courseVideo" class="absolute top-0 left-0 w-full h-full object-contain" controls>
+                                            <source src="get_video.php?course_id=<?php echo $course_id; ?>" type="video/mp4">
+                                            Your browser does not support the video tag.
+                                        </video>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="module2" class="tab-content hidden">
+                                <div class="p-0">
+                                    <?php if (!$video_progress): ?>
+                                    <div class="relative w-full pt-[24.25%] pb-[24%] place-content-center">
+                                        <h3 class="text-base text-center font-semibold text-gray-900 gap-2">
+                                            The order of the course content is determined. <br />You must complete the previous module before proceeding.
+                                        </h3>
+                                    </div>
+                                    <?php else: ?>
+                                    <div class="relative w-full pt-[56.25%]">
+                                        <video id="courseVideo" class="absolute top-0 left-0 w-full h-full object-contain" controls>
+                                        <source src="get_video.php?course_id=<?php echo $course_id; ?>" type="video/mp4">
+                                        Your browser does not support the video tag.
+                                        </video>
+                                    </div>
+                                    <?php endif; ?>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-            <?php endif; ?>
 
             <!-- Quiz Section -->
             <div class="mt-12">
@@ -375,6 +414,7 @@ $can_access_quizzes = !$video_info || ($video_progress !== null);
                     <?php endif; ?>
                 </div>
             </div>
+
         </div>
     </div>
 
@@ -392,42 +432,26 @@ $can_access_quizzes = !$video_info || ($video_progress !== null);
                 });
             }, 300);
             
-            // Video modal functionality
-            const openButtons = document.querySelectorAll('[data-modal-toggle]');
-            const closeButtons = document.querySelectorAll('[data-modal-hide]');
-            const videoModal = document.getElementById('videoModal');
-            const courseVideo = document.getElementById('courseVideo');
-            
-            if (videoModal) {
-                openButtons.forEach(button => {
-                    button.addEventListener('click', () => {
-                        videoModal.classList.remove('hidden');
-                    });
+            const buttons = document.querySelectorAll('.tab-btn');
+            const tabs = document.querySelectorAll('.tab-content');
+
+            buttons.forEach(button => {
+                button.addEventListener('click', () => {
+                const target = button.getAttribute('data-tab');
+
+                // Remove active styles from all buttons
+                buttons.forEach(btn => btn.classList.remove('active-tab'));
+
+                // Hide all tabs
+                tabs.forEach(tab => tab.classList.add('hidden'));
+
+                // Show target tab
+                document.getElementById(target).classList.remove('hidden');
+
+                // Add active style to clicked button
+                button.classList.add('active-tab');
                 });
-                
-                closeButtons.forEach(button => {
-                    button.addEventListener('click', () => {
-                        videoModal.classList.add('hidden');
-                        if (courseVideo) courseVideo.pause();
-                    });
-                });
-                
-                // Close modal when clicking outside
-                videoModal.addEventListener('click', (e) => {
-                    if (e.target === videoModal) {
-                        videoModal.classList.add('hidden');
-                        if (courseVideo) courseVideo.pause();
-                    }
-                });
-                
-                // Close modal with ESC key
-                document.addEventListener('keydown', (e) => {
-                    if (e.key === 'Escape' && !videoModal.classList.contains('hidden')) {
-                        videoModal.classList.add('hidden');
-                        if (courseVideo) courseVideo.pause();
-                    }
-                });
-            }
+            });
             
             // Add video completion tracking
             if (courseVideo) {

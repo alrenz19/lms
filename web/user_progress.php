@@ -152,60 +152,70 @@ include 'includes/header.php';
             </div>
 
             <!-- Course Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="gap-6">
                 <?php foreach ($courses as $course): ?>
                 <div data-course-card class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-all duration-200">
                     <div class="h-2 bg-blue-600"></div>
-                    <div class="p-6">
-                        <div class="flex items-start gap-4 mb-4">
-                            <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                <i data-lucide="book" class="h-5 w-5 text-blue-600"></i>
-                            </div>
-                            <div>
-                                <h4 class="text-lg font-semibold text-gray-900 mb-1"><?php echo htmlspecialchars($course['course_title']); ?></h4>
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <?php echo $course['course_progress'] >= 100 ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'; ?>">
-                                    <?php echo $course['course_progress'] >= 100 ? 'Completed' : 'In Progress'; ?>
-                                </span>
-                            </div>
+                    <div class="p-6 grid md:grid-cols-3 max-md:grid-rows-2 lg:grid-cols-4">
+                        <div class="col-span-1 max-md:col-span-2 row-span-1 lg:col-span-1 max-md:text-center place-content-center">
+                            <img src="book image.jpg" alt="Open Book" class="h-[150px] hx-auto mx-auto">
                         </div>
-                        
-                        <div class="text-sm text-gray-600 mb-4 line-clamp-2">
-                            <?php echo htmlspecialchars($course['course_description']); ?>
-                        </div>
-                        
-                        <div class="mb-5">
-                            <div class="w-full bg-gray-200 rounded-full h-2 mb-2">
-                                <div class="bg-blue-600 h-2 rounded-full" style="width: <?php echo round($course['course_progress']); ?>%"></div>
-                            </div>
-                            <div class="text-xs text-gray-500 text-right"><?php echo round($course['course_progress']); ?>% complete</div>
-                        </div>
-
-                        <div class="bg-gray-50 rounded-lg p-4 mb-4 grid grid-cols-2 gap-4">
-                            <div class="flex items-center gap-2">
-                                <i data-lucide="check-circle" class="h-4 w-4 text-green-500"></i>
+                        <div class="col-span-2 lg:col-span-3">
+                            <div class="flex items-start gap-4 mb-4">
+                                <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                    <i data-lucide="book" class="h-5 w-5 text-blue-600"></i>
+                                </div>
                                 <div>
-                                    <div class="text-xs text-gray-500">Completed Quizzes</div>
-                                    <div class="text-sm font-medium text-gray-900"><?php echo $course['completed_quizzes']; ?> / <?php echo $course['total_quizzes']; ?></div>
+                                    <h4 class="text-lg font-semibold text-gray-900 mb-1"><?php echo htmlspecialchars($course['course_title']); ?></h4>
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <?php echo $course['course_progress'] >= 100 ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'; ?>">
+                                        <?php echo $course['course_progress'] >= 100 ? 'Completed' : 'In Progress'; ?>
+                                    </span>
                                 </div>
                             </div>
-                            <div class="flex items-center gap-2">
-                                <i data-lucide="award" class="h-4 w-4 text-amber-500"></i>
-                                <div>
-                                    <div class="text-xs text-gray-500">Correct Answers</div>
-                                    <div class="text-sm font-medium text-gray-900"><?php echo $course['correct_answers']; ?> / <?php echo $course['total_questions']; ?></div>
+                            
+                            <div class="text-sm text-gray-600 mb-4 line-clamp-2">
+                                <?php echo htmlspecialchars($course['course_description']); ?>
+                            </div>
+
+                            <div class="bg-gray-50 rounded-lg p-4 mb-4 grid grid-cols-2 gap-4">
+                                <div class="flex items-center gap-2">
+                                    <i data-lucide="check-circle" class="h-4 w-4 text-green-500"></i>
+                                    <div>
+                                        <div class="text-xs text-gray-500">Completed Quizzes</div>
+                                        <div class="text-sm font-medium text-gray-900"><?php echo $course['completed_quizzes']; ?> / <?php echo $course['total_quizzes']; ?></div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <i data-lucide="award" class="h-4 w-4 text-amber-500"></i>
+                                    <div>
+                                        <div class="text-xs text-gray-500">Correct Answers</div>
+                                        <div class="text-sm font-medium text-gray-900"><?php echo $course['correct_answers']; ?> / <?php echo $course['total_questions']; ?></div>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <div class="flex items-center justify-between pt-4 border-t border-gray-200">
-                            <div class="text-xs text-gray-500 flex items-center gap-1">
-                                <i data-lucide="clock" class="h-3 w-3"></i>
-                                <span>Last activity: <?php echo date('F j, Y g:i A', strtotime($course['last_activity'])); ?></span>
+                            <div class="grid grid-cols-4 pt-4 border-t border-gray-200 gap-5">
+                                <div class="col-span-3">
+                                    <div class="w-full bg-gray-200 rounded-full h-3 mb-2">
+                                        <div class="bg-blue-600 h-3 rounded-full" style="width: <?php echo round($course['course_progress']); ?>%"></div>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <div class="text-xs text-gray-500 flex items-center gap-1">
+                                            <i data-lucide="clock" class="h-3 w-3"></i>
+                                            <span>Last activity: <?php echo date('F j, Y g:i A', strtotime($course['last_activity'])); ?></span>
+                                        </div>
+                                        <div class="text-xs text-gray-500"><?php echo round($course['course_progress']); ?>% complete</div>
+                                    </div>
+                                </div>
+                                
+                                <a href="view_course.php?id=<?php echo $course['course_id']; ?>" 
+                                class="col-span-1 px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 flex place-content-center gap-2 transition-colors">
+                                    <i data-lucide="play" class="place-self-center h-3 w-3"></i>
+                                     <div class="place-self-center max-md:hidden">
+                                        Continue
+                                    </div>
+                                </a>
                             </div>
-                            <a href="view_course.php?id=<?php echo $course['course_id']; ?>" 
-                               class="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 flex items-center gap-1 transition-colors">
-                                <i data-lucide="play" class="h-3 w-3"></i> Continue
-                            </a>
                         </div>
                     </div>
                 </div>
