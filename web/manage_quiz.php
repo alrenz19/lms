@@ -345,13 +345,13 @@ unset($_SESSION['new_question_id']);
                             </div>
                         </div>
                         <div class="md:col-span-2 flex gap-3">
-                            <button class="w-full px-4 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl flex items-center justify-center gap-2 transition text-sm font-medium shadow-sm hover:shadow-md hover:-translate-y-1" 
+                            <!-- <button class="w-full px-4 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl flex items-center justify-center gap-2 transition text-sm font-medium shadow-sm hover:shadow-md hover:-translate-y-1" 
                                     onclick="openCreateQuizModal()">
                                 <i data-lucide="plus-circle" class="w-4 h-4"></i> New Quiz
-                            </button>
+                            </button> -->
                             <button class="add-question-btn w-full px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl flex items-center justify-center gap-2 transition text-sm font-medium shadow-sm hover:shadow-md hover:-translate-y-1" 
                                     onclick="openAddQuestionModal()">
-                                <i data-lucide="plus-circle" class="w-4 h-4"></i> Add Question
+                                <i data-lucide="plus-circle" class="w-4 h-4"></i> Add Quiz
                             </button>
                         </div>
                     </div>
@@ -513,7 +513,7 @@ unset($_SESSION['new_question_id']);
         </div>
     </div>
 
-    <!-- Add Question Modal -->
+   <!-- Add Question Modal -->
     <div class="fixed inset-0 bg-black bg-opacity-70 z-50 hidden items-center justify-center backdrop-blur-sm transition-all duration-300" id="addQuestionModal">
         <div class="bg-white rounded-xl shadow-xl w-full max-w-3xl mx-4 transform transition-all duration-300 max-h-[90vh] overflow-y-auto">
             <div class="bg-gradient-to-r from-indigo-600 to-indigo-800 p-5 rounded-t-xl flex items-center justify-between sticky top-0 z-10">
@@ -526,163 +526,199 @@ unset($_SESSION['new_question_id']);
                 </button>
             </div>
             <form method="POST" id="addQuestionForm" enctype="multipart/form-data">
-                <div class="p-6 space-y-6">
+                <div class="p-6 space-y-6 inputWrapper" id="inputContainer">
                     <input type="hidden" name="add_question" value="1">
-                    
-                    <!-- Question Section -->
-                    <div class="bg-indigo-50 rounded-xl p-6 border border-indigo-100">
-                        <h3 class="text-lg font-medium text-indigo-800 mb-4 flex items-center">
-                            <i data-lucide="help-circle" class="h-5 w-5 mr-2 text-indigo-600"></i>
-                            Question Information
-                        </h3>
-                        
-                        <div class="mb-4">
-                            <label for="question_text" class="block text-sm font-medium text-gray-700 mb-2">Question Text</label>
-                            <div class="relative">
-                                <textarea class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 transition shadow-sm" 
-                                       id="question_text" 
-                                       name="question_text" 
-                                       rows="3"
-                                       required 
-                                       placeholder="Enter your question here..."></textarea>
+                    <div class="mb-4">
+                        <label for="quiz_title" class="block text-sm font-medium text-gray-700 mb-1">Quiz Title</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-500">
+                                <i data-lucide="file-text" class="w-5 h-5"></i>
                             </div>
-                            <p class="mt-1 text-xs text-gray-500">Question should be clear and concise.</p>
-                        </div>
-                        
-                        <div class="mt-4">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Question Image (Optional)</label>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
-                                <div>
-                                    <p class="text-xs text-gray-500 mb-1">Upload a new image:</p>
-                                    <input type="file" name="question_image" id="question_image" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500" accept="image/*">
-                                </div>
-                                <div>
-                                    <p class="text-xs text-gray-500 mb-1">Or use an existing image:</p>
-                                    <input type="text" name="question_image_path" placeholder="images/example.jpg" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500">
-                                </div>
-                            </div>
-                            <p class="mt-1 text-xs text-gray-500">You can either upload a new image or specify the path to an existing image in assets folder.</p>
+                            <input type="text" 
+                                   class="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 transition" 
+                                   id="quiz_title" 
+                                   name="quiz_title" 
+                                   required 
+                                   minlength="3"
+                                   placeholder="Enter quiz title..."/>
                         </div>
                     </div>
-                    
-                    <!-- Answer Options Section -->
-                    <div class="bg-indigo-50 rounded-xl p-6 border border-indigo-100">
-                        <h3 class="text-lg font-medium text-indigo-800 mb-4 flex items-center">
-                            <i data-lucide="check-circle" class="h-5 w-5 mr-2 text-indigo-600"></i>
-                            Answer Options
-                        </h3>
-                        
-                        <div class="space-y-5">
-                            <!-- Option A -->
-                            <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm hover:border-indigo-300 transition">
-                                <div class="flex items-center mb-3">
-                                    <input type="radio" name="correct_answer" value="A" class="h-5 w-5 text-indigo-600 focus:ring-indigo-500 mr-2" required>
-                                    <label class="inline-block w-8 text-center font-medium text-indigo-600 bg-indigo-50 rounded-md py-1 mr-3">A</label>
-                                    <span class="text-sm font-medium text-gray-700">Option A</span>
-                                    <span class="ml-auto px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full hidden" id="option-a-correct">Correct Answer</span>
+                    <div id="questionContainer">
+
+                        <!-- Question Bbody -->
+                        <div class="p-6 space-y-6 question-block">
+                            <div class="question-label font-bold text-lg text-gray-700 mb-2">Q1.</div>
+                            <!-- Question Section -->
+                            <div class="bg-indigo-50 rounded-xl p-6 border border-indigo-100">
+                                <h3 class="text-lg font-medium text-indigo-800 mb-4 flex items-center">
+                                    <i data-lucide="help-circle" class="h-5 w-5 mr-2 text-indigo-600"></i>
+                                    Question Information
+                                </h3>
+                                
+                                <div class="mb-4">
+                                    <label for="question_text" class="block text-sm font-medium text-gray-700 mb-2">Question Text</label>
+                                    <div class="relative">
+                                        <textarea class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 transition shadow-sm" 
+                                            id="question_text" 
+                                            name="question_text" 
+                                            rows="3"
+                                            required 
+                                            placeholder="Enter your question here..."></textarea>
+                                    </div>
+                                    <p class="mt-1 text-xs text-gray-500">Question should be clear and concise.</p>
                                 </div>
                                 
-                                <div class="mb-3">
-                                    <input type="text" name="option_a" class="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 transition" 
-                                           placeholder="Option A" required>
-                                </div>
-                                
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <p class="text-xs text-gray-500 mb-1">Upload a new image:</p>
-                                        <input type="file" name="option_a_image" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" accept="image/*">
+                                <div class="mt-4">
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Question Image (Optional)</label>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
+                                        <div>
+                                            <p class="text-xs text-gray-500 mb-1">Upload a new image:</p>
+                                            <input type="file" name="question_image" id="question_image" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500" accept="image/*">
+                                        </div>
+                                        <div>
+                                            <p class="text-xs text-gray-500 mb-1">Or use an existing image:</p>
+                                            <input type="text" name="question_image_path" placeholder="images/example.jpg" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500">
+                                        </div>
                                     </div>
-                                    <div>
-                                        <p class="text-xs text-gray-500 mb-1">Or use existing image path:</p>
-                                        <input type="text" name="option_a_image_path" placeholder="images/example.jpg" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500">
-                                    </div>
+                                    <p class="mt-1 text-xs text-gray-500">You can either upload a new image or specify the path to an existing image in assets folder.</p>
                                 </div>
                             </div>
-                            
-                            <!-- Option B -->
-                            <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm hover:border-indigo-300 transition">
-                                <div class="flex items-center mb-3">
-                                    <input type="radio" name="correct_answer" value="B" class="h-5 w-5 text-indigo-600 focus:ring-indigo-500 mr-2">
-                                    <label class="inline-block w-8 text-center font-medium text-indigo-600 bg-indigo-50 rounded-md py-1 mr-3">B</label>
-                                    <span class="text-sm font-medium text-gray-700">Option B</span>
-                                    <span class="ml-auto px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full hidden" id="option-b-correct">Correct Answer</span>
-                                </div>
+                             <!-- Answer Options Section -->
+                            <div class="bg-indigo-50 rounded-xl p-6 border border-indigo-100">
+                                <h3 class="text-lg font-medium text-indigo-800 mb-4 flex items-center">
+                                    <i data-lucide="check-circle" class="h-5 w-5 mr-2 text-indigo-600"></i>
+                                    Answer Options
+                                </h3>
                                 
-                                <div class="mb-3">
-                                    <input type="text" name="option_b" class="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 transition" 
-                                           placeholder="Option B" required>
-                                </div>
-                                
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <p class="text-xs text-gray-500 mb-1">Upload a new image:</p>
-                                        <input type="file" name="option_b_image" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" accept="image/*">
+                                <div class="space-y-5">
+                                    <!-- Option A -->
+                                    <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm hover:border-indigo-300 transition">
+                                        <div class="flex items-center mb-3">
+                                            <input type="radio" name="correct_answer" value="A" class="h-5 w-5 text-indigo-600 focus:ring-indigo-500 mr-2" required>
+                                            <label class="inline-block w-8 text-center font-medium text-indigo-600 bg-indigo-50 rounded-md py-1 mr-3">A</label>
+                                            <span class="text-sm font-medium text-gray-700">Option A</span>
+                                            <span class="ml-auto px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full hidden" id="option-a-correct">Correct Answer</span>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <input type="text" name="option_a" class="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 transition" 
+                                                placeholder="Option A" required>
+                                        </div>
+                                        
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                                <p class="text-xs text-gray-500 mb-1">Upload a new image:</p>
+                                                <input type="file" name="option_a_image" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" accept="image/*">
+                                            </div>
+                                            <div>
+                                                <p class="text-xs text-gray-500 mb-1">Or use existing image path:</p>
+                                                <input type="text" name="option_a_image_path" placeholder="images/example.jpg" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500">
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <p class="text-xs text-gray-500 mb-1">Or use existing image path:</p>
-                                        <input type="text" name="option_b_image_path" placeholder="images/example.jpg" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500">
+                                    
+                                    <!-- Option B -->
+                                    <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm hover:border-indigo-300 transition">
+                                        <div class="flex items-center mb-3">
+                                            <input type="radio" name="correct_answer" value="B" class="h-5 w-5 text-indigo-600 focus:ring-indigo-500 mr-2">
+                                            <label class="inline-block w-8 text-center font-medium text-indigo-600 bg-indigo-50 rounded-md py-1 mr-3">B</label>
+                                            <span class="text-sm font-medium text-gray-700">Option B</span>
+                                            <span class="ml-auto px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full hidden" id="option-b-correct">Correct Answer</span>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <input type="text" name="option_b" class="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 transition" 
+                                                placeholder="Option B" required>
+                                        </div>
+                                        
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                                <p class="text-xs text-gray-500 mb-1">Upload a new image:</p>
+                                                <input type="file" name="option_b_image" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" accept="image/*">
+                                            </div>
+                                            <div>
+                                                <p class="text-xs text-gray-500 mb-1">Or use existing image path:</p>
+                                                <input type="text" name="option_b_image_path" placeholder="images/example.jpg" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Option C -->
+                                    <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm hover:border-indigo-300 transition">
+                                        <div class="flex items-center mb-3">
+                                            <input type="radio" name="correct_answer" value="C" class="h-5 w-5 text-indigo-600 focus:ring-indigo-500 mr-2">
+                                            <label class="inline-block w-8 text-center font-medium text-indigo-600 bg-indigo-50 rounded-md py-1 mr-3">C</label>
+                                            <span class="text-sm font-medium text-gray-700">Option C</span>
+                                            <span class="ml-auto px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full hidden" id="option-c-correct">Correct Answer</span>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <input type="text" name="option_c" class="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 transition" 
+                                                placeholder="Option C" required>
+                                        </div>
+                                        
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                                <p class="text-xs text-gray-500 mb-1">Upload a new image:</p>
+                                                <input type="file" name="option_c_image" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" accept="image/*">
+                                            </div>
+                                            <div>
+                                                <p class="text-xs text-gray-500 mb-1">Or use existing image path:</p>
+                                                <input type="text" name="option_c_image_path" placeholder="images/example.jpg" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Option D -->
+                                    <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm hover:border-indigo-300 transition">
+                                        <div class="flex items-center mb-3">
+                                            <input type="radio" name="correct_answer" value="D" class="h-5 w-5 text-indigo-600 focus:ring-indigo-500 mr-2">
+                                            <label class="inline-block w-8 text-center font-medium text-indigo-600 bg-indigo-50 rounded-md py-1 mr-3">D</label>
+                                            <span class="text-sm font-medium text-gray-700">Option D</span>
+                                            <span class="ml-auto px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full hidden" id="option-d-correct">Correct Answer</span>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <input type="text" name="option_d" class="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 transition" 
+                                                placeholder="Option D" required>
+                                        </div>
+                                        
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                                <p class="text-xs text-gray-500 mb-1">Upload a new image:</p>
+                                                <input type="file" name="option_d_image" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" accept="image/*">
+                                            </div>
+                                            <div>
+                                                <p class="text-xs text-gray-500 mb-1">Or use existing image path:</p>
+                                                <input type="text" name="option_d_image_path" placeholder="images/example.jpg" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500">
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                            
-                            <!-- Option C -->
-                            <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm hover:border-indigo-300 transition">
-                                <div class="flex items-center mb-3">
-                                    <input type="radio" name="correct_answer" value="C" class="h-5 w-5 text-indigo-600 focus:ring-indigo-500 mr-2">
-                                    <label class="inline-block w-8 text-center font-medium text-indigo-600 bg-indigo-50 rounded-md py-1 mr-3">C</label>
-                                    <span class="text-sm font-medium text-gray-700">Option C</span>
-                                    <span class="ml-auto px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full hidden" id="option-c-correct">Correct Answer</span>
-                                </div>
-                                
-                                <div class="mb-3">
-                                    <input type="text" name="option_c" class="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 transition" 
-                                           placeholder="Option C" required>
-                                </div>
-                                
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <p class="text-xs text-gray-500 mb-1">Upload a new image:</p>
-                                        <input type="file" name="option_c_image" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" accept="image/*">
-                                    </div>
-                                    <div>
-                                        <p class="text-xs text-gray-500 mb-1">Or use existing image path:</p>
-                                        <input type="text" name="option_c_image_path" placeholder="images/example.jpg" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500">
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Option D -->
-                            <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm hover:border-indigo-300 transition">
-                                <div class="flex items-center mb-3">
-                                    <input type="radio" name="correct_answer" value="D" class="h-5 w-5 text-indigo-600 focus:ring-indigo-500 mr-2">
-                                    <label class="inline-block w-8 text-center font-medium text-indigo-600 bg-indigo-50 rounded-md py-1 mr-3">D</label>
-                                    <span class="text-sm font-medium text-gray-700">Option D</span>
-                                    <span class="ml-auto px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full hidden" id="option-d-correct">Correct Answer</span>
-                                </div>
-                                
-                                <div class="mb-3">
-                                    <input type="text" name="option_d" class="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 transition" 
-                                           placeholder="Option D" required>
-                                </div>
-                                
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <p class="text-xs text-gray-500 mb-1">Upload a new image:</p>
-                                        <input type="file" name="option_d_image" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" accept="image/*">
-                                    </div>
-                                    <div>
-                                        <p class="text-xs text-gray-500 mb-1">Or use existing image path:</p>
-                                        <input type="text" name="option_d_image_path" placeholder="images/example.jpg" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500">
-                                    </div>
-                                </div>
+                                <p class="mt-4 text-xs text-gray-500 flex items-center">
+                                    <i data-lucide="info" class="w-4 h-4 mr-1 text-indigo-500"></i>
+                                    Select the radio button next to the correct answer option.
+                                </p>
                             </div>
                         </div>
-                        <p class="mt-4 text-xs text-gray-500 flex items-center">
-                            <i data-lucide="info" class="w-4 h-4 mr-1 text-indigo-500"></i>
-                            Select the radio button next to the correct answer option.
-                        </p>
                     </div>
+                    <!-- END: Quiz Form -->
+
+                    <div class="flex justify-end gap-3 mt-6">
+                        <button type="button" id="removeQuestion"
+                                class="px-4 py-2.5 bg-red-500 hover:bg-red-700 text-white rounded-lg transition text-sm font-medium flex items-center gap-2 shadow-sm hover:-translate-y-1">
+                            <i data-lucide="trash" class="h-4 w-4"></i>
+                            Remove Question
+                        </button>
+                        <button type="button" id="addButton"  
+                                class="px-4 py-2.5 bg-blue-500 hover:bg-indigo-700 text-white rounded-lg transition text-sm font-medium flex items-center gap-2 shadow-sm hover:-translate-y-1">
+                            <i data-lucide="plus" class="h-4 w-4"></i>
+                            Add New Question
+                        </button>
+                    </div>
+                    
                 </div>
+                
                 <div class="flex justify-end p-5 border-t border-gray-200 gap-3 sticky bottom-0 bg-white z-10">
                     <button type="button" 
                             class="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-lg transition text-sm font-medium flex items-center gap-1 shadow-sm hover:-translate-y-1"
@@ -696,10 +732,10 @@ unset($_SESSION['new_question_id']);
                         <i data-lucide="eye" class="h-4 w-4"></i>
                         Preview
                     </button>
-                    <button type="submit" 
+                    <button type="button" id="saveButton"  
                             class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition text-sm font-medium flex items-center gap-2 shadow-sm hover:-translate-y-1">
-                        <i data-lucide="plus" class="h-4 w-4"></i>
-                        Add Question
+                        <i data-lucide="upload" class="h-4 w-4"></i>
+                        Save Quiz
                     </button>
                 </div>
             </form>
@@ -707,128 +743,32 @@ unset($_SESSION['new_question_id']);
     </div>
 
     <!-- Question Preview Modal -->
-    <div class="fixed inset-0 bg-black bg-opacity-70 z-50 hidden items-center justify-center backdrop-blur-sm transition-all duration-300" id="previewQuestionModal">
-        <div class="bg-white rounded-xl shadow-xl w-full max-w-2xl mx-4 transform transition-all duration-300">
-            <div class="bg-gradient-to-r from-indigo-600 to-indigo-800 p-5 rounded-t-xl flex items-center justify-between">
-                <h5 class="text-lg font-semibold text-white flex items-center">
-                    <i data-lucide="eye" class="h-5 w-5 mr-2"></i>
-                    Question Preview
-                </h5>
-                <button type="button" class="text-white/80 hover:text-white focus:outline-none" onclick="closePreviewModal()">
-                    <i data-lucide="x" class="h-5 w-5"></i>
+    <div id="previewQuestionModal" class="fixed inset-0 bg-black bg-opacity-70 z-50 hidden items-center justify-center backdrop-blur-sm transition-all duration-300">
+        <div class="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-lg">
+            <div id="preview-question-list" class="space-y-6"></div>
+
+            <div class="flex justify-end mt-4">
+                <button type="button" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition text-sm font-medium hover:-translate-y-1 shadow-sm" onclick="closePreviewModal()">
+                    Close Preview
                 </button>
-            </div>
-            <div class="p-6">
-                <div class="bg-gray-50 rounded-xl border border-gray-200 p-6 mb-4">
-                    <div class="mb-4">
-                        <span class="inline-block bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-sm font-medium mb-3">Question Preview</span>
-                        <div class="text-gray-800 text-lg font-medium" id="preview-question-text"></div>
-                        <div class="mt-3" id="preview-question-image-container" style="display: none;">
-                            <img id="preview-question-image" src="" alt="Question Image" class="max-w-full h-auto rounded-lg border border-gray-200 max-h-64">
-                        </div>
-                    </div>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <div class="flex flex-col p-4 border-2 border-gray-200 rounded-lg text-gray-800 bg-white hover:border-indigo-300 transition-all duration-200">
-                                <div class="flex items-center">
-                                    <span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 text-sm font-medium mr-3">A</span>
-                                    <span class="text-sm" id="preview-option-a-text"></span>
-                                </div>
-                                <div class="mt-3 w-full" id="preview-option-a-image-container" style="display: none;">
-                                    <img id="preview-option-a-image" src="" alt="Option A Image" class="max-w-full h-auto rounded-lg border border-gray-100 max-h-36">
-                                </div>
-                            </div>
-                        </div>
-                        <div>
-                            <div class="flex flex-col p-4 border-2 border-gray-200 rounded-lg text-gray-800 bg-white hover:border-indigo-300 transition-all duration-200">
-                                <div class="flex items-center">
-                                    <span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 text-sm font-medium mr-3">B</span>
-                                    <span class="text-sm" id="preview-option-b-text"></span>
-                                </div>
-                                <div class="mt-3 w-full" id="preview-option-b-image-container" style="display: none;">
-                                    <img id="preview-option-b-image" src="" alt="Option B Image" class="max-w-full h-auto rounded-lg border border-gray-100 max-h-36">
-                                </div>
-                            </div>
-                        </div>
-                        <div>
-                            <div class="flex flex-col p-4 border-2 border-gray-200 rounded-lg text-gray-800 bg-white hover:border-indigo-300 transition-all duration-200">
-                                <div class="flex items-center">
-                                    <span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 text-sm font-medium mr-3">C</span>
-                                    <span class="text-sm" id="preview-option-c-text"></span>
-                                </div>
-                                <div class="mt-3 w-full" id="preview-option-c-image-container" style="display: none;">
-                                    <img id="preview-option-c-image" src="" alt="Option C Image" class="max-w-full h-auto rounded-lg border border-gray-100 max-h-36">
-                                </div>
-                            </div>
-                        </div>
-                        <div>
-                            <div class="flex flex-col p-4 border-2 border-gray-200 rounded-lg text-gray-800 bg-white hover:border-indigo-300 transition-all duration-200">
-                                <div class="flex items-center">
-                                    <span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 text-sm font-medium mr-3">D</span>
-                                    <span class="text-sm" id="preview-option-d-text"></span>
-                                </div>
-                                <div class="mt-3 w-full" id="preview-option-d-image-container" style="display: none;">
-                                    <img id="preview-option-d-image" src="" alt="Option D Image" class="max-w-full h-auto rounded-lg border border-gray-100 max-h-36">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="flex justify-end">
-                    <button type="button" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition text-sm font-medium hover:-translate-y-1 shadow-sm" onclick="closePreviewModal()">
-                        Close Preview
-                    </button>
-                </div>
             </div>
         </div>
     </div>
 
-    <!-- Create Quiz Modal -->
-    <div class="fixed inset-0 bg-black bg-opacity-70 z-50 hidden items-center justify-center backdrop-blur-sm transition-all duration-300" id="createQuizModal">
-        <div class="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 transform transition-all duration-300">
-            <div class="bg-gradient-to-r from-indigo-600 to-indigo-800 p-5 rounded-t-xl flex items-center justify-between">
-                <h5 class="text-lg font-semibold text-white flex items-center">
-                    <i data-lucide="plus-circle" class="h-5 w-5 mr-2"></i>
-                    Create New Quiz
-                </h5>
-                <button type="button" class="text-white/80 hover:text-white focus:outline-none" onclick="closeCreateQuizModal()">
-                    <i data-lucide="x" class="h-5 w-5"></i>
-                </button>
-            </div>
-            <form method="POST" id="createQuizForm">
-                <div class="p-6">
-                    <input type="hidden" name="create_quiz" value="1">
-                    <div class="mb-4">
-                        <label for="quiz_title" class="block text-sm font-medium text-gray-700 mb-1">Quiz Title</label>
-                        <div class="relative">
-                            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-500">
-                                <i data-lucide="file-text" class="w-5 h-5"></i>
-                            </div>
-                            <input type="text" 
-                                   class="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 transition" 
-                                   id="quiz_title" 
-                                   name="quiz_title" 
-                                   required 
-                                   minlength="3"
-                                   placeholder="Enter quiz title...">
-                        </div>
-                        <p class="mt-1 text-xs text-gray-500">Choose a descriptive title for your quiz.</p>
-                    </div>
-                    
-                    <div class="flex justify-end space-x-3 mt-6">
-                        <button type="button" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-lg transition text-sm font-medium flex items-center gap-1 hover:-translate-y-1 shadow-sm" onclick="closeCreateQuizModal()">
-                            <i data-lucide="x" class="h-4 w-4"></i>
-                            Cancel
-                        </button>
-                        <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition text-sm font-medium flex items-center gap-2 hover:-translate-y-1 shadow-sm">
-                            <i data-lucide="plus" class="h-4 w-4"></i>
-                            Create Quiz
-                        </button>
+     <!-- Alert Modal -->
+    <div id="alertModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center">
+        <div class="bg-white rounded-lg p-6 w-full max-w-md text-center">
+                <div class="bg-yellow-50 text-black-800 p-4 rounded-lg mb-4 flex items-start">
+                    <i data-lucide="alert-circle" class="w-5 h-5 mr-2 flex-shrink-0 mt-0.5"></i>
+                    <div>
+                        <p class="font-medium">Warning</p>
+                        <p class="text-sm">This action cannot be undone. Your changes will be lost. Do you really want to close this form?</p>
                     </div>
                 </div>
-            </form>
+            <div class="flex justify-center space-x-4">
+                <button onclick="confirmCloseAddQuestion()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg">Yes, Close</button>
+                <button onclick="hideModal('alertModal')" class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-lg">Cancel</button>
+            </div>
         </div>
     </div>
 
@@ -883,8 +823,9 @@ unset($_SESSION['new_question_id']);
     }
     
     function closeAddQuestionModal() {
-        hideModal('addQuestionModal');
-        document.body.classList.remove('overflow-hidden');
+        // hideModal('addQuestionModal');
+        showModal('alertModal');
+        //document.body.classList.remove('overflow-hidden');
     }
     
     function openCreateQuizModal() {
@@ -941,127 +882,105 @@ unset($_SESSION['new_question_id']);
             window.location.href = `delete_question.php?course_id=<?php echo $course_id; ?>&quiz_id=<?php echo $current_quiz_id; ?>&question_id=${questionId}`;
         }
     }
+
+    function confirmCloseAddQuestion() {
+        hideModal('alertModal');
+        hideModal('addQuestionModal');
+        document.body.classList.remove('overflow-hidden');
+    }
     
-    // Question preview functions with improved transitions
+    // // Question preview functions with improved transitions
+    
     function previewQuestion() {
-        // Get values from form
-        const questionText = document.getElementById('question_text').value;
-        const optionA = document.querySelector('input[name="option_a"]').value;
-        const optionB = document.querySelector('input[name="option_b"]').value;
-        const optionC = document.querySelector('input[name="option_c"]').value;
-        const optionD = document.querySelector('input[name="option_d"]').value;
-        const correctAnswer = document.querySelector('input[name="correct_answer"]:checked')?.value || '';
-        
-        // Set text values in preview
-        document.getElementById('preview-question-text').textContent = questionText;
-        document.getElementById('preview-option-a-text').textContent = optionA;
-        document.getElementById('preview-option-b-text').textContent = optionB;
-        document.getElementById('preview-option-c-text').textContent = optionC;
-        document.getElementById('preview-option-d-text').textContent = optionD;
-        
-        // Handle question image
-        handleImagePreview('question_image', 'question_image_path', 'preview-question-image', 'preview-question-image-container');
-        
-        // Handle option images
-        handleImagePreview('option_a_image', 'option_a_image_path', 'preview-option-a-image', 'preview-option-a-image-container');
-        handleImagePreview('option_b_image', 'option_b_image_path', 'preview-option-b-image', 'preview-option-b-image-container');
-        handleImagePreview('option_c_image', 'option_c_image_path', 'preview-option-c-image', 'preview-option-c-image-container');
-        handleImagePreview('option_d_image', 'option_d_image_path', 'preview-option-d-image', 'preview-option-d-image-container');
-        
-        // Reset all options to default style
-        document.querySelectorAll('#previewQuestionModal .border-2').forEach(option => {
-            option.className = 'flex flex-col p-4 border-2 border-gray-200 rounded-lg text-gray-800 bg-white hover:border-indigo-300 transition-all duration-200';
-        });
-        
-        // Highlight correct answer if selected
-        if (correctAnswer) {
-            const correctOptionElement = document.querySelector(`#preview-option-${correctAnswer.toLowerCase()}-text`).closest('.border-2');
-            correctOptionElement.className = 'flex flex-col p-4 border-2 border-green-500 rounded-lg text-gray-800 bg-green-50 transition-all duration-200';
-            
-            // Add correct badge
-            const hasCorrectBadge = correctOptionElement.querySelector('.correct-badge');
-            if (!hasCorrectBadge) {
-                const correctIndicator = document.createElement('span');
-                correctIndicator.className = 'correct-badge px-3 py-1.5 rounded-full text-white text-xs font-medium shadow-sm ml-auto mt-1 bg-gradient-to-r from-green-500 to-green-600';
-                correctIndicator.innerHTML = '<i class="bi bi-check-lg mr-1"></i> Correct Answer';
-                correctOptionElement.querySelector('.flex.items-center').appendChild(correctIndicator);
+        const questionListContainer = document.getElementById('preview-question-list');
+        questionListContainer.innerHTML = ''; // Clear old previews
+
+        const questionBlocks = document.querySelectorAll('.question-block');
+
+        questionBlocks.forEach((block, index) => {
+            const questionText = block.querySelector('textarea[name="question_text"]')?.value || '';
+            const correctAnswer = block.querySelector('input[name^="correct_answer"]:checked')?.value;
+
+            // ✅ Handle question image (file OR path)
+            const questionImageFile = block.querySelector('input[name="question_image"]')?.files?.[0];
+            const questionImagePath = block.querySelector('input[name="question_image_path"]')?.value.trim();
+
+            let questionImageURL = '';
+            if (questionImageFile) {
+                questionImageURL = URL.createObjectURL(questionImageFile);
+                setTimeout(() => URL.revokeObjectURL(questionImageURL), 5000);
+            } else if (questionImagePath) {
+                questionImageURL = `../assets/${questionImagePath}`;
             }
-        }
-        
-        // Show preview modal
+
+            // ✅ Prepare options data
+            const optionData = ['a', 'b', 'c', 'd'].map(letter => {
+                const text = block.querySelector(`input[name="option_${letter}"]`)?.value || '';
+
+                const file = block.querySelector(`input[name="option_${letter}_image"]`)?.files?.[0];
+                const path = block.querySelector(`input[name="option_${letter}_image_path"]`)?.value?.trim();
+
+                const imageUrl = file
+                    ? URL.createObjectURL(file)
+                    : (path ? `../assets/${path}` : null);
+
+                if (file) setTimeout(() => URL.revokeObjectURL(imageUrl), 5000);
+
+                return {
+                    letter,
+                    text,
+                    imageUrl,
+                    isCorrect: correctAnswer === letter.toUpperCase()
+                };
+            });
+
+            // ✅ Build preview HTML
+            const html = `
+                <div class="bg-gray-50 rounded-xl border border-gray-200 p-6">
+                    <span class="inline-block bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-sm font-medium mb-3">Q${index + 1}</span>
+                    
+                    <div class="text-gray-800 text-lg font-medium mb-3 whitespace-pre-line">${questionText}</div>
+
+                    ${questionImageURL
+                        ? `<img src="${questionImageURL}" alt="Question Image" class="mb-4 rounded-lg border border-gray-300 max-h-48 object-contain">`
+                        : ''
+                    }
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        ${optionData.map(option => {
+                            const containerClasses = option.isCorrect
+                                ? 'border-green-500 bg-green-50'
+                                : 'border-gray-200 bg-white';
+
+                            return `
+                                <div class="flex flex-col p-4 border-2 ${containerClasses} rounded-lg text-gray-800 transition-all duration-200">
+                                    <div class="flex items-center mb-2">
+                                        <span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 text-sm font-medium mr-3">
+                                            ${option.letter.toUpperCase()}
+                                        </span>
+                                        <span class="text-sm">${option.text}</span>
+                                    </div>
+                                    ${option.imageUrl
+                                        ? `<img src="${option.imageUrl}" alt="Option ${option.letter.toUpperCase()} Image" class="mt-2 rounded-lg border border-gray-200 max-h-36 object-contain">`
+                                        : ''
+                                    }
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `;
+
+            questionListContainer.insertAdjacentHTML('beforeend', html);
+        });
+
         showModal('previewQuestionModal');
     }
-    
-    function handleImagePreview(fileInputId, pathInputId, previewImgId, containerImgId) {
-        const fileInput = document.getElementById(fileInputId);
-        const pathInput = document.querySelector(`input[name="${pathInputId}"]`);
-        const previewImg = document.getElementById(previewImgId);
-        const container = document.getElementById(containerImgId);
-        
-        // Reset display
-        container.style.display = 'none';
-        
-        // Check if a file is selected
-        if (fileInput && fileInput.files && fileInput.files[0]) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                previewImg.src = e.target.result;
-                container.style.display = 'block';
-            };
-            reader.readAsDataURL(fileInput.files[0]);
-        } 
-        // Check if a path is specified
-        else if (pathInput && pathInput.value) {
-            previewImg.src = '../assets/' + pathInput.value;
-            container.style.display = 'block';
-        }
-    }
-    
+
     function closePreviewModal() {
         hideModal('previewQuestionModal');
     }
     
-    // Handle correct answer selection in form
-    document.addEventListener('DOMContentLoaded', function() {
-        // Hide all correct answer badges initially
-        document.querySelectorAll('#option-a-correct, #option-b-correct, #option-c-correct, #option-d-correct').forEach(badge => {
-            badge.classList.add('hidden');
-        });
-        
-        // Add event listeners to radio buttons
-        document.querySelectorAll('input[name="correct_answer"]').forEach(radio => {
-            radio.addEventListener('change', updateCorrectAnswerBadges);
-        });
-        
-        // Call once to initialize based on any pre-selected radio
-        updateCorrectAnswerBadges();
-        
-        function updateCorrectAnswerBadges() {
-            // Hide all badges first
-            document.querySelectorAll('#option-a-correct, #option-b-correct, #option-c-correct, #option-d-correct').forEach(badge => {
-                badge.classList.add('hidden');
-            });
-            
-            // Show badge for selected answer
-            const selectedOption = document.querySelector('input[name="correct_answer"]:checked');
-            if (selectedOption) {
-                const optionLetter = selectedOption.value.toLowerCase();
-                document.getElementById(`option-${optionLetter}-correct`).classList.remove('hidden');
-                
-                // Reset all containers
-                document.querySelectorAll('.bg-white.p-4.rounded-lg.border').forEach(container => {
-                    container.classList.remove('border-green-300', 'bg-green-50');
-                    container.classList.add('border-gray-200');
-                });
-                
-                // Add highlight to the selected option container with transition
-                const targetContainer = selectedOption.closest('.bg-white.p-4.rounded-lg.border');
-                targetContainer.classList.remove('border-gray-200');
-                targetContainer.classList.add('border-green-300', 'bg-green-50');
-            }
-        }
-    });
-
     // Enhanced toast notification system with animations
     function showToast(message, type = 'info') {
         // Create toast container if it doesn't exist
@@ -1146,5 +1065,109 @@ unset($_SESSION['new_question_id']);
         }, 4000);
     }
     </script>
+
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        
+        // Handle correct answer selection in form
+        setupAllCorrectAnswerHandlers();
+
+        // Setup correct-answer logic in ALL existing and new question-blocks
+        function setupAllCorrectAnswerHandlers() {
+            document.querySelectorAll('.question-block').forEach(setupCorrectAnswerHandler);
+        }
+
+        function setupCorrectAnswerHandler(block) {
+            // First, hide all badges in the block
+            block.querySelectorAll('[id^="option-"][id$="-correct"]').forEach(badge => {
+                badge.classList.add('hidden');
+            });
+
+            const radios = block.querySelectorAll('input[type="radio"]');
+            radios.forEach(radio => {
+                radio.addEventListener('change', () => {
+                    updateCorrectAnswerBadges(block);
+                });
+            });
+
+            // Initial call if any radio is already checked
+            updateCorrectAnswerBadges(block);
+        }
+
+        function updateCorrectAnswerBadges(block) {
+            // Hide all badges inside this block
+            block.querySelectorAll('[id^="option-"][id$="-correct"]').forEach(badge => {
+                badge.classList.add('hidden');
+            });
+
+            // Reset all option containers in the block
+            block.querySelectorAll('.bg-white.p-4.rounded-lg.border').forEach(container => {
+                container.classList.remove('border-green-300', 'bg-green-50');
+                container.classList.add('border-gray-200');
+            });
+
+            // Get selected radio in this block
+            const selectedOption = block.querySelector('input[type="radio"]:checked');
+            if (selectedOption) {
+                const optionLetter = selectedOption.value.toLowerCase();
+                const badge = block.querySelector(`#option-${optionLetter}-correct`);
+                if (badge) {
+                    badge.classList.remove('hidden');
+                }
+
+                const container = selectedOption.closest('.bg-white.p-4.rounded-lg.border');
+                if (container) {
+                    container.classList.remove('border-gray-200');
+                    container.classList.add('border-green-300', 'bg-green-50');
+                }
+            }
+        }
+
+        // Ensure newly added question-blocks also work
+        const addBtn = document.getElementById('addButton');
+        addBtn.addEventListener('click', () => {
+            const container = document.getElementById('questionContainer');
+            const last = container.querySelector('.question-block:last-child');
+            const clone = last.cloneNode(true);
+
+            // Clear inputs
+            clone.querySelectorAll('input, textarea').forEach(input => {
+                if (input.type === 'radio' || input.type === 'checkbox') {
+                    input.checked = false;
+                } else {
+                    input.value = '';
+                }
+            });
+
+            // Unique radio group name
+            const timestamp = Date.now();
+            clone.querySelectorAll('input[type="radio"]').forEach((radio, idx) => {
+                radio.name = `correct_answer_${timestamp}`;
+            });
+
+            container.appendChild(clone);
+            updateQuestionLabels();
+            setupCorrectAnswerHandler(clone); // 👈 re-initialize the logic for new block
+        });
+
+        const removeBtn = document.getElementById('removeQuestion');
+        removeBtn.addEventListener('click', () => {
+            const blocks = document.querySelectorAll('.question-block');
+            if (blocks.length > 1) {
+                blocks[blocks.length - 1].remove();
+                updateQuestionLabels();
+            }
+        });
+
+        function updateQuestionLabels() {
+            document.querySelectorAll('.question-block').forEach((block, index) => {
+                const label = block.querySelector('.question-label');
+                if (label) label.textContent = `Q${index + 1}.`;
+            });
+        }
+    });
+</script>
+
 </body>
 </html>
