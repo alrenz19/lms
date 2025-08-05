@@ -12,32 +12,36 @@ if (!isset($_GET['course_id'])) {
     exit("Video ID not provided");
 }
 
-$video_id = intval($_GET['course_id']);
-
-// Get video information
-$stmt = $conn->prepare("SELECT cv.*, c.id as course_id FROM course_videos cv 
-                       JOIN courses c ON cv.course_id = c.id 
-                       WHERE cv.course_id = ?");
-$stmt->bind_param("i", $video_id);
-$stmt->execute();
-$result = $stmt->get_result();
-
-if ($result->num_rows === 0) {
-    header("HTTP/1.1 404 Not Found");
-    exit(`"Video not found"`.$video_id);
+if (!isset($_GET['id'])) {
+    header("HTTP/1.1 400 Bad Request");
+    exit("Video ID not provided");
 }
 
-$video = $result->fetch_assoc();
-$file_path = $video['video_url'];
+$course_id = $_GET['course_id'];
+$id = $_GET['id'];
 
-if (!file_exists($file_path)) {
+$stmt = $conn->prepare("SELECT video_url FROM course_videos WHERE course_id = ? AND id = ?");
+$stmt->bind_param("is", $course_id, $id);
+$stmt->execute();
+$video_result = $stmt->get_result();
+$video_info = $video_result->fetch_assoc();
+
+if ($video_result->num_rows === 0) {
     header("HTTP/1.1 404 Not Found");
+    exit(`"Video not found"`.$course_id .$id);
+}
+
+$video_file_path = __DIR__ . '/../' . $video_info['video_url'];
+
+if (!file_exists($video_file_path)) {
+    header("HTTP/1.1 404 Not Found");
+    echo $video_file_path;
     exit("Video file not found");
 }
 
 // Set proper headers
-$file_size = filesize($file_path);
-$file_extension = strtolower(pathinfo($file_path, PATHINFO_EXTENSION));
+$file_size = filesize($video_file_path);
+$file_extension = strtolower(pathinfo($video_file_path, PATHINFO_EXTENSION));
 
 switch ($file_extension) {
     case "mp4":
@@ -49,7 +53,8 @@ switch ($file_extension) {
     default:
         header("Content-Type: application/octet-stream");
 }
-
+header('Content-Type: video/mp4');
+readfile($video_file_path);
 header("Content-Length: " . $file_size);
 header("Accept-Ranges: bytes");
 

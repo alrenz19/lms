@@ -16,13 +16,12 @@ $query = "
         c.id,
         c.title,
         c.description,
-        COUNT(DISTINCT q.id) as quiz_count,
-        COUNT(DISTINCT up.quiz_id) as completed_quizzes,
-        COALESCE(AVG(up.score), 0) as average_score,
-        COALESCE((COUNT(DISTINCT up.quiz_id) * 100.0 / NULLIF(COUNT(DISTINCT q.id), 0)), 0) as progress
+        COUNT(DISTINCT cv.id) AS total_modules,
+        COUNT(DISTINCT uvp.video_id) AS completed_modules,
+        COALESCE((COUNT(DISTINCT uvp.video_id) * 100.0 / NULLIF(COUNT(DISTINCT cv.id), 0)), 0) AS progress
     FROM courses c
-    LEFT JOIN quizzes q ON c.id = q.course_id
-    LEFT JOIN user_progress up ON q.id = up.quiz_id AND up.user_id = ?
+    LEFT JOIN course_videos cv ON c.id = cv.course_id
+    LEFT JOIN user_video_progress uvp ON cv.id = uvp.video_id AND uvp.user_id = ?
     GROUP BY c.id, c.title, c.description
     ORDER BY c.title
 ";
@@ -94,7 +93,6 @@ $courses = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
                                 </div>
                                 <div class="flex justify-between items-center mt-2">
                                     <span class="text-xs font-medium text-gray-500"><?php echo round($course['progress']); ?>% complete</span>
-                                    <span class="text-xs font-medium text-gray-500"><?php echo $course['completed_quizzes']; ?>/<?php echo $course['quiz_count']; ?> quizzes</span>
                                 </div>
                             </div>
                             <!-- Button -->
