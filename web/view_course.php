@@ -23,7 +23,7 @@ if (!$course) {
 }
 
 // Get user progress for all quizzes in this course
-$stmt = $conn->prepare("
+/* $stmt = $conn->prepare("
     SELECT 
         COALESCE(AVG(CASE WHEN up.quiz_id IS NOT NULL THEN up.progress_percentage ELSE 0 END), 0) as overall_progress,
         COALESCE(SUM(up.score), 0) as total_score,
@@ -52,43 +52,66 @@ if ($progress['total_quizzes'] == 0) {
 // Set progress to 100% if all quizzes are completed
 if ($progress['total_quizzes'] > 0 && $progress['completed_quizzes'] == $progress['total_quizzes']) {
     $progress['overall_progress'] = 100;
-}
+} */
 
-// Get video information and progress
-$video_info = null;
-$video_progress = null;
-$stmt = $conn->prepare("SELECT * FROM course_videos WHERE course_id = ?");
-$stmt->bind_param("i", $course_id);
-$stmt->execute();
-$video_result = $stmt->get_result();
-if ($video_result->num_rows > 0) {
-    $video_info = $video_result->fetch_assoc();
-    
-    // Get user's video progress
-    $stmt = $conn->prepare("SELECT * FROM user_video_progress WHERE user_id = ? AND video_id = ? AND watched = 1");
-    $stmt->bind_param("ii", $user_id, $video_info['id']);
+
+    // Get quizzes for this course with completion status
+    $stmt = $conn->prepare("
+        SELECT 
+            q.*,
+            CASE WHEN up.quiz_id IS NOT NULL THEN 1 ELSE 0 END as is_completed,
+            COALESCE(up.score, 0) as score,
+            COALESCE(up.progress_percentage, 0) as progress
+        FROM questions q
+        LEFT JOIN user_progress up ON q.id = up.quiz_id AND up.user_id = ?
+        WHERE q.course_id = ?
+        ORDER BY q.id ASC
+    ");
+    $stmt->bind_param("ii", $user_id, $course_id);
     $stmt->execute();
-    $video_progress = $stmt->get_result()->fetch_assoc();
-}
+    $questions = $stmt->get_result();
 
-// Get quizzes for this course with completion status
-$stmt = $conn->prepare("
-    SELECT 
-        q.*,
-        CASE WHEN up.quiz_id IS NOT NULL THEN 1 ELSE 0 END as is_completed,
-        COALESCE(up.score, 0) as score,
-        COALESCE(up.progress_percentage, 0) as progress
-    FROM quizzes q
-    LEFT JOIN user_progress up ON q.id = up.quiz_id AND up.user_id = ?
-    WHERE q.course_id = ?
-    ORDER BY q.id ASC
-");
-$stmt->bind_param("ii", $user_id, $course_id);
-$stmt->execute();
-$quizzes = $stmt->get_result();
 
-// Calculate if user can access quizzes (only if video is watched)
-$can_access_quizzes = !$video_info || ($video_progress !== null);
+    // Get video information and progress
+    $videos = [];
+    $video_progress = [];
+
+    // Get all modules (videos or PDFs) for the course
+    $stmt = $conn->prepare("SELECT * FROM course_videos WHERE course_id = ?");
+    $stmt->bind_param("i", $course_id);
+    $stmt->execute();
+    $video_result = $stmt->get_result();
+
+    while ($row = $video_result->fetch_assoc()) {
+        $videos[] = $row;
+        $video_id = $row['id'];
+
+        // Get progress per module (watched = 1)
+        $stmt_progress = $conn->prepare("SELECT * FROM user_video_progress WHERE user_id = ? AND video_id = ? AND watched = 1");
+        $stmt_progress->bind_param("ii", $user_id, $video_id);
+        $stmt_progress->execute();
+        $progress_result = $stmt_progress->get_result()->fetch_assoc();
+
+        // Store progress status per video_id
+        if ($progress_result) {
+            $video_progress[$video_id] = $progress_result;
+        }
+    }
+
+    $totalModules = count($videos);
+    $completedModules = 0;
+
+    foreach ($videos as $module) {
+        $video_id = $module['id'];
+        if (isset($video_progress[$video_id])) {
+            $completedModules++;
+        }
+    }
+
+    $overall_progress = ($totalModules > 0) ? ($completedModules / $totalModules) * 100 : 0;
+
+    // Calculate if user can access quizzes (only if video is watched)
+    $can_access_quiz = round($overall_progress) < 100 ? false : true;
 ?>
 
 <!DOCTYPE html>
@@ -222,42 +245,6 @@ $can_access_quizzes = !$video_info || ($video_progress !== null);
                         <i class="bi bi-arrow-left"></i> Back to Dashboard
                     </a>
                 </div>
-
-                <!-- Progress Stats -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
-                    <div class="stat-card rounded-2xl p-6">
-                        <div class="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center mb-4 text-white">
-                            <i class="bi bi-book-fill text-xl"></i>
-                        </div>
-                        <h3 class="text-sm font-medium text-white/70 mb-1">Overall Progress</h3>
-                        <div class="flex items-end gap-2">
-                            <h2 class="text-3xl font-bold text-white"><?php echo round($progress['overall_progress']); ?>%</h2>
-                            <div class="w-full bg-white/20 h-2 rounded-full mb-1.5 overflow-hidden">
-                                <div class="bg-white progress-bar h-2 rounded-full" style="width: 0%"></div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="stat-card rounded-2xl p-6">
-                        <div class="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center mb-4 text-white">
-                            <i class="bi bi-check-circle-fill text-xl"></i>
-                        </div>
-                        <h3 class="text-sm font-medium text-white/70 mb-1">Quizzes Completed</h3>
-                        <div class="flex items-end">
-                            <h2 class="text-3xl font-bold text-white"><?php echo $progress['completed_quizzes']; ?><span class="text-white/70 text-xl"> / <?php echo $progress['total_quizzes']; ?></span></h2>
-                        </div>
-                    </div>
-                    
-                    <div class="stat-card rounded-2xl p-6">
-                        <div class="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center mb-4 text-white">
-                            <i class="bi bi-trophy-fill text-xl"></i>
-                        </div>
-                        <h3 class="text-sm font-medium text-white/70 mb-1">Total Score</h3>
-                        <div class="flex items-end">
-                            <h2 class="text-3xl font-bold text-white"><?php echo $progress['total_score']; ?> <span class="text-white/70 text-xl">pts</span></h2>
-                        </div>
-                    </div>
-                </div>
             </div>
 
             <!-- Course Content Section -->
@@ -276,24 +263,28 @@ $can_access_quizzes = !$video_info || ($video_progress !== null);
                                 <h3 class="text-xl font-bold text-gray-900 mb-4"><?php echo htmlspecialchars($course['title']); ?></h3>
                                     <div class="col-span-3 place-content-center">
                                         <div class="flex justify-between items-center mt-2 mb-2">
-                                            <span class="text-xs font-medium text-gray-500"><?php echo round($progress['overall_progress']); ?>% complete</span>
+                                            <span class="text-xs font-medium text-gray-500">
+                                                <?php echo round($overall_progress); ?>% complete
+                                            </span>
                                         </div>
                                         <div class="w-full bg-gray-200 rounded-full h-4 mb-7">
-                                            <div class="bg-blue-600 h-4 rounded-full" style="width: <?php echo round($progress['overall_progress']); ?>%"></div>
+                                            <div class="bg-blue-600 h-4 rounded-full" style="width: <?php echo round($overall_progress); ?>%"></div>
                                         </div>
                                     </div>
+
                                     
-                                    <?php if ($video_info): ?>
-                                        <button type="button" class="tab-btn active-tab w-full py-2.5 rounded-sm font-medium flex items-center gap-2" data-modal-target="videoModal" data-modal-toggle="videoModal" data-tab="module1">
-                                            1. <?php echo htmlspecialchars($course['title']); ?>
-                                            <?php if ($video_progress): ?>
-                                            <i class="bi bi-check-lg text-green-500"></i>
+                                    <?php $first = true; foreach ($videos as $module): 
+                                        $dataTab = 'module' . $module['id'];
+                                    ?>
+                                        <button type="button" class="tab-btn <?= ($first) ? 'active-tab' : '' ?> w-full py-2.5 rounded-sm font-medium flex items-center gap-2" data-tab="<?= $dataTab ?>">
+                                            <?= htmlspecialchars($module['module_name']) ?>
+                                            <?php if (!empty($video_progress[$module['id']])): ?>
+                                                <i class="bi bi-check-lg text-green-500"></i>
                                             <?php endif; ?>
                                         </button>
-                                        <button type="button" data-tab="module2" class="tab-btn w-full py-2.5 rounded-sm font-medium flex items-center gap-2">
-                                        2. <?php echo htmlspecialchars($course['title']); ?>
-                                        </button>
-                                    <?php endif; ?>
+                                    <?php 
+                                        $first = false;
+                                    endforeach; ?>
                             </div>
                         </div>
                     </div>
@@ -301,35 +292,76 @@ $can_access_quizzes = !$video_info || ($video_progress !== null);
                     <!-- Course Content Videos/PDF -->
                     <div class="col-span-2">
                         <div class="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 p-6">
-                            <h4 class="text-xl font-medium text-gray-900 mb-4">Module description</h4>
-                            <div id="module1" class="tab-content">
-                                <div class="p-0">
-                                    <div class="relative w-full pt-[56.25%]">
-                                        <video id="courseVideo" class="absolute top-0 left-0 w-full h-full object-contain" controls>
-                                            <source src="get_video.php?course_id=<?php echo $course_id; ?>" type="video/mp4">
-                                            Your browser does not support the video tag.
-                                        </video>
+                            <?php 
+                            $previous_completed = true;
+                            foreach ($videos as $index => $video): 
+                                $video_id = $video['id'];
+                                $tabId = 'module' . $video_id;
+                                $file_extension = pathinfo($video['video_url'], PATHINFO_EXTENSION);
+
+                                $isFirst = ($index === 0);
+                                $current_progress = !empty($video_progress[$video_id]);
+
+                                $canAccess = $isFirst || $previous_completed;
+                            ?>
+                                <div id="<?= $tabId ?>" class="tab-content <?= $isFirst ? '' : 'hidden' ?>">
+                                    <div class="p-0">
+                                        <h4 class="text-xl font-medium text-gray-900 mb-4"><?= $video['module_description']; ?></h4>
+
+                                        <?php if ($canAccess): ?>
+                                            <?php if ($file_extension === 'mp4'): ?>
+                                                <div class="relative w-full pt-[56.25%]">
+                                                    <video  id="courseVideo" class="absolute top-0 left-0 w-full h-full object-contain" controls>
+                                                        <source src="get_video.php?course_id=<?= $course_id ?>&id=<?= $video_id ?>" type="video/mp4">
+                                                        Your browser does not support the video tag.
+                                                    </video>
+                                                    <script>
+                                                        document.addEventListener('DOMContentLoaded', function () {
+                                                            const video = document.getElementById('courseVideo');
+                                                            if (video) {
+                                                                video.addEventListener('ended', function () {
+                                                                    // Send progress via AJAX when video ends
+                                                                    fetch('save_progress.php', {
+                                                                        method: 'POST',
+                                                                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                                                                        body: 'video_id=<?= $video_id ?>&course_id=<?= $course_id ?>'
+                                                                    })
+                                                                    .then(response => response.text())
+                                                                    .then(data => console.log('Progress saved:', data))
+                                                                    .catch(error => console.error('Error:', error));
+                                                                });
+                                                            }
+                                                        });
+                                                    </script>
+                                                </div>
+                                            <?php elseif ($file_extension === 'pdf'): ?>
+                                                <div class="relative w-full">
+                                                    <embed src="get_pdf.php?course_id=<?= $course_id ?>&id=<?= $video_id ?>" type="application/pdf" width="100%" height="500px">
+                                                    <?php if (!isset($video_progress[$video_id])): ?>
+                                                        <form method="post" action="save_progress.php" class="text-right">
+                                                            <input type="hidden" name="video_id" value="<?= $video_id ?>">
+                                                            <input type="hidden" name="course_id" value="<?= $course_id ?>">
+                                                            <button type="submit" class="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                                                                Mark as Complete
+                                                            </button>
+                                                        </form>
+                                                    <?php else: ?>
+                                                        <p class="text-right text-green-600 font-medium mt-4">✔ Completed</p>
+                                                    <?php endif; ?>
+                                                </div>
+                                            <?php endif; ?>
+                                        <?php else: ?>
+                                            <div class="relative w-full pt-[24.25%] pb-[24%] place-content-center">
+                                                <h3 class="text-base text-center font-semibold text-gray-900 gap-2">
+                                                    The order of the course content is determined. <br />
+                                                    You must complete the previous module before proceeding.
+                                                </h3>
+                                            </div>
+                                        <?php endif; ?>
                                     </div>
                                 </div>
-                            </div>
-                            <div id="module2" class="tab-content hidden">
-                                <div class="p-0">
-                                    <?php if (!$video_progress): ?>
-                                    <div class="relative w-full pt-[24.25%] pb-[24%] place-content-center">
-                                        <h3 class="text-base text-center font-semibold text-gray-900 gap-2">
-                                            The order of the course content is determined. <br />You must complete the previous module before proceeding.
-                                        </h3>
-                                    </div>
-                                    <?php else: ?>
-                                    <div class="relative w-full pt-[56.25%]">
-                                        <video id="courseVideo" class="absolute top-0 left-0 w-full h-full object-contain" controls>
-                                        <source src="get_video.php?course_id=<?php echo $course_id; ?>" type="video/mp4">
-                                        Your browser does not support the video tag.
-                                        </video>
-                                    </div>
-                                    <?php endif; ?>
-                                </div>
-                            </div>
+                            <?php $previous_completed = $current_progress;
+                        endforeach; ?>
                         </div>
                     </div>
                 </div>
@@ -341,48 +373,48 @@ $can_access_quizzes = !$video_info || ($video_progress !== null);
                     <div class="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center mr-3 text-blue-600">
                         <i class="bi bi-journal-check text-xl"></i>
                     </div>
-                    <h5 class="text-2xl font-bold text-gray-800">Course Quizzes</h5>
+                    <h5 class="text-2xl font-bold text-gray-800">Course Quiz</h5>
                 </div>
                 
-                <?php if ($video_info && !$video_progress): ?>
+                <?php if (round($overall_progress) < 100): ?>
                     <div class="p-5 mb-8 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 flex items-start gap-3 shadow-sm">
                         <i class="bi bi-exclamation-triangle text-xl mt-0.5"></i>
                         <div>
                             <h4 class="font-medium mb-1">Action Required</h4>
-                            <p>Please watch the course video completely before accessing the quizzes.</p>
+                            <p>Please complete course modules before accessing the quiz.</p>
                         </div>
                     </div>
                 <?php endif; ?>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <?php if ($quizzes->num_rows == 0): ?>
+                    <?php if ($questions->num_rows == 0): ?>
                         <div class="col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 p-8 text-center">
                             <div class="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center mx-auto mb-4 text-blue-600">
                                 <i class="bi bi-clipboard-x text-2xl"></i>
                             </div>
-                            <h3 class="text-xl font-medium text-gray-900 mb-2">No Quizzes Available</h3>
-                            <p class="text-gray-500 mb-0">This course doesn't have any quizzes yet.</p>
+                            <h3 class="text-xl font-medium text-gray-900 mb-2">No Exam Available</h3>
+                            <p class="text-gray-500 mb-0">This course doesn't have any exam yet.</p>
                         </div>
                     <?php else: ?>
-                        <?php while ($quiz = $quizzes->fetch_assoc()): ?>
+                        <?php while ($question = $questions->fetch_assoc()): ?>
                             <div class="quiz-card bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
                                 <div class="p-6">
                                     <div class="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center mb-4 text-blue-600">
                                         <i class="bi bi-question-circle text-xl"></i>
                                     </div>
-                                    <h3 class="text-xl font-bold text-gray-900 mb-4"><?php echo htmlspecialchars($quiz['title']); ?></h3>
+                                    <h3 class="text-xl font-bold text-gray-900 mb-4">Quiz</h3>
                                     
-                                    <?php if ($quiz['is_completed']): ?>
+                                    <?php if ($question['is_completed']): ?>
                                         <div class="mb-5">
                                             <div class="flex justify-between items-center mb-2">
                                                 <span class="text-sm text-gray-600 font-medium">Quiz Completed</span>
-                                                <span class="text-sm font-bold text-green-600">Score: <?php echo $quiz['score']; ?>%</span>
+                                                <span class="text-sm font-bold text-green-600">Score: <?php echo $question['score']; ?>%</span>
                                             </div>
                                             <div class="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
                                                 <div class="bg-green-500 h-2.5 rounded-full" style="width: 100%"></div>
                                             </div>
                                         </div>
-                                        <a href="quiz_review.php?id=<?php echo $quiz['id']; ?>" 
+                                        <a href="quiz_review.php?id=<?php echo $question['course_id']; ?>" 
                                            class="w-full inline-flex items-center justify-center gap-2 px-5 py-3 border-2 border-blue-600 text-blue-600 rounded-xl hover:bg-blue-50 transition-colors font-medium">
                                             <i class="bi bi-eye"></i> Review Quiz
                                         </a>
@@ -396,15 +428,15 @@ $can_access_quizzes = !$video_info || ($video_progress !== null);
                                                 <div class="bg-blue-600 h-2.5 rounded-full" style="width: 0%"></div>
                                             </div>
                                         </div>
-                                        <?php if ($can_access_quizzes): ?>
-                                            <a href="take_quiz.php?id=<?php echo $quiz['id']; ?>" 
+                                        <?php if ($can_access_quiz): ?>
+                                            <a href="take_quiz.php?id=<?php echo $question['course_id']; ?>" 
                                                class="w-full inline-flex items-center justify-center gap-2 px-5 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-medium shadow-sm">
                                                 <i class="bi bi-play-fill"></i> Start Quiz
                                             </a>
                                         <?php else: ?>
                                             <button disabled 
                                                     class="w-full inline-flex items-center justify-center gap-2 px-5 py-3 bg-gray-300 text-gray-500 rounded-xl cursor-not-allowed">
-                                                <i class="bi bi-lock"></i> Watch Video First
+                                                <i class="bi bi-lock"></i> Finish the module first
                                             </button>
                                         <?php endif; ?>
                                     <?php endif; ?>
@@ -420,62 +452,57 @@ $can_access_quizzes = !$video_info || ($video_progress !== null);
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Initialize Lucide icons
-            lucide.createIcons();
-            
-            // Animate progress bars
-            setTimeout(() => {
-                const progressBars = document.querySelectorAll('.progress-bar');
-                progressBars.forEach(bar => {
-                    const width = bar.parentNode.getAttribute('style');
-                    bar.style.width = '<?php echo round($progress['overall_progress']); ?>%';
-                });
-            }, 300);
-            
             const buttons = document.querySelectorAll('.tab-btn');
-            const tabs = document.querySelectorAll('.tab-content');
+    const tabs = document.querySelectorAll('.tab-content');
 
-            buttons.forEach(button => {
-                button.addEventListener('click', () => {
-                const target = button.getAttribute('data-tab');
+    buttons.forEach(button => {
+        button.addEventListener('click', () => {
+            console.log("Button clicked:", button); // LOGGING BUTTON CLICK
 
-                // Remove active styles from all buttons
-                buttons.forEach(btn => btn.classList.remove('active-tab'));
+            const target = button.getAttribute('data-tab');
 
-                // Hide all tabs
-                tabs.forEach(tab => tab.classList.add('hidden'));
+            // Remove active styles from all buttons
+            buttons.forEach(btn => btn.classList.remove('active-tab'));
 
-                // Show target tab
-                document.getElementById(target).classList.remove('hidden');
+            // Hide all tabs
+            tabs.forEach(tab => tab.classList.add('hidden'));
 
-                // Add active style to clicked button
-                button.classList.add('active-tab');
+            // Show target tab
+            document.getElementById(target).classList.remove('hidden');
+
+            // Add active style to clicked button
+            button.classList.add('active-tab');
+        });
+    });
+
+    const videos = document.querySelectorAll('video');
+            videos.forEach(video => {
+                video.addEventListener('ended', function () {
+                    const videoId = video.closest('.tab-content').id.replace('module', '');
+                    markModuleAsWatched(videoId);
                 });
             });
-            
-            // Add video completion tracking
-            if (courseVideo) {
-                courseVideo.addEventListener('ended', function() {
-                    // Send AJAX request to update video progress
-                    fetch('update_video_progress.php', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded',
-                        },
-                        body: 'video_id=<?php echo $video_info ? $video_info['id'] : 0; ?>&user_id=<?php echo $user_id; ?>&course_id=<?php echo $course_id; ?>'
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            // Reload page to unlock quizzes
-                            window.location.reload();
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                    });
-                });
+
+            function markModuleAsWatched(videoId) {
+        fetch('update_video_progress.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: `video_id=${videoId}&user_id=<?php echo $_SESSION['user_id']; ?>&course_id=<?php echo $course_id; ?>`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                console.log('Progress updated for module ' + videoId);
+                // Optionally reload or update the checkmark UI here
+                location.reload(); // temporary: reload to update checkmark and progress bar
+            } else {
+                console.error('Progress update failed: ' + data.message);
             }
+        })
+        .catch(err => console.error('Error:', err));
+    }
         });
     </script>
 </body>
