@@ -53,23 +53,48 @@ if ($progress['total_quizzes'] == 0) {
 if ($progress['total_quizzes'] > 0 && $progress['completed_quizzes'] == $progress['total_quizzes']) {
     $progress['overall_progress'] = 100;
 } */
+$stmt = $conn->prepare("SELECT * FROM user_progress WHERE user_id = ? AND course_id = ? AND completed = 1 ORDER BY created_at DESC LIMIT 1");
+$stmt->bind_param("ii", $user_id, $course_id);
+$stmt->execute();
+$result = $stmt->get_result();
+$progress_data = $result->fetch_assoc();
+
+$quiz_completed = $progress_data ? true : false;
+$average_score = $progress_data['score'] ?? 0;
 
 
-    // Get quizzes for this course with completion status
-    $stmt = $conn->prepare("
-        SELECT 
-            q.*,
-            CASE WHEN up.quiz_id IS NOT NULL THEN 1 ELSE 0 END as is_completed,
-            COALESCE(up.score, 0) as score,
-            COALESCE(up.progress_percentage, 0) as progress
-        FROM questions q
-        LEFT JOIN user_progress up ON q.id = up.quiz_id AND up.user_id = ?
-        WHERE q.course_id = ?
-        ORDER BY q.id ASC
-    ");
-    $stmt->bind_param("ii", $user_id, $course_id);
-    $stmt->execute();
-    $questions = $stmt->get_result();
+
+
+    // Fetch all questions for this course
+$stmt = $conn->prepare("
+    SELECT q.*, up.quiz_id, up.score 
+    FROM questions q
+    LEFT JOIN user_progress up ON q.id = up.quiz_id AND up.user_id = ?
+    WHERE q.course_id = ? AND q.removed = 0
+    ORDER BY q.id ASC
+");
+$stmt->bind_param("ii", $user_id, $course_id);
+$stmt->execute();
+$result = $stmt->get_result();
+
+$questions = [];
+$answered_count = 0;
+$total_score = 0;
+
+while ($row = $result->fetch_assoc()) {
+    $questions[] = $row;
+    if ($row['quiz_id']) {
+        $answered_count++;
+        $total_score += $row['score'];
+    }
+}
+
+$total_questions = count($questions);
+
+// Quiz is completed if all questions have user_progress entries
+$quiz_completed = ($answered_count === $total_questions && $total_questions > 0);
+$average_score = $total_questions > 0 ? round($total_score / $total_questions, 2) : 0;
+
 
 
     // Get video information and progress
@@ -387,7 +412,7 @@ if ($progress['total_quizzes'] > 0 && $progress['completed_quizzes'] == $progres
                 <?php endif; ?>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <?php if ($questions->num_rows == 0): ?>
+                    <?php if (empty($questions)): ?>
                         <div class="col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 p-8 text-center">
                             <div class="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center mx-auto mb-4 text-blue-600">
                                 <i class="bi bi-clipboard-x text-2xl"></i>
@@ -396,7 +421,7 @@ if ($progress['total_quizzes'] > 0 && $progress['completed_quizzes'] == $progres
                             <p class="text-gray-500 mb-0">This course doesn't have any exam yet.</p>
                         </div>
                     <?php else: ?>
-                        <?php while ($question = $questions->fetch_assoc()): ?>
+                        <?php if (!empty($questions)): ?>
                             <div class="quiz-card bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
                                 <div class="p-6">
                                     <div class="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center mb-4 text-blue-600">
@@ -404,17 +429,17 @@ if ($progress['total_quizzes'] > 0 && $progress['completed_quizzes'] == $progres
                                     </div>
                                     <h3 class="text-xl font-bold text-gray-900 mb-4">Quiz</h3>
                                     
-                                    <?php if ($question['is_completed']): ?>
+                                    <?php if ($quiz_completed): ?>
                                         <div class="mb-5">
                                             <div class="flex justify-between items-center mb-2">
                                                 <span class="text-sm text-gray-600 font-medium">Quiz Completed</span>
-                                                <span class="text-sm font-bold text-green-600">Score: <?php echo $question['score']; ?>%</span>
+                                                <span class="text-sm font-bold text-green-600">Score: <?php echo $average_score; ?>%</span>
                                             </div>
                                             <div class="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
                                                 <div class="bg-green-500 h-2.5 rounded-full" style="width: 100%"></div>
                                             </div>
                                         </div>
-                                        <a href="quiz_review.php?id=<?php echo $question['course_id']; ?>" 
+                                        <a href="quiz_review.php?id=<?php echo $course_id; ?>" 
                                            class="w-full inline-flex items-center justify-center gap-2 px-5 py-3 border-2 border-blue-600 text-blue-600 rounded-xl hover:bg-blue-50 transition-colors font-medium">
                                             <i class="bi bi-eye"></i> Review Quiz
                                         </a>
@@ -429,7 +454,7 @@ if ($progress['total_quizzes'] > 0 && $progress['completed_quizzes'] == $progres
                                             </div>
                                         </div>
                                         <?php if ($can_access_quiz): ?>
-                                            <a href="take_quiz.php?id=<?php echo $question['course_id']; ?>" 
+                                            <a href="take_quiz.php?id=<?php echo $course_id; ?>" 
                                                class="w-full inline-flex items-center justify-center gap-2 px-5 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-medium shadow-sm">
                                                 <i class="bi bi-play-fill"></i> Start Quiz
                                             </a>
@@ -442,7 +467,7 @@ if ($progress['total_quizzes'] > 0 && $progress['completed_quizzes'] == $progres
                                     <?php endif; ?>
                                 </div>
                             </div>
-                        <?php endwhile; ?>
+                        <?php endif; ?>
                     <?php endif; ?>
                 </div>
             </div>
