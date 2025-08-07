@@ -319,14 +319,21 @@ require_once __DIR__ . '/server_controller/manage_course_controller.php';
                 <div class="mb-4">
                     <label class="block text-lg font-semibold mb-2">Course Modules</label>
                     <div id="dropZone"
-                    class="relative border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:bg-gray-50 transition cursor-pointer"
-                    ondragover="event.preventDefault()"
-                    ondrop="handleDrop(event)">
-                    <div onclick="document.getElementById('filePicker').click()">
-                        📁 <strong>Drop files here</strong> or <span class="text-black-500 ">click to upload</span>
-                    </div>
-                    <input type="file" id="filePicker" multiple accept="video/*,application/pdf"
-                        class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onchange="handleFiles(this.files)">
+                        class="relative border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:bg-gray-50 transition cursor-pointer"
+                        ondragover="event.preventDefault()"
+                        ondrop="handleDrop(event)">
+                        
+                        <!-- Flex container to center contents -->
+                        <div class="flex flex-col items-center justify-center" onclick="document.getElementById('filePicker').click()">
+                            <i data-lucide="upload-cloud" class="w-10 h-10 text-blue-500 mb-4"></i>
+                            <strong>Drop files here</strong> or <span class="text-black-500">click to upload</span>
+                            <p class="text-xs text-gray-500 mt-1">
+                                Max file size: 250MB
+                            </p>
+                        </div>
+
+                        <input type="file" id="filePicker" multiple accept="video/*,application/pdf"
+                            class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onchange="handleFiles(this.files)">
                     </div>
                 </div>
 

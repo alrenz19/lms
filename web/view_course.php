@@ -11,7 +11,7 @@ $course_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 $user_id = $_SESSION['user_id'];
 
 // Get course details
-$stmt = $conn->prepare("SELECT * FROM courses WHERE id = ?");
+$stmt = $conn->prepare("SELECT * FROM courses WHERE id = ? AND removed = 0");
 $stmt->bind_param("i", $course_id);
 $stmt->execute();
 $course = $stmt->get_result()->fetch_assoc();
@@ -59,17 +59,22 @@ if ($progress['total_quizzes'] > 0 && $progress['completed_quizzes'] == $progres
     $stmt = $conn->prepare("
         SELECT 
             q.*,
-            CASE WHEN up.quiz_id IS NOT NULL THEN 1 ELSE 0 END as is_completed,
-            COALESCE(up.score, 0) as score,
-            COALESCE(up.progress_percentage, 0) as progress
+            COALESCE(up.completed, 0) AS is_completed,
+            COALESCE(up.score, 0) AS score,
+            COALESCE(up.total_score, 0) AS total_score,
+            COALESCE(up.progress_percentage, 0) AS progress
         FROM questions q
-        LEFT JOIN user_progress up ON q.id = up.quiz_id AND up.user_id = ?
-        WHERE q.course_id = ?
+        LEFT JOIN (
+            SELECT * FROM user_progress 
+            WHERE user_id = ? AND course_id = ?
+        ) AS up ON q.course_id = up.course_id
+        WHERE q.course_id = ? AND q.removed = 0
         ORDER BY q.id ASC
     ");
-    $stmt->bind_param("ii", $user_id, $course_id);
+    $stmt->bind_param("iii", $user_id, $course_id, $course_id);
     $stmt->execute();
-    $questions = $stmt->get_result();
+    $result = $stmt->get_result();
+    $questions = $result->fetch_assoc();
 
 
     // Get video information and progress
@@ -387,7 +392,57 @@ if ($progress['total_quizzes'] > 0 && $progress['completed_quizzes'] == $progres
                 <?php endif; ?>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <?php if ($questions->num_rows == 0): ?>
+                   <?php if ($questions): ?>
+                        <?php 
+                            $question = $questions;
+                        ?>
+                        <div class="quiz-card bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
+                            <div class="p-6">
+                                <div class="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center mb-4 text-blue-600">
+                                    <i class="bi bi-question-circle text-xl"></i>
+                                </div>
+                                <h3 class="text-xl font-bold text-gray-900 mb-4">Quiz</h3>
+                                
+                                <?php if ($question['is_completed']): ?>
+                                    <div class="mb-5">
+                                        <div class="flex justify-between items-center mb-2">
+                                            <span class="text-sm text-gray-600 font-medium">Quiz Completed</span>
+                                            <span class="text-sm font-bold text-green-600">Score: <?php echo $question['score']; ?> / <?php echo $question['total_score']; ?></span>
+                                        </div>
+                                        <div class="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+                                            <div class="bg-green-500 h-2.5 rounded-full" style="width: 100%"></div>
+                                        </div>
+                                    </div>
+                                    <a href="quiz_review.php?id=<?php echo $question['course_id']; ?>" 
+                                    class="w-full inline-flex items-center justify-center gap-2 px-5 py-3 border-2 border-blue-600 text-blue-600 rounded-xl hover:bg-blue-50 transition-colors font-medium">
+                                        <i class="bi bi-eye"></i> Review Quiz
+                                    </a>
+                                <?php else: ?>
+                                    <div class="mb-5">
+                                        <div class="flex justify-between items-center mb-2">
+                                            <span class="text-sm text-gray-600 font-medium">Not Started</span>
+                                            <span class="text-xs px-2.5 py-1 bg-blue-100 text-blue-700 rounded-full">New</span>
+                                        </div>
+                                        <div class="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+                                            <div class="bg-blue-600 h-2.5 rounded-full" style="width: 0%"></div>
+                                        </div>
+                                    </div>
+                                    <?php if ($can_access_quiz): ?>
+                                        <a href="take_quiz.php?id=<?php echo $question['course_id']; ?>" 
+                                        class="w-full inline-flex items-center justify-center gap-2 px-5 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-medium shadow-sm">
+                                            <i class="bi bi-play-fill"></i> Start Quiz
+                                        </a>
+                                    <?php else: ?>
+                                        <button disabled 
+                                                class="w-full inline-flex items-center justify-center gap-2 px-5 py-3 bg-gray-300 text-gray-500 rounded-xl cursor-not-allowed">
+                                            <i class="bi bi-lock"></i> Finish the module first
+                                        </button>
+                                    <?php endif; ?>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    <?php else: ?>
+                        <!-- No quiz available fallback (already present) -->
                         <div class="col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 p-8 text-center">
                             <div class="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center mx-auto mb-4 text-blue-600">
                                 <i class="bi bi-clipboard-x text-2xl"></i>
@@ -395,55 +450,8 @@ if ($progress['total_quizzes'] > 0 && $progress['completed_quizzes'] == $progres
                             <h3 class="text-xl font-medium text-gray-900 mb-2">No Exam Available</h3>
                             <p class="text-gray-500 mb-0">This course doesn't have any exam yet.</p>
                         </div>
-                    <?php else: ?>
-                        <?php while ($question = $questions->fetch_assoc()): ?>
-                            <div class="quiz-card bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
-                                <div class="p-6">
-                                    <div class="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center mb-4 text-blue-600">
-                                        <i class="bi bi-question-circle text-xl"></i>
-                                    </div>
-                                    <h3 class="text-xl font-bold text-gray-900 mb-4">Quiz</h3>
-                                    
-                                    <?php if ($question['is_completed']): ?>
-                                        <div class="mb-5">
-                                            <div class="flex justify-between items-center mb-2">
-                                                <span class="text-sm text-gray-600 font-medium">Quiz Completed</span>
-                                                <span class="text-sm font-bold text-green-600">Score: <?php echo $question['score']; ?>%</span>
-                                            </div>
-                                            <div class="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
-                                                <div class="bg-green-500 h-2.5 rounded-full" style="width: 100%"></div>
-                                            </div>
-                                        </div>
-                                        <a href="quiz_review.php?id=<?php echo $question['course_id']; ?>" 
-                                           class="w-full inline-flex items-center justify-center gap-2 px-5 py-3 border-2 border-blue-600 text-blue-600 rounded-xl hover:bg-blue-50 transition-colors font-medium">
-                                            <i class="bi bi-eye"></i> Review Quiz
-                                        </a>
-                                    <?php else: ?>
-                                        <div class="mb-5">
-                                            <div class="flex justify-between items-center mb-2">
-                                                <span class="text-sm text-gray-600 font-medium">Not Started</span>
-                                                <span class="text-xs px-2.5 py-1 bg-blue-100 text-blue-700 rounded-full">New</span>
-                                            </div>
-                                            <div class="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
-                                                <div class="bg-blue-600 h-2.5 rounded-full" style="width: 0%"></div>
-                                            </div>
-                                        </div>
-                                        <?php if ($can_access_quiz): ?>
-                                            <a href="take_quiz.php?id=<?php echo $question['course_id']; ?>" 
-                                               class="w-full inline-flex items-center justify-center gap-2 px-5 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-medium shadow-sm">
-                                                <i class="bi bi-play-fill"></i> Start Quiz
-                                            </a>
-                                        <?php else: ?>
-                                            <button disabled 
-                                                    class="w-full inline-flex items-center justify-center gap-2 px-5 py-3 bg-gray-300 text-gray-500 rounded-xl cursor-not-allowed">
-                                                <i class="bi bi-lock"></i> Finish the module first
-                                            </button>
-                                        <?php endif; ?>
-                                    <?php endif; ?>
-                                </div>
-                            </div>
-                        <?php endwhile; ?>
                     <?php endif; ?>
+
                 </div>
             </div>
 

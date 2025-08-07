@@ -20,8 +20,9 @@ $query = "
         COUNT(DISTINCT uvp.video_id) AS completed_modules,
         COALESCE((COUNT(DISTINCT uvp.video_id) * 100.0 / NULLIF(COUNT(DISTINCT cv.id), 0)), 0) AS progress
     FROM courses c
-    LEFT JOIN course_videos cv ON c.id = cv.course_id
-    LEFT JOIN user_video_progress uvp ON cv.id = uvp.video_id AND uvp.user_id = ?
+    LEFT JOIN course_videos cv ON c.id = cv.course_id AND cv.removed = 0
+    LEFT JOIN user_video_progress uvp ON cv.id = uvp.video_id AND uvp.user_id = ? AND uvp.removed = 0
+    WHERE c.removed = 0
     GROUP BY c.id, c.title, c.description
     ORDER BY c.title
 ";

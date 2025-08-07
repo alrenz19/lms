@@ -256,7 +256,8 @@
   });
 
 
-    function closeAddQuestionModal() {
+  function closeAddQuestionModal() {
+    window.location.href = 'edit_course.php?id=' + currentCourseId;
     const modal = document.getElementById('addQuestionModal');
     modal.classList.add('hidden');
   }

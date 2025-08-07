@@ -11,7 +11,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
 $course_id = $_GET['id'] ?? 0;
 
 // Fetch course
-$stmt = $conn->prepare("SELECT * FROM courses WHERE id = ? AND removed = 0");
+$stmt = $conn->prepare("SELECT id, title, description, has_video, department, section, division, group_id FROM courses WHERE id = ? AND removed = 0");
 $stmt->bind_param("i", $course_id);
 $stmt->execute();
 $course = $stmt->get_result()->fetch_assoc();
@@ -23,12 +23,14 @@ if (!$course) {
 
 // Fetch video info
 $video_info = null;
-$stmt = $conn->prepare("SELECT * FROM course_videos WHERE course_id = ? AND removed = 0");
+$stmt = $conn->prepare("SELECT id, course_id, file_size, module_name, module_description, video_url FROM course_videos WHERE course_id = ? AND removed = 0");
 $stmt->bind_param("i", $course_id);
 $stmt->execute();
 $video_result = $stmt->get_result();
 if ($video_result->num_rows > 0) {
-    $video_info = $video_result->fetch_assoc();
+    while ($row = $video_result->fetch_assoc()) {
+        $video_info[] = $row;
+    }
 }
 
 // Handle POST

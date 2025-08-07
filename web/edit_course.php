@@ -125,60 +125,66 @@ require_once __DIR__ . '/server_controller/course_update.php';
                                 
                                 <div>
                                     <label for="course_video" class="block text-sm font-medium text-gray-700 mb-1">Course Module</label>
-                                    <?php if ($video_info): ?>
-                                        <div class="mb-4">
-                                            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-4">
-                                                <i data-lucide="video" class="w-8 h-8 text-blue-600 mt-1"></i>
-                                                <div>
-                                                    <p class="text-sm text-gray-700">Current video: <span class="font-semibold"><?php echo basename($video_info['video_url']); ?></span></p>
-                                                    <p class="text-xs text-gray-500">Size: <?php echo round($video_info['file_size'], 2); ?> MB</p>
-                                                    <div class="flex gap-2 mt-3">
-                                                        <a href="get_video.php?course_id=<?php echo $course_id; ?>" class="px-3 py-1.5 text-xs font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-1">
-                                                            <i data-lucide="play" class="w-3 h-3"></i> Play
-                                                        </a>
-                                                        <button type="submit" name="remove_video" class="px-3 py-1.5 text-xs font-medium bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition flex items-center gap-1">
-                                                            <i data-lucide="trash-2" class="w-3 h-3"></i> Remove
-                                                        </button>
+                                    <?php if (!empty($video_info)): ?>
+                                        <?php foreach ($video_info as $index => $video): ?>
+                                            <div class="mb-4">
+                                                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                                    <div class="flex items-start gap-4">
+                                                        <i data-lucide="book" class="w-8 h-8 text-blue-600 mt-1"></i>
+                                                        <div class="w-full">
+                                                            <div class="flex items-center justify-between">
+                                                                <p class="text-sm text-gray-700">
+                                                                    Module Title: <span class="font-semibold"><?php echo basename($video['module_name']); ?></span>
+                                                                </p>
+                                                                <button type="button"
+                                                                    class="toggle-details text-blue-600 hover:text-blue-800 transition"
+                                                                    data-target="details-<?php echo $index; ?>">
+                                                                    <i data-lucide="chevron-down" class="w-5 h-5"></i>
+                                                                </button>
+                                                            </div>
+
+                                                            <div id="details-<?php echo $index; ?>" class="hidden mt-2 text-xs text-gray-500">
+                                                                <p>Module Description: <?php echo $video['module_description']; ?></p>
+                                                                <div class="flex gap-2 mt-3">
+                                                                    <button 
+                                                                        type="button"
+                                                                       onclick="previewFile('<?php echo "/uploads/modules/" . urlencode($video['module_name']); ?>')" 
+                                                                        class="px-3 py-1.5 text-xs font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-1">
+                                                                        <i data-lucide="eye" class="w-3 h-3"></i> View
+                                                                    </button>
+                                                                    <button type="submit" name="remove_video" value="<?php echo $video['id']; ?>" class="px-3 py-1.5 text-xs font-medium bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition flex items-center gap-1">
+                                                                        <i data-lucide="trash-2" class="w-3 h-3"></i> Remove
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
+                                        <?php endforeach; ?>
                                     <?php endif; ?>
-                                    
-                                    <div class="space-y-4">
-                                        <!-- Toggle between Upload and Paste Link
-                                        <div class="flex space-x-2">
-                                            <button type="button" id="uploadTab" class="px-4 py-2 bg-blue-500 text-white rounded focus:outline-none">Upload Video</button>
-                                            <button type="button" id="linkTab" class="px-4 py-2 bg-gray-200 text-gray-700 rounded focus:outline-none">Paste Video Link</button>
-                                        </div> -->
+                                    <div class="mb-4">
+                                        <label class="block text-lg font-semibold mb-2">Course Modules</label>
+                                        <div id="dropZone"
+                                            class="relative border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:bg-gray-50 transition cursor-pointer"
+                                            ondragover="event.preventDefault()"
+                                            ondrop="handleDrop(event)">
+                                            
+                                            <!-- Flex container to center contents -->
+                                            <div class="flex flex-col items-center justify-center" onclick="document.getElementById('filePicker').click()">
+                                                <i data-lucide="upload-cloud" class="w-10 h-10 text-blue-500 mb-4"></i>
+                                                <strong>Drop files here</strong> or <span class="text-black-500">click to upload</span>
+                                                <p class="text-xs text-gray-500 mt-1">
+                                                    Max file size: 250MB
+                                                </p>
+                                            </div>
 
-                                        <!-- Upload Section -->
-                                        <div id="uploadSection" class="border-2 border-dashed border-gray-300 rounded-lg p-6 flex flex-col items-center justify-center bg-gray-50 hover:bg-gray-100 transition cursor-pointer relative">
-                                            <input type="file" 
-                                                id="course_video" 
-                                                name="course_video" 
-                                                accept="video/*, application/pdf" 
-                                                class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
-                                            <i data-lucide="upload-cloud" class="w-10 h-10 text-blue-500 mb-4"></i>
-                                            <p class="text-sm font-medium text-gray-700">
-                                                Drag and drop a video or pdf file here, or click to select
-                                            </p>
-                                            <p class="text-xs text-gray-500 mt-1">
-                                                Max file size: 250MB
-                                            </p>
-                                            <div id="file-name" class="text-sm text-blue-600 mt-2 hidden"></div>
+                                            <input type="file" id="filePicker" multiple accept="video/*,application/pdf"
+                                                class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onchange="handleFiles(this.files)">
                                         </div>
-
-                                        <!-- Link Section -->
-                                        <!-- <div id="linkSection" class="hidden">
-                                            <label for="video_link" class="block text-sm font-medium text-gray-700 mb-1">Paste Video Link</label>
-                                            <input type="url" 
-                                                id="video_link" 
-                                                name="video_link" 
-                                                placeholder="https://example.com/video.mp4" 
-                                                class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300">
-                                        </div> -->
                                     </div>
+                                                    <!-- MODULE LIST PREVIEW -->
+                                    <div id="moduleList" class="space-y-3 mt-4"></div>
                                 </div>
                             </div>
                             
@@ -266,140 +272,211 @@ require_once __DIR__ . '/server_controller/course_update.php';
         </div>
     </div>
 
-    <script>
-        // Initialize Lucide icons
-        lucide.createIcons();
+    <!-- File Preview Modal -->
+<div id="filePreviewModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 hidden">
+    <div class="bg-white w-full max-w-4xl rounded-xl shadow-xl overflow-hidden relative">
+        <button onclick="closePreview()" class="absolute top-2 right-2 text-gray-600 hover:text-red-600 text-xl font-bold z-50">×</button>
+        <div id="fileContent" class="w-full h-[80vh] flex items-center justify-center bg-gray-100">
+            <!-- Content (iframe or video) will be injected here -->
+        </div>
+    </div>
+</div>
+
+<script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+
+    // Initialize toast notifications
+    <?php if (isset($_SESSION['success'])): ?>
+        showToast('<?php echo addslashes($_SESSION['success']); ?>', 'success');
+        <?php unset($_SESSION['success']); ?>
+    <?php endif; ?>
+    
+    <?php if (isset($_SESSION['error'])): ?>
+        showToast('<?php echo addslashes($_SESSION['error']); ?>', 'error');
+        <?php unset($_SESSION['error']); ?>
+    <?php endif; ?>
+    
+    // Toast notification system
+    function showToast(message, type = 'info') {
+        // Create toast container if it doesn't exist
+        let toastContainer = document.getElementById('toast-container');
         
-        // File upload preview
-        document.getElementById('course_video').addEventListener('change', function(e) {
-            var fileName = e.target.files[0] ? e.target.files[0].name : '';
-            var fileNameDisplay = document.getElementById('file-name');
-            
-            if (fileName) {
-                fileNameDisplay.textContent = 'Selected: ' + fileName;
-                fileNameDisplay.classList.remove('hidden');
-            } else {
-                fileNameDisplay.classList.add('hidden');
-            }
-        });
-        
-        // Initialize toast notifications
-        <?php if (isset($_SESSION['success'])): ?>
-            showToast('<?php echo addslashes($_SESSION['success']); ?>', 'success');
-            <?php unset($_SESSION['success']); ?>
-        <?php endif; ?>
-        
-        <?php if (isset($_SESSION['error'])): ?>
-            showToast('<?php echo addslashes($_SESSION['error']); ?>', 'error');
-            <?php unset($_SESSION['error']); ?>
-        <?php endif; ?>
-        
-        // Toast notification system
-        function showToast(message, type = 'info') {
-            // Create toast container if it doesn't exist
-            let toastContainer = document.getElementById('toast-container');
-            
-            if (!toastContainer) {
-                toastContainer = document.createElement('div');
-                toastContainer.id = 'toast-container';
-                toastContainer.className = 'fixed bottom-4 right-4 z-50 flex flex-col gap-2';
-                document.body.appendChild(toastContainer);
-            }
-            
-            // Create toast element
-            const toast = document.createElement('div');
-            toast.className = 'transform transition-all duration-300 ease-in-out translate-x-full';
-            
-            // Set background color based on type
-            let bgColor, textColor, iconName;
-            switch (type) {
-                case 'success':
-                    bgColor = 'bg-green-500';
-                    textColor = 'text-white';
-                    iconName = 'check-circle';
-                    break;
-                case 'error':
-                    bgColor = 'bg-red-500';
-                    textColor = 'text-white';
-                    iconName = 'alert-circle';
-                    break;
-                case 'warning':
-                    bgColor = 'bg-amber-500';
-                    textColor = 'text-white';
-                    iconName = 'alert-triangle';
-                    break;
-                default: // info
-                    bgColor = 'bg-blue-500';
-                    textColor = 'text-white';
-                    iconName = 'info';
-            }
-            
-            // Apply styles
-            toast.className += ` ${bgColor} ${textColor} rounded-lg shadow-lg p-4 mb-2 flex items-center`;
-            
-            // Add content
-            toast.innerHTML = `
-                <i data-lucide="${iconName}" class="w-5 h-5 mr-2"></i>
-                <span>${message}</span>
-            `;
-            
-            // Add to container
-            toastContainer.appendChild(toast);
-            
-            // Initialize icon
-            if (typeof lucide !== 'undefined') {
-                lucide.createIcons({
-                    attrs: {
-                        class: ["stroke-current"]
-                    }
-                });
-            }
-            
-            // Animate in
-            setTimeout(() => {
-                toast.classList.remove('translate-x-full');
-                toast.classList.add('translate-x-0');
-            }, 10);
-            
-            // Remove after 3 seconds
-            setTimeout(() => {
-                toast.classList.remove('translate-x-0');
-                toast.classList.add('translate-x-full');
-                
-                // Remove from DOM after animation completes
-                setTimeout(() => {
-                    toast.remove();
-                }, 300);
-            }, 3000);
+        if (!toastContainer) {
+            toastContainer = document.createElement('div');
+            toastContainer.id = 'toast-container';
+            toastContainer.className = 'fixed bottom-4 right-4 z-50 flex flex-col gap-2';
+            document.body.appendChild(toastContainer);
         }
-    </script>
+        
+        // Create toast element
+        const toast = document.createElement('div');
+        toast.className = 'transform transition-all duration-300 ease-in-out translate-x-full';
+        
+        // Set background color based on type
+        let bgColor, textColor, iconName;
+        switch (type) {
+            case 'success':
+                bgColor = 'bg-green-500';
+                textColor = 'text-white';
+                iconName = 'check-circle';
+                break;
+            case 'error':
+                bgColor = 'bg-red-500';
+                textColor = 'text-white';
+                iconName = 'alert-circle';
+                break;
+            case 'warning':
+                bgColor = 'bg-amber-500';
+                textColor = 'text-white';
+                iconName = 'alert-triangle';
+                break;
+            default: // info
+                bgColor = 'bg-blue-500';
+                textColor = 'text-white';
+                iconName = 'info';
+        }
+        
+        // Apply styles
+        toast.className += ` ${bgColor} ${textColor} rounded-lg shadow-lg p-4 mb-2 flex items-center`;
+        
+        // Add content
+        toast.innerHTML = `
+            <i data-lucide="${iconName}" class="w-5 h-5 mr-2"></i>
+            <span>${message}</span>
+        `;
+        
+        // Add to container
+        toastContainer.appendChild(toast);
+        
+        // Initialize icon
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons({
+                attrs: {
+                    class: ["stroke-current"]
+                }
+            });
+        }
+        
+        // Animate in
+        setTimeout(() => {
+            toast.classList.remove('translate-x-full');
+            toast.classList.add('translate-x-0');
+        }, 10);
+        
+        // Remove after 3 seconds
+        setTimeout(() => {
+            toast.classList.remove('translate-x-0');
+            toast.classList.add('translate-x-full');
+            
+            // Remove from DOM after animation completes
+            setTimeout(() => {
+                toast.remove();
+            }, 300);
+        }, 3000);
+    }
+</script>
 
-    <!--javascript to switch between hyperlink or video -->
+<script>
+    let uploadedFiles = [];
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.toggle-details').forEach(button => {
+        button.addEventListener('click', function () {
+            const targetId = this.dataset.target;
+            const target = document.getElementById(targetId);
 
-    <!-- <script>
-        const uploadTab = document.getElementById('uploadTab');
-        const linkTab = document.getElementById('linkTab');
-        const uploadSection = document.getElementById('uploadSection');
-        const linkSection = document.getElementById('linkSection');
+            if (target.classList.contains('hidden')) {
+                target.classList.remove('hidden');
+                this.innerHTML = `<i data-lucide="chevron-up" class="w-5 h-5"></i>`;
+            } else {
+                target.classList.add('hidden');
+                this.innerHTML = `<i data-lucide="chevron-down" class="w-5 h-5"></i>`;
+            }
 
-        uploadTab.addEventListener('click', () => {
-            uploadSection.classList.remove('hidden');
-            linkSection.classList.add('hidden');
-            uploadTab.classList.add('bg-blue-500', 'text-white');
-            uploadTab.classList.remove('bg-gray-200', 'text-gray-700');
-            linkTab.classList.remove('bg-blue-500', 'text-white');
-            linkTab.classList.add('bg-gray-200', 'text-gray-700');
+            // Re-render lucide icons if needed
+            if (window.lucide) lucide.createIcons();
+        });
+    });
+
+    window.handleFiles = function (files) {
+        [...files].forEach((file, i) => {
+            uploadedFiles.push(file); 
+            addModuleRow(file); 
         });
 
-        linkTab.addEventListener('click', () => {
-            linkSection.classList.remove('hidden');
-            uploadSection.classList.add('hidden');
-            linkTab.classList.add('bg-blue-500', 'text-white');
-            linkTab.classList.remove('bg-gray-200', 'text-gray-700');
-            uploadTab.classList.remove('bg-blue-500', 'text-white');
-            uploadTab.classList.add('bg-gray-200', 'text-gray-700');
+        document.getElementById('filePicker').value = ''; 
+    };
+
+    window.handleDrop = function(e) {
+        e.preventDefault();
+        const files = e.dataTransfer.files;
+    }
+
+        function addModuleRow(file, index) {
+        const moduleList = document.getElementById('moduleList');
+
+        const row = document.createElement('div');
+        row.className = 'group flex flex-wrap items-start gap-3 p-4 border border-gray-300 rounded relative';
+
+        row.innerHTML = `
+            <div class="w-full sm:w-1/4 text-sm text-gray-700 truncate">📄 ${file.name}</div>
+
+            <input type="text" name="module_titles[]" required placeholder="Module Title"
+                class="w-full sm:w-1/4 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring focus:ring-blue-300">
+
+            <input type="text" name="module_descriptions[]" placeholder="Module Description (optional)"
+                class="w-full sm:w-1/3 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring focus:ring-blue-300">
+
+            <input type="hidden" name="module_file_names[]" value="${file.name}">
+
+            <button type="button"
+                class="absolute top-2 right-2 text-red-500 hover:text-red-700 text-sm font-bold opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                title="Remove">❌</button>
+        `;
+
+        // Remove row on ❌ click
+        const removeBtn = row.querySelector('button');
+        removeBtn.addEventListener('click', () => {
+            row.remove();
         });
-    </script> -->
+
+        moduleList.appendChild(row);
+    }
+        
+
+});
+
+function previewFile(fileUrl) {
+    const modal = document.getElementById('filePreviewModal');
+    const content = document.getElementById('fileContent');
+    content.innerHTML = ''; // Clear previous content
+
+    const fileExtension = fileUrl.split('.').pop().toLowerCase();
+    if (fileExtension === 'mp4' || fileExtension === 'webm' || fileExtension === 'ogg') {
+        const video = document.createElement('video');
+        video.src = fileUrl;
+        video.controls = true;
+        video.className = 'w-full h-full object-contain';
+        content.appendChild(video);
+    } else if (fileExtension === 'pdf') {
+        const iframe = document.createElement('iframe');
+        iframe.src = fileUrl;
+        iframe.className = 'w-full h-full';
+        content.appendChild(iframe);
+    } else {
+        content.innerHTML = '<p class="text-gray-500 text-center">Unsupported file format</p>';
+    }
+
+    modal.classList.remove('hidden');
+}
+
+function closePreview() {
+    const modal = document.getElementById('filePreviewModal');
+    modal.classList.add('hidden');
+}
+
+</script>
+
 
 </body>
 </html>

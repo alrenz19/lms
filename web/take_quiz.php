@@ -10,7 +10,7 @@ if (!isset($_SESSION['user_id'])) {
 $course_id = $_GET['id'] ?? 0;
 $user_id = $_SESSION['user_id'];
 
-// Check if course exists
+// Validate course
 $stmt = $conn->prepare("SELECT title FROM courses WHERE id = ?");
 $stmt->bind_param("i", $course_id);
 $stmt->execute();
@@ -21,62 +21,91 @@ if (!$course) {
     exit;
 }
 
-// Check if user already completed exam for this course
+// Check progress
 $stmt = $conn->prepare("SELECT completed FROM user_progress WHERE user_id = ? AND course_id = ?");
 $stmt->bind_param("ii", $user_id, $course_id);
 $stmt->execute();
 $progress = $stmt->get_result()->fetch_assoc();
 
 if ($progress && $progress['completed']) {
-    header("Location: view_course.php?id=" . $course_id);
+    header("Location: view_course.php?id=" . $course_id . '&&completed');
     exit;
 }
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $score = 0;
-    $total_questions = count($_POST['answers']);
-    $answers = [];
+    $answers = $_POST['answers'] ?? [];
+    $total_questions = count($answers);
+    $submitted_answers = [];
+    $questions_id = [];
 
-    foreach ($_POST['answers'] as $question_id => $answer) {
-        $stmt = $conn->prepare("SELECT correct_answer FROM questions WHERE id = ?");
-        $stmt->bind_param("i", $question_id);
+    if ($total_questions > 0) {
+        // Build placeholders and types for prepared statement
+        $question_ids = array_keys($answers);
+        $placeholders = implode(',', array_fill(0, count($question_ids), '?'));
+        $types = str_repeat('i', count($question_ids)) . 'i'; // 'iii...i' + course_id
+        $params = [...$question_ids, $course_id];
+
+        // Prepare dynamic SQL
+        $stmt = $conn->prepare("SELECT id, correct_answer FROM questions WHERE id IN ($placeholders) AND course_id = ?");
+        
+        // Bind parameters dynamically
+        $stmt->bind_param($types, ...$params);
         $stmt->execute();
-        $result = $stmt->get_result()->fetch_assoc();
+        $result = $stmt->get_result();
 
-        if ($result['correct_answer'] === $answer) {
-            $score++;
+        // Map correct answers
+        $correct_answers = [];
+        
+        while ($row = $result->fetch_assoc()) {
+            $correct_answers[$row['id']] = $row['correct_answer'];
         }
 
-        $answers[$question_id] = $answer;
+        // Compare answers
+        foreach ($answers as $question_id => $user_answer) {
+            $submitted_answers[$question_id] = $user_answer;
+            $questions_id[] = $question_id;
+            if (isset($correct_answers[$question_id]) && strtolower($correct_answers[$question_id]) === strtolower($user_answer)) {
+                $score++;
+            }
+        }
     }
 
-    $percentage = ($score / $total_questions) * 100;
-    $answers_json = json_encode($answers);
-
+    // Compute percentage safely
+    $percentage = $total_questions > 0 ? ($score / $total_questions) * 100 : 0;
+    $answers_json = json_encode($submitted_answers);
+    $question_ids_json = $questions_id ? json_encode($questions_id) : null;
     // Insert or update progress
     $stmt = $conn->prepare("
-        INSERT INTO user_progress (user_id, course_id, score, progress_percentage, completed, user_answers) 
-        VALUES (?, ?, ?, ?, TRUE, ?) 
+        INSERT INTO user_progress (user_id, course_id, score, total_score, progress_percentage, completed, user_answers) 
+        VALUES (?, ?, ?, ?, ?, TRUE, ?) 
         ON DUPLICATE KEY UPDATE 
             score = VALUES(score), 
             progress_percentage = VALUES(progress_percentage),
             completed = TRUE,
             user_answers = VALUES(user_answers)
     ");
-    $stmt->bind_param("iidds", $user_id, $course_id, $score, $percentage, $answers_json);
+
+    $stmt->bind_param("iiddds", $user_id, $course_id, $score, $total_questions, $percentage, $answers_json);
     $stmt->execute();
 
+    // Store session data for result page
     $_SESSION['quiz_results'] = [
         'course_id' => $course_id,
         'score' => $score,
         'total' => $total_questions,
-        'answers' => $answers
+        'answers' => $submitted_answers
     ];
 
+    // Redirect to results
     header("Location: quiz_results.php?id=" . $course_id);
     exit;
 }
+
+
+$questions = $conn->query("SELECT * FROM questions WHERE course_id = $course_id ORDER BY RAND()");
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -113,7 +142,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 <form method="POST" class="quiz-form" id="quizForm">
                     <div class="space-y-6">
                         <?php
-                        $questions = $conn->query("SELECT * FROM questions WHERE course_id = $course_id ORDER BY RAND()");
                         $question_num = 1;
                         while ($question = $questions->fetch_assoc()): 
                             // Create options array from individual fields
@@ -137,7 +165,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                                  alt="Question Image" 
                                                  class="max-w-full h-auto rounded-lg border border-gray-200 max-h-64">
                                         <?php else: ?>
-                                            <img src="../uploads/question_images/<?php echo htmlspecialchars($question['question_image']); ?>" 
+                                            <img src="../<?php echo htmlspecialchars($question['question_image']); ?>" 
                                                  alt="Question Image" 
                                                  class="max-w-full h-auto rounded-lg border border-gray-200 max-h-64">
                                         <?php endif; ?>
@@ -170,7 +198,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                                              alt="Option <?php echo $letter; ?> Image" 
                                                              class="max-w-full h-auto rounded-lg border border-gray-100 max-h-48">
                                                     <?php else: ?>
-                                                        <img src="../uploads/question_images/<?php echo htmlspecialchars($question[$option_image_field]); ?>" 
+                                                        <img src="../<?php echo htmlspecialchars($question[$option_image_field]); ?>" 
                                                              alt="Option <?php echo $letter; ?> Image" 
                                                              class="max-w-full h-auto rounded-lg border border-gray-100 max-h-48">
                                                     <?php endif; ?>
@@ -201,40 +229,51 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     </div>
     
     <script>
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         const form = document.getElementById('quizForm');
         const submitButton = document.getElementById('submitQuiz');
-
-        // Check all questions
-        const radioInputs = form.querySelectorAll('input[type="radio"]');
         const totalQuestions = document.querySelectorAll('.bg-gray-50.rounded-xl').length;
-        let answeredQuestions = 0;
 
-        radioInputs.forEach(input => {
-            input.addEventListener('change', function() {
-                const questionId = this.name.match(/\d+/)[0];
-                const questionCard = this.closest('.bg-gray-50.rounded-xl');
-                const allOptionsInQuestion = questionCard.querySelectorAll('input[type="radio"]');
-                let isFirstAnswer = true;
+        // Disable submit by default
+        submitButton.disabled = true;
+        submitButton.classList.add('opacity-50', 'cursor-not-allowed');
 
-                allOptionsInQuestion.forEach(option => {
-                    if (option.checked && isFirstAnswer) {
-                        answeredQuestions++;
-                        isFirstAnswer = false;
-                    }
-                });
+        function countAnsweredQuestions() {
+            const answered = new Set();
+            const radioInputs = form.querySelectorAll('input[type="radio"]:checked');
 
-                updateProgress();
+            radioInputs.forEach(input => {
+                const match = input.name.match(/\d+/); // extract question ID
+                if (match) {
+                    answered.add(match[0]);
+                }
             });
-        });
 
-        function updateProgress() {
-            console.log(`${answeredQuestions} of ${totalQuestions} questions answered`);
+            return answered.size;
         }
 
-        // Confirm before submitting
-        form.addEventListener('submit', function(e) {
-            if (answeredQuestions < totalQuestions) {
+        function updateSubmitState() {
+            const answeredCount = countAnsweredQuestions();
+            if (answeredCount === totalQuestions) {
+                submitButton.disabled = false;
+                submitButton.classList.remove('opacity-50', 'cursor-not-allowed');
+            } else {
+                submitButton.disabled = true;
+                submitButton.classList.add('opacity-50', 'cursor-not-allowed');
+            }
+        }
+
+        // Monitor changes
+        form.querySelectorAll('input[type="radio"]').forEach(input => {
+            input.addEventListener('change', updateSubmitState);
+        });
+
+        // Recheck state in case browser autofills
+        updateSubmitState();
+
+        // Confirm on submit
+        form.addEventListener('submit', function (e) {
+            if (countAnsweredQuestions() < totalQuestions) {
                 e.preventDefault();
                 alert('Please answer all questions before submitting.');
                 return;
@@ -247,14 +286,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             }
         });
 
-        // Prevent accidental navigation
-        window.addEventListener('beforeunload', function(e) {
-            if (answeredQuestions > 0 && !form.submitted) {
+        // Warn on accidental navigation
+        window.addEventListener('beforeunload', function (e) {
+            if (!form.submitted && countAnsweredQuestions() > 0) {
                 e.preventDefault();
                 e.returnValue = '';
             }
         });
     });
-    </script>
+</script>
+
 </body>
 </html>

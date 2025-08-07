@@ -152,15 +152,14 @@ function handleCourseDelete($conn) {
         $updates = [
             // Soft delete user progress
             "UPDATE user_progress up 
-             JOIN quizzes q ON up.quiz_id = q.id 
+             JOIN questions q ON up.quiz_id = q.id 
              SET up.removed = 1 
              WHERE q.course_id = ?",
 
             // Soft delete questions
-            "UPDATE questions qs 
-             JOIN quizzes q ON qs.quiz_id = q.id 
-             SET qs.removed = 1 
-             WHERE q.course_id = ?",
+            "UPDATE questions
+             SET removed = 1 
+             WHERE course_id = ?",
 
             // Soft delete quizzes
             "UPDATE quizzes SET removed = 1 WHERE course_id = ?",
@@ -183,6 +182,8 @@ function handleCourseDelete($conn) {
         echo json_encode(['success' => false, 'message' => "Deletion failed.", 'error' => $e->getMessage()]);
     }
 }
+
+
 function handleQuizAdd($conn) {
     header('Content-Type: application/json');
     ini_set('display_errors', 1);
@@ -196,19 +197,27 @@ function handleQuizAdd($conn) {
         $questions = $_POST['questions'];
         $files = $_FILES['questions'];
         $course_id = $_POST['course_id'];
-        $uploadDir = 'uploads/questions/';
-        if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
+
+        $upload_dir = __DIR__ . '/../../uploads/question_images';
+        $upload_url_path = '/uploads/question_images';
+
+        if (!is_dir($upload_dir)) {
+            mkdir($upload_dir, 0777, true);
+        }
 
         foreach ($questions as $qIndex => $qData) {
             // Upload question image
             $questionImagePath = null;
             $qImage = normalizeFilesArray($files, $qIndex, 'image');
             if (!empty($qImage['name'])) {
-                $name = uniqid() . '_' . basename($qImage['name']);
-                $questionImagePath = $uploadDir . $name;
-                if (!move_uploaded_file($qImage['tmp_name'], $questionImagePath)) {
+                $name = preg_replace("/[^a-zA-Z0-9.\-_]/", "_", basename($qImage['name']));
+                $uniqueName = uniqid('mod_', true) . '_' . $name;
+                $destination = $upload_dir . DIRECTORY_SEPARATOR . $uniqueName;
+
+                if (!move_uploaded_file($qImage['tmp_name'], $destination)) {
                     throw new Exception("Failed to upload question image at index $qIndex.");
                 }
+                $questionImagePath = $upload_url_path . '/' . $uniqueName;
             }
 
             // Option texts
@@ -219,15 +228,19 @@ function handleQuizAdd($conn) {
 
             // Option images
             $optionAImage = $optionBImage = $optionCImage = $optionDImage = null;
+
             foreach (['a', 'b', 'c', 'd'] as $letter) {
                 $fileInfo = normalizeFilesArray($files, $qIndex, 'option_images', $letter);
                 if (!empty($fileInfo['name'])) {
-                    $name = uniqid() . '_' . basename($fileInfo['name']);
-                    $path = $uploadDir . $name;
-                    if (!move_uploaded_file($fileInfo['tmp_name'], $path)) {
+                    $fileName = preg_replace("/[^a-zA-Z0-9.\-_]/", "_", basename($fileInfo['name']));
+                    $uniqueName = uniqid('mod_', true) . '_' . $fileName;
+                    $destination = $upload_dir . DIRECTORY_SEPARATOR . $uniqueName;
+
+                    if (!move_uploaded_file($fileInfo['tmp_name'], $destination)) {
                         throw new Exception("Failed to upload option '$letter' image for question index $qIndex.");
                     }
-                    ${"option" . strtoupper($letter) . "Image"} = $path;
+
+                    ${"option" . strtoupper($letter) . "Image"} = $upload_url_path . '/' . $uniqueName;
                 }
             }
 
@@ -270,23 +283,29 @@ function handleQuizAdd($conn) {
 }
 
 
-function normalizeFilesArray($files, $qIndex, $field, $subField = null) {
-    if ($subField !== null) {
-        return [
-            'name' => $files['name'][$qIndex][$field][$subField],
-            'type' => $files['type'][$qIndex][$field][$subField],
-            'tmp_name' => $files['tmp_name'][$qIndex][$field][$subField],
-            'error' => $files['error'][$qIndex][$field][$subField],
-            'size' => $files['size'][$qIndex][$field][$subField],
-        ];
+function normalizeFilesArray($files, $qIndex, $field, $subKey = null) {
+    $result = [];
+
+    if (!isset($files['name'][$qIndex][$field])) return null;
+
+    if ($subKey !== null) {
+        // For option_images[a|b|c|d]
+        if (!isset($files['name'][$qIndex][$field][$subKey])) return null;
+
+        $result['name'] = $files['name'][$qIndex][$field][$subKey];
+        $result['type'] = $files['type'][$qIndex][$field][$subKey];
+        $result['tmp_name'] = $files['tmp_name'][$qIndex][$field][$subKey];
+        $result['error'] = $files['error'][$qIndex][$field][$subKey];
+        $result['size'] = $files['size'][$qIndex][$field][$subKey];
     } else {
-        return [
-            'name' => $files['name'][$qIndex][$field],
-            'type' => $files['type'][$qIndex][$field],
-            'tmp_name' => $files['tmp_name'][$qIndex][$field],
-            'error' => $files['error'][$qIndex][$field],
-            'size' => $files['size'][$qIndex][$field],
-        ];
+        // For image (question image)
+        $result['name'] = $files['name'][$qIndex][$field];
+        $result['type'] = $files['type'][$qIndex][$field];
+        $result['tmp_name'] = $files['tmp_name'][$qIndex][$field];
+        $result['error'] = $files['error'][$qIndex][$field];
+        $result['size'] = $files['size'][$qIndex][$field];
     }
+
+    return $result;
 }
 

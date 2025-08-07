@@ -12,11 +12,11 @@ $user_id = $_SESSION['user_id'];
 
 // Get quiz details and verify completion
 $stmt = $conn->prepare("
-    SELECT q.*, c.id as course_id, up.user_answers, up.score, up.completed
-    FROM quizzes q
+    SELECT q.*, c.id as course_id, c.title, up.user_answers, up.score, up.completed
+    FROM questions q
     JOIN courses c ON q.course_id = c.id
-    LEFT JOIN user_progress up ON q.id = up.quiz_id AND up.user_id = ?
-    WHERE q.id = ?
+    LEFT JOIN user_progress up ON q.course_id = up.course_id AND up.user_id = ?
+    WHERE q.course_id = ?
 ");
 $stmt->bind_param("ii", $user_id, $quiz_id);
 $stmt->execute();
@@ -29,7 +29,7 @@ if (!$quiz || !$quiz['completed']) {
 }
 
 // Get quiz questions with answers
-$stmt = $conn->prepare("SELECT * FROM questions WHERE quiz_id = ? ORDER BY id");
+$stmt = $conn->prepare("SELECT * FROM questions WHERE course_id = ? ORDER BY id");
 $stmt->bind_param("i", $quiz_id);
 $stmt->execute();
 $questions = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
@@ -40,7 +40,7 @@ $user_answers = !empty($quiz['user_answers']) ? json_decode($quiz['user_answers'
 // Calculate the correct answer count
 $correct_count = 0;
 foreach ($questions as $question) {
-    if (isset($user_answers[$question['id']]) && $user_answers[$question['id']] === $question['correct_answer']) {
+    if (isset($user_answers[$question['id']]) && strtolower($user_answers[$question['id']]) === strtolower($question['correct_answer'])) {
         $correct_count++;
     }
 }
@@ -148,10 +148,12 @@ foreach ($questions as $question) {
                 <?php foreach ($questions as $index => $question): ?>
                     <?php 
                     $user_answer = isset($user_answers[$question['id']]) ? $user_answers[$question['id']] : '';
-                    $is_correct = $user_answer === $question['correct_answer'];
+                    $is_correct = strtolower($user_answer) === strtolower($question['correct_answer']);
                     $card_class = !empty($user_answer) ? 
                         ($is_correct ? 'correct-answer' : 'incorrect-answer') : 
                         'neutral-answer';
+                    $correct_answer = strtoupper($question['correct_answer']);
+                    $has_question_image = !empty($question['question_image']);
                     ?>
                     <div class="question-card bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 p-6 <?php echo $card_class; ?>">
                         <div class="flex items-start gap-3 mb-4">
@@ -159,7 +161,17 @@ foreach ($questions as $question) {
                                 <?php echo $index + 1; ?>
                             </div>
                             <div>
-                                <h3 class="text-lg font-medium text-gray-800 mb-1"><?php echo htmlspecialchars($question['question_text']); ?></h3>
+                                <h3 class="text-lg font-medium text-gray-800 mb-1">
+                                    <?php 
+                                        echo !$has_question_image 
+                                        ? htmlspecialchars($question['question_text']) 
+                                        : '<img src="../' . htmlspecialchars($question['question_image']) . 
+                                            '" alt="Option ' . htmlspecialchars($question['question_text']) . ' Image" class="max-w-full h-auto rounded-lg border border-gray-100 max-h-48">';
+                                    ?>
+                                    
+                                <?php echo htmlspecialchars($question['question_text']); ?>
+                            
+                                </h3>
                                 <?php if (!empty($user_answer)): ?>
                                     <?php if ($is_correct): ?>
                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
@@ -172,7 +184,7 @@ foreach ($questions as $question) {
                                     <?php endif; ?>
                                 <?php else: ?>
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                        <i class="bi bi-dash-circle-fill mr-1"></i> Not Answered
+                                        <i class="bi bi-dash-circle-fill mr-1"></i> Not Answered 
                                     </span>
                                 <?php endif; ?>
                             </div>
@@ -186,14 +198,15 @@ foreach ($questions as $question) {
                                 'C' => $question['option_c'],
                                 'D' => $question['option_d']
                             ];
-                            
                             foreach ($options as $letter => $option): 
                                 // Style for different answer states
+                                $option_image_field = 'option_' . strtolower($letter) . '_image';
+                                $has_image = !empty($question[$option_image_field]);
                                 $bgClass = 'bg-gray-50 border border-gray-200';
                                 $textClass = 'text-gray-700';
                                 $iconClass = '';
                                 
-                                if ($letter === $user_answer && $letter === $question['correct_answer']) {
+                                if ($letter === $user_answer && $letter === strtoupper($question['correct_answer'])) {
                                     $bgClass = 'bg-green-50 border border-green-200';
                                     $textClass = 'text-green-800';
                                     $iconClass = '<i class="bi bi-check-circle-fill text-green-500 ml-2"></i>';
@@ -206,18 +219,29 @@ foreach ($questions as $question) {
                                     $textClass = 'text-blue-700';
                                     $iconClass = '<i class="bi bi-check-circle-fill text-blue-500 ml-2"></i>';
                                 }
-                            ?>
+                                ?>
                                 <div class="<?php echo $bgClass; ?> p-3 rounded-lg flex items-center">
-                                    <span class="inline-flex items-center justify-center w-6 h-6 rounded-full mr-2 text-sm font-medium <?php echo $letter === $question['correct_answer'] ? 'bg-green-100 text-green-800' : ($letter === $user_answer ? 'bg-red-100 text-red-800' : 'bg-gray-200 text-gray-800'); ?>">
+                                    <span class="inline-flex items-center justify-center w-6 h-6 rounded-full mr-2 text-sm font-medium <?php echo $letter === strtoupper($question['correct_answer']) ? 'bg-green-100 text-green-800' : ($letter === $user_answer ? 'bg-red-100 text-red-800' : 'bg-gray-200 text-gray-800'); ?>">
                                         <?php echo $letter; ?>
                                     </span>
-                                    <span class="<?php echo $textClass; ?>"><?php echo htmlspecialchars($option); ?></span>
+                                    <span class="<?php echo $textClass; ?>">
+                                        <?php 
+                                            echo !$has_image 
+                                            ? htmlspecialchars($option) 
+                                            : '<img src="../' . htmlspecialchars($question[$option_image_field]) . 
+                                                '" alt="Option ' . htmlspecialchars($letter) . ' Image" class="max-w-full h-auto rounded-lg border border-gray-100 max-h-48">';
+                                        ?>
+                                    </span>
                                     <?php echo $iconClass; ?>
                                 </div>
                             <?php endforeach; ?>
                         </div>
 
                         <?php if (!empty($user_answer) && !$is_correct): ?>
+                            <?php 
+                                $option_field = 'option_'; 
+                                $option_image = '_image';
+                            ?>
                             <div class="mt-6 p-5 bg-gray-50 rounded-lg border border-gray-200">
                                 <div class="mb-3">
                                     <h4 class="font-medium text-gray-700 mb-2">Explanation</h4>
@@ -226,14 +250,28 @@ foreach ($questions as $question) {
                                             <i class="bi bi-x-circle-fill mt-0.5"></i>
                                             <div>
                                                 <p class="font-medium mb-1">Your answer</p>
-                                                <p><?php echo $letter = $user_answer; ?> - <?php echo htmlspecialchars($options[$user_answer]); ?></p>
+                                                <p>
+                                                    <?php echo htmlspecialchars($user_answer); ?>  - 
+                                                    <?php 
+                                                    echo $options[$user_answer]
+                                                    ? htmlspecialchars($options[$user_answer])
+                                                    : '<img src="../' . htmlspecialchars($question[$option_field.strtolower($user_answer).$option_image]) . 
+                                                        '" alt="Option ' . htmlspecialchars($user_answer) . ' Image" class="max-w-full h-auto rounded-lg border border-gray-100 max-h-48">';
+                                                    ?>
+                                                </p>
                                             </div>
                                         </div>
                                         <div class="bg-green-50 text-green-800 p-4 rounded-lg flex items-start gap-2 border border-green-200">
                                             <i class="bi bi-check-circle-fill mt-0.5"></i>
                                             <div>
-                                                <p class="font-medium mb-1">Correct answer</p>
-                                                <p><?php echo $question['correct_answer']; ?> - <?php echo htmlspecialchars($options[$question['correct_answer']]); ?></p>
+                                                <p class="font-medium mb-1">Correct answer <?php echo $question[$option_image_field]?></p>
+                                                <p><?php echo strtoupper($question['correct_answer']); ?> -
+                                                    <?php 
+                                                        echo $options[$correct_answer] 
+                                                        ? htmlspecialchars($options[$correct_answer]) 
+                                                        : '<img src="../' . htmlspecialchars($question[$option_field.strtolower($correct_answer).$option_image]) . 
+                                                            '" alt="Option ' . htmlspecialchars($user_answer) . ' Image" class="max-w-full h-auto rounded-lg border border-gray-100 max-h-48">';
+                                                    ?></p>
                                             </div>
                                         </div>
                                     </div>
