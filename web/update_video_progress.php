@@ -52,7 +52,7 @@ if ($result->num_rows > 0) {
 }
 
 if ($stmt->execute()) {
-    echo json_encode(['success' => true, 'message' => 'Video progress updated successfully']);
+    echo json_encode(['success' => true, 'message' => 'Module progress updated successfully']);
 } else {
     echo json_encode(['success' => false, 'message' => 'Failed to update video progress: ' . $conn->error]);
 } 

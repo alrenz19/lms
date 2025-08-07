@@ -16,7 +16,6 @@ function getCount($conn, $query) {
 }
 
 $courses_count = getCount($conn, "SELECT COUNT(*) as count FROM courses WHERE removed = 0");
-$quizzes_count = getCount($conn, "SELECT COUNT(*) as count FROM quizzes WHERE removed = 0");
 $total_enrollments = getCount($conn, "SELECT COUNT(*) as count FROM user_progress WHERE removed = 0");
 $course_completions = getCount($conn, "SELECT COUNT(*) as count FROM user_progress WHERE score = 100 AND removed = 0");
 
@@ -29,10 +28,10 @@ $courses_result = $conn->query("
         c.description, 
         c.created_at,
         COUNT(DISTINCT up.user_id) AS enrollment_count,
-        COUNT(DISTINCT q.id) AS quiz_count
+        COUNT(DISTINCT q.id) AS question_count
     FROM courses c
-    LEFT JOIN quizzes q ON c.id = q.course_id AND q.removed = 0
-    LEFT JOIN user_progress up ON q.id = up.quiz_id AND up.removed = 0
+    LEFT JOIN questions q ON c.id = q.course_id AND q.removed = 0
+    LEFT JOIN user_progress up ON q.course_id = up.course_id AND up.removed = 0
     WHERE c.removed = 0
     GROUP BY c.id
     ORDER BY c.created_at DESC
@@ -152,7 +151,7 @@ function handleCourseDelete($conn) {
         $updates = [
             // Soft delete user progress
             "UPDATE user_progress up 
-             JOIN questions q ON up.quiz_id = q.id 
+             JOIN questions q ON up.course_id = q.course_id 
              SET up.removed = 1 
              WHERE q.course_id = ?",
 

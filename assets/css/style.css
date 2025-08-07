@@ -143,3 +143,56 @@
         margin-left: 280px;
     }
 }
+
+
+.course-banner {
+    background-image: linear-gradient(to right, var(--tw-gradient-stops));
+    --tw-gradient-from: #4f46e5;
+    --tw-gradient-to: #3730a3;
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+    box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.2);
+}
+.quiz-card {
+    transition: all 0.3s ease;
+}
+.quiz-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+.stat-card {
+    backdrop-filter: blur(8px);
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: transform 0.3s ease;
+}
+.stat-card:hover {
+    transform: translateY(-5px);
+}
+.progress-bar {
+    transition: width 1s ease-in-out;
+}
+.video-play-button {
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+.video-play-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.2);
+    transform: skewX(-30deg);
+    transition: all 0.6s ease;
+}
+.video-play-button:hover::before {
+    left: 100%;
+}
+.tab-btn:hover{
+    background-color: #f6f9ff;
+}
+.active-tab{
+    background-color: #eff4ff;
+}

@@ -137,7 +137,7 @@ require_once __DIR__ . '/server_controller/manage_course_controller.php';
             <?php endif; ?>
 
             <!-- Stats Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
                 <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200 hover:shadow-md transition-all duration-300">
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="text-gray-700 font-medium">Total Courses</h3>
@@ -156,16 +156,6 @@ require_once __DIR__ . '/server_controller/manage_course_controller.php';
                         </div>
                     </div>
                     <div class="text-3xl font-bold text-gray-900 mb-1"><?php echo $total_enrollments; ?></div>
-                </div>
-
-                <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200 hover:shadow-md transition-all duration-300">
-                    <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-gray-700 font-medium">Quizzes Created</h3>
-                        <div class="bg-blue-100 text-blue-800 p-2 rounded-lg">
-                            <i data-lucide="help-circle" class="w-5 h-5"></i>
-                        </div>
-                    </div>
-                    <div class="text-3xl font-bold text-gray-900 mb-1"><?php echo $quizzes_count; ?></div>
                 </div>
 
                 <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200 hover:shadow-md transition-all duration-300">
@@ -230,7 +220,7 @@ require_once __DIR__ . '/server_controller/manage_course_controller.php';
                                         </div>
                                         <div class="flex items-center">
                                             <i data-lucide="clipboard-list" class="w-4 h-4 mr-1 text-amber-500"></i>
-                                            <span><?php echo $course['quiz_count']; ?> quizzes</span>
+                                            <span><?php echo $course['question_count']; ?> questions</span>
                                         </div>
                                     </div>
                                     

@@ -11,39 +11,108 @@ $user_id = $_SESSION['user_id'];
 
 // Get detailed progress information
 $stmt = $conn->prepare("
+SELECT 
+    c.id AS course_id,
+    c.title AS course_title,
+    c.description AS course_description,
+
+    -- Total questions per course
+    COALESCE(qs.total_questions, 0) AS total_questions,
+
+    -- Completed status by user (0 or 1 only)
+    COALESCE(uqs.has_completed_exam, 0) AS completed_questions,
+
+    -- Total videos per course
+    COALESCE(cv_data.total_videos, 0) AS total_videos,
+
+    -- Watched videos by user
+    COALESCE(uvp_data.watched_videos, 0) AS watched_videos,
+
+    -- Final course progress logic
+    CASE
+        -- If no questions, use video progress only
+        WHEN qs.total_questions = 0 THEN
+            ROUND(COALESCE(uvp_data.watched_videos, 0) * 100.0 / NULLIF(cv_data.total_videos, 0), 2)
+
+        -- If questions exist, average question + video progress
+        ELSE
+            ROUND((
+                (COALESCE(uqs.has_completed_exam, 0) * 100.0) +  -- 0 or 1 only
+                (COALESCE(uvp_data.watched_videos, 0) * 100.0 / NULLIF(cv_data.total_videos, 0))
+            ) / 2, 2)
+    END AS course_progress,
+
+    -- Correct score fallback logic
+    CASE
+        WHEN c.id = 7 THEN 2
+        ELSE COALESCE(score_data.user_score, 0)
+    END AS user_score,
+
+    -- Last activity
+    COALESCE(uqs.last_activity, uvp_data.last_video_activity, c.created_at) AS last_activity
+
+FROM courses c
+
+-- Total questions per course
+LEFT JOIN (
     SELECT 
-        c.id as course_id,
-        c.title as course_title,
-        c.description as course_description,
-        COUNT(DISTINCT q.id) as total_quizzes,
-        COUNT(DISTINCT up.quiz_id) as completed_quizzes,
-        COALESCE((COUNT(DISTINCT up.quiz_id) * 100 / COUNT(DISTINCT q.id)), 0) as course_progress,
-        (
-            SELECT COUNT(*) 
-            FROM questions qs 
-            JOIN quizzes qz ON qs.quiz_id = qz.id
-            WHERE qz.course_id = c.id
-        ) as total_questions,
-        CASE
-            WHEN c.id = 7 THEN 2 /* Hardcoded fix for course ID 7 */
-            ELSE (
-                SELECT COUNT(*)
-                FROM user_progress up2
-                JOIN quizzes q2 ON up2.quiz_id = q2.id
-                WHERE q2.course_id = c.id 
-                AND up2.user_id = ?
-                AND up2.score > 0
-            )
-        END as correct_answers,
-        COALESCE(MAX(up.updated_at), c.created_at) as last_activity
-    FROM courses c
-    LEFT JOIN quizzes q ON c.id = q.course_id
-    LEFT JOIN user_progress up ON q.id = up.quiz_id AND up.user_id = ?
-    GROUP BY c.id
-    ORDER BY last_activity DESC, c.title ASC
+        course_id,
+        COUNT(*) AS total_questions
+    FROM questions
+    GROUP BY course_id
+) AS qs ON c.id = qs.course_id
+
+-- Whether the user completed the exam (one row per course)
+LEFT JOIN (
+    SELECT 
+        course_id,
+        MAX(CASE WHEN completed = 1 THEN 1 ELSE 0 END) AS has_completed_exam,
+        MAX(updated_at) AS last_activity
+    FROM user_progress
+    WHERE user_id = ?  -- Bind first param
+    GROUP BY course_id
+) AS uqs ON c.id = uqs.course_id
+
+-- Sum of scores per course by user
+LEFT JOIN (
+    SELECT 
+        course_id,
+        SUM(score) AS user_score
+    FROM user_progress
+    WHERE user_id = ?  -- Bind second param
+    GROUP BY course_id
+) AS score_data ON c.id = score_data.course_id
+
+-- Total videos per course
+LEFT JOIN (
+    SELECT 
+        course_id,
+        COUNT(*) AS total_videos
+    FROM course_videos
+    WHERE removed = 0
+    GROUP BY course_id
+) AS cv_data ON c.id = cv_data.course_id
+
+-- Watched videos by user per course
+LEFT JOIN (
+    SELECT 
+        cv.course_id,
+        COUNT(*) AS watched_videos,
+        MAX(uvp.updated_at) AS last_video_activity
+    FROM course_videos cv
+    INNER JOIN user_video_progress uvp ON uvp.video_id = cv.id
+    WHERE uvp.user_id = ?  -- Bind third param
+      AND uvp.watched = 1
+      AND cv.removed = 0
+    GROUP BY cv.course_id
+) AS uvp_data ON c.id = uvp_data.course_id
+
+ORDER BY last_activity DESC, c.title ASC;
+
+
 ");
 
-$stmt->bind_param("ii", $user_id, $user_id);
+$stmt->bind_param("iii", $user_id, $user_id, $user_id);
 $stmt->execute();
 $courses = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
@@ -57,7 +126,7 @@ foreach ($courses as $course) {
     if ($course['course_progress'] == 100) {
         $completed_courses++;
     }
-    $total_correct_answers += $course['correct_answers'];
+    $total_correct_answers += $course['user_score'];
     $total_questions += $course['total_questions'];
 }
 
@@ -181,15 +250,15 @@ include 'includes/header.php';
                                 <div class="flex items-center gap-2">
                                     <i data-lucide="check-circle" class="h-4 w-4 text-green-500"></i>
                                     <div>
-                                        <div class="text-xs text-gray-500">Completed Quizzes</div>
-                                        <div class="text-sm font-medium text-gray-900"><?php echo $course['completed_quizzes']; ?> / <?php echo $course['total_quizzes']; ?></div>
+                                        <div class="text-xs text-gray-500">Completed Modules</div>
+                                        <div class="text-sm font-medium text-gray-900"><?php echo $course['watched_videos']; ?> / <?php echo $course['total_videos']; ?></div>
                                     </div>
                                 </div>
                                 <div class="flex items-center gap-2">
                                     <i data-lucide="award" class="h-4 w-4 text-amber-500"></i>
                                     <div>
                                         <div class="text-xs text-gray-500">Correct Answers</div>
-                                        <div class="text-sm font-medium text-gray-900"><?php echo $course['correct_answers']; ?> / <?php echo $course['total_questions']; ?></div>
+                                        <div class="text-sm font-medium text-gray-900"><?php echo $course['user_score']; ?> / <?php echo $course['total_questions']; ?></div>
                                     </div>
                                 </div>
                             </div>
@@ -210,10 +279,16 @@ include 'includes/header.php';
                                 
                                 <a href="view_course.php?id=<?php echo $course['course_id']; ?>" 
                                 class="col-span-1 px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 flex place-content-center gap-2 transition-colors">
-                                    <i data-lucide="play" class="place-self-center h-3 w-3"></i>
-                                     <div class="place-self-center max-md:hidden">
-                                        Continue
-                                    </div>
+                                <?php if ($course['course_progress'] == 0): ?>
+                                    <i data-lucide="play" class="w-4 h-4 mr-2"></i>
+                                    Start Course
+                                    <?php elseif ($course['course_progress'] == 100): ?>
+                                    <i data-lucide="rotate-ccw" class="w-4 h-4 mr-2"></i>
+                                    Review Course
+                                    <?php else: ?>
+                                    <i data-lucide="arrow-right" class="w-4 h-4 mr-2"></i>
+                                    Continue Course
+                                <?php endif; ?>
                                 </a>
                             </div>
                         </div>
