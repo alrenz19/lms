@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once '../config.php';
+require_once 'reusable_source_code/get_course_sql_query.php';
 
 if (!isset($_SESSION['user_id'])) {
     header("Location: index.php");
@@ -60,25 +61,9 @@ if ($is_admin) {
 }
 
 // Calculate overall progress across all courses
-$progress_query = "
-    SELECT 
-        c.id AS course_id,
-        c.title AS course_title,
-        c.description,
-        COUNT(q.id) AS quiz_count,
-        CASE WHEN up.completed = 1 THEN COUNT(q.id) ELSE 0 END AS completed_quizzes,
-        COALESCE(up.score, 0) AS score,
-        COALESCE(up.total_score, 0) AS total_score,
-        ROUND(COALESCE(up.progress_percentage, 0), 2) AS progress,
-        ROUND((COALESCE(up.score, 0) / NULLIF(up.total_score, 0)) * 100, 2) AS score_percentage
-    FROM courses c
-    LEFT JOIN questions q ON c.id = q.course_id
-    LEFT JOIN user_progress up ON c.id = up.course_id AND up.user_id = ?
-    GROUP BY c.id, c.title, c.description, up.completed, up.score, up.total_score, up.progress_percentage;
-";
 
-$stmt = $conn->prepare($progress_query);
-$stmt->bind_param("i", $user_id);
+$stmt = $conn->prepare($course_query);
+$stmt->bind_param("iii", $user_id, $user_id, $user_id);
 $stmt->execute();
 $courses_result = $stmt->get_result();
 
@@ -89,18 +74,19 @@ $total_score_percentage = 0;
 $completed_courses = 0;
 $courses_with_score = 0;
 
+
 while ($course = $courses_result->fetch_assoc()) {
     $courses[] = $course;
 
-    $total_progress += $course['progress'];
+    $total_progress += $course['course_progress'];
 
-    if ($course['progress'] == 100) {
+    if ($course['course_progress'] == 100) {
         $completed_courses++;
     }
 
     // Add only if there is a total_score > 0 to avoid division by zero
-    if ($course['total_score'] > 0) {
-        $total_score_percentage += $course['score_percentage'];
+    if ($course['total_questions'] > 0) {
+        $total_score_percentage += $course['user_score'];
         $courses_with_score++;
     }
 }
@@ -122,21 +108,42 @@ $average_score = round($average_score, 2);
 if (!$is_admin) {
     // Get enrolled courses count
     $result = $conn->query("SELECT COUNT(DISTINCT q.course_id) as count FROM questions q JOIN user_progress up ON q.course_id = up.course_id WHERE up.user_id = $user_id");
-    $enrolled_courses = $result->fetch_assoc()['count'];
+    $enrolled_courses = count($courses);
     
     // Get completed quizzes count
     $result = $conn->query("SELECT COUNT(*) as count FROM user_progress WHERE user_id = $user_id");
     $completed_quizzes = $result->fetch_assoc()['count'];
     
     // Calculate course progress and quiz completion percentages
+    // Fetch quiz data: total score obtained and possible
     $result = $conn->query("SELECT 
-        (SELECT COUNT(*) FROM user_progress WHERE user_id = $user_id) as completed_quizzes,
-        (SELECT COUNT(*) FROM questions) as total_quizzes
+        (SELECT SUM(score) FROM user_progress WHERE user_id = $user_id) AS score_obtained,
+        (SELECT COUNT(*) FROM questions) AS total_quizzes,
+        (SELECT SUM(total_score) FROM user_progress WHERE user_id = $user_id) AS quiz_taken
+    ");
+    $quiz_data = $result->fetch_assoc();
+
+    // Fetch course/module progress data
+    $result = $conn->query("SELECT 
+        (SELECT COUNT(*) FROM user_video_progress WHERE user_id = $user_id) AS completed_course,
+        (SELECT COUNT(*) FROM course_videos) AS total_module
     ");
     $progress_data = $result->fetch_assoc();
-    $total_quizzes = $progress_data['total_quizzes'] > 0 ? $progress_data['total_quizzes'] : 1; // Avoid division by zero 
-    $course_progress = round(($progress_data['completed_quizzes'] / $total_quizzes) * 100);
-    $quiz_completion = $course_progress; // Both are the same in this context
+
+    // Sanitize and prevent division by zero
+    $score_obtained = isset($quiz_data['quiz_taken']) ? (int)$quiz_data['quiz_taken'] : 0;
+    $score_possible = isset($quiz_data['total_quizzes']) && $quiz_data['total_quizzes'] > 0 
+        ? (int)$quiz_data['total_quizzes'] 
+        : 1;
+
+    $completed_course = isset($progress_data['completed_course']) ? (int)$progress_data['completed_course'] : 0;
+    $total_modules = isset($progress_data['total_module']) && $progress_data['total_module'] > 0 
+        ? (int)$progress_data['total_module'] 
+        : 1;
+
+    // Final computed percentages
+    $course_progress = round(($completed_course / $total_modules) * 100);
+    $quiz_completion = round(($score_obtained / $score_possible) * 100);
 }
 
 // Include the header component
@@ -156,6 +163,7 @@ include_once 'components/dashboard_card.php';
                 </div>
                 <div>
                     <h1 class="text-2xl font-bold text-white">Dashboard</h1>
+                    <?php var_dump($quiz_data)?>
                     <p class="text-blue-100"><?php echo $is_admin ? 'Admin Overview' : 'Student Overview'; ?></p>
                 </div>
             </div>
@@ -181,6 +189,7 @@ include_once 'components/dashboard_card.php';
             <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200 hover:shadow-md transition-all duration-300">
                 <div class="flex items-center justify-between mb-4">
                     <h3 class="text-gray-700 font-medium">Total Courses</h3>
+                    
                     <div class="bg-green-100 text-green-800 p-2 rounded-lg">
                         <i data-lucide="book-open" class="w-5 h-5"></i>
                     </div>
@@ -507,9 +516,9 @@ include_once 'components/dashboard_card.php';
                 </div>
                 <?php else: ?>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <?php var_dump($courses); ?>
                     <?php foreach ($courses as $index => $course):
-                        $course_progress = $course['quiz_count'] > 0 ? 
-                            ($course['completed_quizzes'] / $course['quiz_count']) * 100 : 0;
+                        $course_progress = $course['course_progress'];
                     ?>
                     <div class="border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300">
                         <div class="h-32 bg-gradient-to-r from-blue-600 to-blue-800 p-4 flex items-end">
@@ -529,7 +538,7 @@ include_once 'components/dashboard_card.php';
                             <div class="flex items-center text-xs text-gray-500 mb-4">
                                 <div class="flex items-center mr-3">
                                     <i data-lucide="help-circle" class="w-3 h-3 mr-1 text-blue-500"></i>
-                                    <span><?php echo $course['completed_quizzes']; ?>/<?php echo $course['quiz_count']; ?> quizzes</span>
+                                    <span><?php echo $course['user_score']; ?>/<?php echo $course['total_questions']; ?> quizzes score</span>
                                 </div>
                                 <?php if ($course_progress == 100): ?>
                                 <span class="px-2 py-0.5 bg-green-100 text-green-800 rounded-full text-xs font-medium flex items-center">
