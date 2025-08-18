@@ -59,7 +59,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="./public/css/tailwind.min.css" />
+    <!-- <script src="https://cdn.tailwindcss.com"></script> -->
     <link rel="stylesheet" href="../assets/css/style.css">
     <script>
         tailwind.config = {

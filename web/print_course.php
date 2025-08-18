@@ -35,7 +35,7 @@ if (!$selected_user_id) {
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Select User - Print Preview</title>
-        <script src="https://cdn.tailwindcss.com"></script>
+        <link rel="stylesheet" href="./public/css/tailwind.min.css" />
     </head>
     <body class="bg-gray-50">
         <div class="container mx-auto max-w-2xl py-6 px-4">
@@ -169,7 +169,7 @@ foreach ($results as $row) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Course Progress Report - <?php echo htmlspecialchars($course['title']); ?></title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="./public/css/tailwind.min.css" />
     <style>
         /* Base styles */
         body {

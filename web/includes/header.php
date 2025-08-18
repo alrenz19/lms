@@ -20,6 +20,7 @@ $page_title = isset($page_title) ? $page_title : 'LMS System';
     <title><?php echo htmlspecialchars($page_title); ?></title>
     
     <!-- Tailwind CSS -->
+    <!-- <link rel="stylesheet" href="./public/css/tailwind.min.css" /> -->
     <script src="https://cdn.tailwindcss.com"></script>
     
     <!-- Lucide Icons -->

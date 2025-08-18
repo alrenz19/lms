@@ -8,7 +8,8 @@ require_once __DIR__ . '/server_controller/manage_course_controller.php';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LMS - Manage Courses</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- <link rel="stylesheet" href="./public/css/tailwind.min.css" /> -->
+     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <!-- Remove Bootstrap CSS and JavaScript as they're not used in manage_users.php -->
     <script>
@@ -431,7 +432,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 uploadedFiles = [];
                 showToast(result.message || 'Successfully submitted', 'success');
                 onSuccessCallback?.(form, result);
-                console.log('result', currentCourseId);
 
             } catch (err) {
                 // Access the actual `error` field from the JSON response if available
@@ -517,7 +517,7 @@ document.addEventListener('DOMContentLoaded', function () {
     handleFormSubmission('addCourseForm', (form) => {
         form.reset();
         hideModal('addCourseModal');
-        refreshCourseList();
+        // refreshCourseList();
 
     });
 

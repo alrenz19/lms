@@ -1,5 +1,31 @@
 <?php 
 require_once __DIR__ . '/server_controller/course_update.php';
+
+$course_id = $_GET['id'] ?? 0;
+
+// Fetch course
+$stmt = $conn->prepare("SELECT id, title, description, has_video, department, section, division, group_id FROM courses WHERE id = ? AND removed = 0");
+$stmt->bind_param("i", $course_id);
+$stmt->execute();
+$course = $stmt->get_result()->fetch_assoc();
+
+if (!$course) {
+    header("Location: manage_courses.php");
+    exit;
+}
+
+// Fetch video info
+$video_info = null;
+$stmt = $conn->prepare("SELECT id, course_id, file_size, module_name, module_description, video_url FROM course_videos WHERE course_id = ? AND removed = 0 ORDER BY id DESC");
+$stmt->bind_param("i", $course_id);
+$stmt->execute();
+$video_result = $stmt->get_result();
+if ($video_result->num_rows > 0) {
+    while ($row = $video_result->fetch_assoc()) {
+        $video_info[] = $row;
+    }
+}
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -101,7 +127,8 @@ require_once __DIR__ . '/server_controller/course_update.php';
                             </h2>
                         </div>
                         
-                        <form method="POST" enctype="multipart/form-data">
+                        <form id="updateCourseForm"  action="server_controller/course_update.php" method="POST" enctype="multipart/form-data">
+                            <input type="hidden" name="course_id" id="courseIdToUpdate" value=<?php echo $course_id; ?>>
                             <div class="p-6 space-y-6">
                                 <div>
                                     <label for="title" class="block text-sm font-medium text-gray-700 mb-1">Course Title</label>
@@ -127,6 +154,7 @@ require_once __DIR__ . '/server_controller/course_update.php';
                                     <label for="course_video" class="block text-sm font-medium text-gray-700 mb-1">Course Module</label>
                                     <?php if (!empty($video_info)): ?>
                                         <?php foreach ($video_info as $index => $video): ?>
+                                            <input type="hidden" name="module_id" id="moduleIdToDelete" value=<?php echo $video['id']; ?>>
                                             <div class="mb-4">
                                                 <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
                                                     <div class="flex items-start gap-4">
@@ -148,11 +176,11 @@ require_once __DIR__ . '/server_controller/course_update.php';
                                                                 <div class="flex gap-2 mt-3">
                                                                     <button 
                                                                         type="button"
-                                                                       onclick="previewFile('<?php echo "/uploads/modules/" . urlencode($video['module_name']); ?>')" 
+                                                                       onclick="previewFile('<?php echo $video['video_url']; ?>', '<?php echo $course_id; ?>', '<?php echo $video['id']; ?>')" 
                                                                         class="px-3 py-1.5 text-xs font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-1">
                                                                         <i data-lucide="eye" class="w-3 h-3"></i> View
                                                                     </button>
-                                                                    <button type="submit" name="remove_video" value="<?php echo $video['id']; ?>" class="px-3 py-1.5 text-xs font-medium bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition flex items-center gap-1">
+                                                                    <button type="submit" name="course_delete" value="<?php echo $video['id']; ?>" class="px-3 py-1.5 text-xs font-medium bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition flex items-center gap-1">
                                                                         <i data-lucide="trash-2" class="w-3 h-3"></i> Remove
                                                                     </button>
                                                                 </div>
@@ -380,6 +408,50 @@ require_once __DIR__ . '/server_controller/course_update.php';
 <script>
     let uploadedFiles = [];
 document.addEventListener('DOMContentLoaded', function () {
+    const form = document.getElementById('updateCourseForm');
+    if (!form) return;
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+                const clickedBtn = e.submitter; // Which button triggered submit
+            const btnName = clickedBtn.name;
+            const btnValue = clickedBtn.value;
+
+            const formData = new FormData(form);
+
+            // Append the clicked button data (important for PHP)
+            formData.append(btnName, btnValue);
+
+            // If it's "Update Course", include uploaded files
+            if (btnName === 'update_course') {
+                uploadedFiles.forEach(file => {
+                    formData.append('module_files[]', file);
+                });
+            }
+
+            try {
+                const response = await fetch(form.action, {
+                    method: form.method,
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+
+                const result = await response.json();
+                if (!response.ok || !result.success)
+                    throw new Error(result.message || 'Submission failed');
+
+                uploadedFiles = [];
+                showToast(result.message || 'Successfully submitted', 'success');
+            } catch (err) {
+                // Access the actual `error` field from the JSON response if available
+                const message = err.detail?.error ||  err.message;
+                showToast(message, 'error');
+            } finally {
+                location.reload();
+            }
+        });
+
     document.querySelectorAll('.toggle-details').forEach(button => {
         button.addEventListener('click', function () {
             const targetId = this.dataset.target;
@@ -413,7 +485,9 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
         function addModuleRow(file, index) {
+            
         const moduleList = document.getElementById('moduleList');
+
 
         const row = document.createElement('div');
         row.className = 'group flex flex-wrap items-start gap-3 p-4 border border-gray-300 rounded relative';
@@ -427,7 +501,8 @@ document.addEventListener('DOMContentLoaded', function () {
             <input type="text" name="module_descriptions[]" placeholder="Module Description (optional)"
                 class="w-full sm:w-1/3 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring focus:ring-blue-300">
 
-            <input type="hidden" name="module_file_names[]" value="${file.name}">
+            <input type="hidden" name="module_files_name[]" value="${file.name}">
+            
 
             <button type="button"
                 class="absolute top-2 right-2 text-red-500 hover:text-red-700 text-sm font-bold opacity-0 group-hover:opacity-100 transition-opacity duration-200"
@@ -440,35 +515,61 @@ document.addEventListener('DOMContentLoaded', function () {
             row.remove();
         });
 
+        uploadedFiles.forEach(file => {
+                moduleList.append('module_files[]', file);
+        });
+
         moduleList.appendChild(row);
     }
-        
-
 });
 
-function previewFile(fileUrl) {
+function previewFile(fileUrl, courseId = null, fileId = null) {
     const modal = document.getElementById('filePreviewModal');
     const content = document.getElementById('fileContent');
     content.innerHTML = ''; // Clear previous content
 
     const fileExtension = fileUrl.split('.').pop().toLowerCase();
+
     if (fileExtension === 'mp4' || fileExtension === 'webm' || fileExtension === 'ogg') {
+        // --- VIDEO PREVIEW ---
         const video = document.createElement('video');
-        video.src = fileUrl;
+        video.id = 'courseVideo';
+        video.className = 'absolute top-0 left-0 w-full h-full object-contain';
         video.controls = true;
-        video.className = 'w-full h-full object-contain';
+
+        const source = document.createElement('source');
+        if (courseId && fileId) {
+            source.src = `get_video.php?course_id=${courseId}&id=${fileId}`;
+            source.type = 'video/mp4';
+        } else {
+            source.src = fileUrl;
+            source.type = `video/${fileExtension}`;
+        }
+
+        video.appendChild(source);
+        video.append('Your browser does not support the video tag.');
         content.appendChild(video);
+
     } else if (fileExtension === 'pdf') {
-        const iframe = document.createElement('iframe');
-        iframe.src = fileUrl;
-        iframe.className = 'w-full h-full';
-        content.appendChild(iframe);
+        // --- PDF PREVIEW ---
+        const embed = document.createElement('embed');
+        if (courseId && fileId) {
+            embed.src = `get_pdf.php?course_id=${courseId}&id=${fileId}`;
+        } else {
+            embed.src = fileUrl;
+        }
+        embed.type = 'application/pdf';
+        embed.width = '100%';
+        embed.height = '500px';
+        content.appendChild(embed);
+
     } else {
         content.innerHTML = '<p class="text-gray-500 text-center">Unsupported file format</p>';
     }
 
     modal.classList.remove('hidden');
 }
+
 
 function closePreview() {
     const modal = document.getElementById('filePreviewModal');

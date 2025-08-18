@@ -16,7 +16,7 @@ $stmt = $conn->prepare("
     FROM questions q
     JOIN courses c ON q.course_id = c.id
     LEFT JOIN user_progress up ON q.course_id = up.course_id AND up.user_id = ?
-    WHERE q.course_id = ?
+    WHERE q.course_id = ? AND q.removed = 0
 ");
 $stmt->bind_param("ii", $user_id, $quiz_id);
 $stmt->execute();
@@ -29,7 +29,7 @@ if (!$quiz || !$quiz['completed']) {
 }
 
 // Get quiz questions with answers
-$stmt = $conn->prepare("SELECT * FROM questions WHERE course_id = ? ORDER BY id");
+$stmt = $conn->prepare("SELECT * FROM questions WHERE course_id = ? AND removed=0 ORDER BY id");
 $stmt->bind_param("i", $quiz_id);
 $stmt->execute();
 $questions = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
@@ -52,7 +52,7 @@ foreach ($questions as $question) {
     <meta charset="UTF-8">
     <title>Quiz Review - <?php echo htmlspecialchars($quiz['title']); ?></title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="./public/css/tailwind.min.css" />
     <script src="https://unpkg.com/lucide@latest"></script>
     <script>
         tailwind.config = {

@@ -163,7 +163,7 @@ include_once 'components/dashboard_card.php';
                 </div>
                 <div>
                     <h1 class="text-2xl font-bold text-white">Dashboard</h1>
-                    <?php var_dump($quiz_data)?>
+
                     <p class="text-blue-100"><?php echo $is_admin ? 'Admin Overview' : 'Student Overview'; ?></p>
                 </div>
             </div>
@@ -516,7 +516,6 @@ include_once 'components/dashboard_card.php';
                 </div>
                 <?php else: ?>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <?php var_dump($courses); ?>
                     <?php foreach ($courses as $index => $course):
                         $course_progress = $course['course_progress'];
                     ?>

@@ -9,9 +9,8 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
 
 $question_id = $_GET['question_id'] ?? 0;
 $course_id = $_GET['course_id'] ?? 0;
-$quiz_id = $_GET['quiz_id'] ?? 0;
 
-if (!$question_id || !$course_id || !$quiz_id) {
+if (!$question_id || !$course_id) {
     header("Location: manage_courses.php");
     exit;
 }
@@ -125,7 +124,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update_question'])) {
         
         $conn->commit();
         $_SESSION['success'] = "Question updated successfully!";
-        header("Location: manage_quiz.php?course_id=" . $course_id . "&quiz_id=" . $quiz_id);
+        header("Location: manage_quiz.php?course_id=" . $course_id);
         exit;
     } catch (Exception $e) {
         $conn->rollback();
@@ -152,7 +151,7 @@ $quiz = $stmt->get_result()->fetch_assoc();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LMS - Edit Question</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="./public/css/tailwind.min.css" />
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="../assets/css/style.css">
     <style>
@@ -179,8 +178,7 @@ $quiz = $stmt->get_result()->fetch_assoc();
                             <h1 class="text-2xl font-bold text-white">Edit Question</h1>
                             <p class="text-indigo-100">
                                 <a href="manage_courses.php" class="hover:underline">Courses</a> &raquo; 
-                                <a href="manage_quiz.php?course_id=<?php echo $course_id; ?>" class="hover:underline"><?php echo htmlspecialchars($course['title']); ?></a> &raquo; 
-                                <a href="manage_quiz.php?course_id=<?php echo $course_id; ?>&quiz_id=<?php echo $quiz_id; ?>" class="hover:underline"><?php echo htmlspecialchars($quiz['title']); ?></a>
+                                <a href="manage_quiz.php?course_id=<?php echo $course_id; ?>" class="hover:underline"><?php echo htmlspecialchars($course['title']); ?></a>
                             </p>
                         </div>
                     </div>

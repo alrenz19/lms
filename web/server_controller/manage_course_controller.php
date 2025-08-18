@@ -164,7 +164,10 @@ function handleCourseDelete($conn) {
             "UPDATE quizzes SET removed = 1 WHERE course_id = ?",
 
             // Soft delete course
-            "UPDATE courses SET removed = 1 WHERE id = ?"
+            "UPDATE courses SET removed = 1 WHERE id = ?",
+
+            // Soft delete the modules
+            "UPDATE course_videos SET removed = 1 WHERE course_id = ?"
         ];
 
         foreach ($updates as $query) {
@@ -275,7 +278,7 @@ function handleQuizAdd($conn) {
             }
         }
 
-        echo json_encode(['success' => true, 'message' => 'Quiz saved successfully']);
+        echo json_encode(['success' => true, 'message' => 'Quiz saved successfully hng admh']);
     } catch (Exception $e) {
         echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
     }
