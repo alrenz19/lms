@@ -117,6 +117,75 @@ $questions = $conn->query("SELECT * FROM questions WHERE course_id = $course_id 
     <link rel="stylesheet" href="./public/css/tailwind.min.css" />
     <link rel="stylesheet" href="../assets/css/style.css">
 </head>
+<style>
+/* Radio Input Styling */
+.quiz-option {
+    position: relative;
+    margin-bottom: 10px;
+}
+
+.quiz-option input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.quiz-option label {
+    display: flex;
+    flex-direction: column;
+    padding: 1rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    background: white;
+    transition: all 0.2s ease;
+}
+
+.quiz-option label:hover {
+    background: #f9fafb;
+}
+
+.quiz-option input[type="radio"]:checked + label {
+    border-color: #3b82f6;
+    background: #eff6ff;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.option-letter {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 9999px;
+    background: #dbeafe;
+    color: #1d4ed8;
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-right: 0.75rem;
+}
+
+/* Submit Button Styling */
+#submitQuiz {
+    background: #3b82f6;
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+    font-weight: 500;
+    transition: background 0.2s ease;
+}
+
+#submitQuiz:hover {
+    background: #2563eb;
+}
+
+#submitQuiz:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: #9ca3af;
+}
+</style>
 <body class="bg-gray-50">
     <?php include 'includes/sidebar.php'; ?>
     
@@ -178,31 +247,23 @@ $questions = $conn->query("SELECT * FROM questions WHERE course_id = $course_id 
                                         $option_image_field = 'option_' . strtolower($letter) . '_image';
                                         $has_image = !empty($question[$option_image_field]);
                                     ?>
-                                        <div>
+                                        <div class="quiz-option">
                                             <input type="radio" 
-                                                   class="hidden peer" 
-                                                   name="answers[<?php echo $question['id']; ?>]" 
-                                                   id="q<?php echo $question['id']; ?>_<?php echo $letter; ?>" 
-                                                   value="<?php echo $letter; ?>" 
-                                                   required>
-                                            <label class="flex flex-col p-4 border-2 border-gray-200 rounded-lg cursor-pointer text-gray-800 bg-white hover:bg-gray-50 peer-checked:border-blue-500 peer-checked:bg-blue-50 transition" 
-                                                   for="q<?php echo $question['id']; ?>_<?php echo $letter; ?>">
+                                                name="answers[<?php echo $question['id']; ?>]" 
+                                                id="q<?php echo $question['id']; ?>_<?php echo $letter; ?>" 
+                                                value="<?php echo $letter; ?>" 
+                                                required>
+                                            <label for="q<?php echo $question['id']; ?>_<?php echo $letter; ?>">
                                                 <div class="flex items-center">
-                                                    <span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-blue-100 text-blue-700 text-sm font-medium mr-3"><?php echo $letter; ?></span>
+                                                    <span class="option-letter"><?php echo $letter; ?></span>
                                                     <span class="text-sm"><?php echo htmlspecialchars($option_text); ?></span>
                                                 </div>
                                                 <?php if ($has_image): ?>
-                                                <div class="mt-3 w-full">
-                                                    <?php if (strpos($question[$option_image_field], 'assets:') === 0): ?>
-                                                        <img src="../assets/<?php echo htmlspecialchars(substr($question[$option_image_field], 7)); ?>" 
-                                                             alt="Option <?php echo $letter; ?> Image" 
-                                                             class="max-w-full h-auto rounded-lg border border-gray-100 max-h-48">
-                                                    <?php else: ?>
+                                                    <div class="mt-3 w-full">
                                                         <img src="../<?php echo htmlspecialchars($question[$option_image_field]); ?>" 
-                                                             alt="Option <?php echo $letter; ?> Image" 
-                                                             class="max-w-full h-auto rounded-lg border border-gray-100 max-h-48">
-                                                    <?php endif; ?>
-                                                </div>
+                                                            alt="Option <?php echo $letter; ?> Image" 
+                                                            class="max-w-full h-auto rounded-lg border border-gray-100 max-h-48">
+                                                    </div>
                                                 <?php endif; ?>
                                             </label>
                                         </div>

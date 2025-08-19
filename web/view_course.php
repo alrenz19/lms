@@ -142,19 +142,9 @@ include 'includes/header.php';
                     </div>
                     <h5 class="text-2xl font-bold text-gray-800">Course Quiz</h5>
                 </div>
-                
-                <?php if (round($overall_progress) < 100): ?>
-                    <div class="p-5 mb-8 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 flex items-start gap-3 shadow-sm">
-                        <i class="bi bi-exclamation-triangle text-xl mt-0.5"></i>
-                        <div>
-                            <h4 class="font-medium mb-1">Action Required</h4>
-                            <p>Please complete course modules before accessing the quiz.</p>
-                        </div>
-                    </div>
-                <?php endif; ?>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                   <?php if ($questions): ?>
+                   <?php if ($questions['has_questions']): ?>
                         <?php 
                             $question = $questions;
                         ?>
@@ -212,7 +202,7 @@ include 'includes/header.php';
                                 <i class="bi bi-clipboard-x text-2xl"></i>
                             </div>
                             <h3 class="text-xl font-medium text-gray-900 mb-2">No Exam Available</h3>
-                            <p class="text-gray-500 mb-0">This course doesn't have any exam yet.</p>
+                            <p class="text-gray-500 mb-0">This course doesn't have any exam.</p>
                         </div>
                     <?php endif; ?>
 

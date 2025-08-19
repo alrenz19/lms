@@ -167,7 +167,10 @@ function handleCourseDelete($conn) {
             "UPDATE courses SET removed = 1 WHERE id = ?",
 
             // Soft delete the modules
-            "UPDATE course_videos SET removed = 1 WHERE course_id = ?"
+            "UPDATE course_videos SET removed = 1 WHERE course_id = ?",
+
+            // Soft delete the modules
+            "UPDATE user_progress SET removed = 1 WHERE course_id = ?"
         ];
 
         foreach ($updates as $query) {

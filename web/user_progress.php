@@ -28,13 +28,20 @@ SELECT
     -- Watched videos by user
     COALESCE(uvp_data.watched_videos, 0) AS watched_videos,
 
-    -- Final course progress logic
+    -- Final course progress logic - MODIFIED TO HANDLE COURSES WITHOUT QUESTIONS
     CASE
-        -- If no questions, use video progress only
-        WHEN qs.total_questions = 0 THEN
+        -- If no videos and no questions, 0% progress
+        WHEN COALESCE(cv_data.total_videos, 0) = 0 AND COALESCE(qs.total_questions, 0) = 0 THEN 0
+        
+        -- If no questions, only use video progress
+        WHEN COALESCE(qs.total_questions, 0) = 0 THEN
             ROUND(COALESCE(uvp_data.watched_videos, 0) * 100.0 / NULLIF(cv_data.total_videos, 0), 2)
-
-        -- If questions exist, average question + video progress
+            
+        -- If no videos, only use question progress
+        WHEN COALESCE(cv_data.total_videos, 0) = 0 THEN
+            ROUND(COALESCE(uqs.has_completed_exam, 0) * 100.0, 2)
+            
+        -- If both exist, average them
         ELSE
             ROUND((
                 (COALESCE(uqs.has_completed_exam, 0) * 100.0) +  -- 0 or 1 only
@@ -108,8 +115,6 @@ LEFT JOIN (
 ) AS uvp_data ON c.id = uvp_data.course_id
 
 ORDER BY last_activity DESC, c.title ASC;
-
-
 ");
 
 $stmt->bind_param("iii", $user_id, $user_id, $user_id);
@@ -254,6 +259,7 @@ include 'includes/header.php';
                                         <div class="text-sm font-medium text-gray-900"><?php echo $course['watched_videos']; ?> / <?php echo $course['total_videos']; ?></div>
                                     </div>
                                 </div>
+                                <?php if($course['total_questions'] > 0): ?>
                                 <div class="flex items-center gap-2">
                                     <i data-lucide="award" class="h-4 w-4 text-amber-500"></i>
                                     <div>
@@ -261,6 +267,7 @@ include 'includes/header.php';
                                         <div class="text-sm font-medium text-gray-900"><?php echo $course['user_score']; ?> / <?php echo $course['total_questions']; ?></div>
                                     </div>
                                 </div>
+                                <?php endif; ?>
                             </div>
 
                             <div class="grid grid-cols-4 pt-4 border-t border-gray-200 gap-5">
