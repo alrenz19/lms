@@ -1,4 +1,3 @@
--- Active: 1736124649896@@127.0.0.1@3306@db_lms
 <?php
 session_start();
 require_once '../config.php';
@@ -15,75 +14,67 @@ if ($course_id > 0) {
     $conn->begin_transaction();
     
     try {
-        // Get all question images for this course to delete them from the filesystem
-        $query = "SELECT q.question_image, q.option_a_image, q.option_b_image, q.option_c_image, q.option_d_image 
-                 FROM questions q 
-                 JOIN quizzes qz ON q.quiz_id = qz.id 
-                 WHERE qz.course_id = $course_id";
+        // 🔹 Get all question images for this course
+        $query = "SELECT question_image, option_a_image, option_b_image, option_c_image, option_d_image 
+                  FROM questions 
+                  WHERE course_id = $course_id";
         
         $result = $conn->query($query);
-        
-        // Array to store image paths that need to be deleted
         $imagesToDelete = [];
         
         while ($row = $result->fetch_assoc()) {
-            // Add question image and option images to deletion list if they exist
             foreach (['question_image', 'option_a_image', 'option_b_image', 'option_c_image', 'option_d_image'] as $imgField) {
                 if (!empty($row[$imgField])) {
                     if (strpos($row[$imgField], 'assets:') === 0) {
-                        // Skip assets folder images since they're shared resources
-                        continue;
+                        continue; // skip shared assets
                     }
                     $imagesToDelete[] = $row[$imgField];
                 }
             }
         }
         
-        // Get course videos
+        // 🔹 Get course videos to delete from filesystem
         $videoQuery = "SELECT video_url FROM course_videos WHERE course_id = $course_id";
         $videoResult = $conn->query($videoQuery);
-        
         $videosToDelete = [];
+        
         while ($row = $videoResult->fetch_assoc()) {
             if (!empty($row['video_url'])) {
                 $videosToDelete[] = $row['video_url'];
             }
         }
+
+        // 🔹 Delete user progress (quiz progress)
+        $conn->query("DELETE FROM user_progress WHERE course_id = $course_id");
+
+        // 🔹 Delete user video progress
+        $conn->query("DELETE uvp FROM user_video_progress uvp 
+                      JOIN course_videos cv ON uvp.video_id = cv.id
+                      WHERE cv.course_id = $course_id");
+
+        // 🔹 Delete questions
+        $conn->query("DELETE FROM questions WHERE course_id = $course_id");
         
-        // Delete related user progress
-        $conn->query("DELETE up FROM user_progress up 
-                     JOIN quizzes q ON up.quiz_id = q.id 
-                     WHERE q.course_id = $course_id");
-        
-        // Delete related questions
-        $conn->query("DELETE q FROM questions q 
-                     JOIN quizzes qz ON q.quiz_id = qz.id 
-                     WHERE qz.course_id = $course_id");
-        
-        // Delete quizzes
-        $conn->query("DELETE FROM quizzes WHERE course_id = $course_id");
-        
-        // Delete course videos from database
+        // 🔹 Delete course videos
         $conn->query("DELETE FROM course_videos WHERE course_id = $course_id");
         
-        // Finally delete the course
+        // 🔹 Finally delete the course
         $conn->query("DELETE FROM courses WHERE id = $course_id");
         
         $conn->commit();
         
-        // After successful database deletion, remove the files
+        // === Filesystem cleanup ===
         $uploadDir = "../uploads/question_images/";
-        
+
         // Delete question images
         foreach ($imagesToDelete as $image) {
-            $imagePath = $uploadDir . $image;
+            $imagePath = $uploadDir . basename($image);
             if (file_exists($imagePath)) {
                 unlink($imagePath);
             }
         }
-        
-        // Delete course videos
-        // Videos are stored at the path specified in the database
+
+        // Delete course videos (full path already stored in DB)
         foreach ($videosToDelete as $videoPath) {
             if (file_exists($videoPath)) {
                 unlink($videoPath);

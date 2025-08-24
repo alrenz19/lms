@@ -52,7 +52,45 @@ if ($result->num_rows > 0) {
 }
 
 if ($stmt->execute()) {
-    echo json_encode(['success' => true, 'message' => 'Module progress updated successfully']);
+    // ✅ Fetch updated progress
+    // Get total videos in course
+    $stmt = $conn->prepare("SELECT COUNT(*) as total FROM course_videos WHERE course_id = ?");
+    $stmt->bind_param("i", $course_id);
+    $stmt->execute();
+    $total_videos = $stmt->get_result()->fetch_assoc()['total'];
+
+    // Get watched videos count
+    $stmt = $conn->prepare("SELECT COUNT(*) as watched FROM user_video_progress uv 
+                            JOIN course_videos cv ON uv.video_id = cv.id 
+                            WHERE uv.user_id = ? AND cv.course_id = ? AND uv.watched = 1");
+    $stmt->bind_param("ii", $user_id, $course_id);
+    $stmt->execute();
+    $watched_videos = $stmt->get_result()->fetch_assoc()['watched'];
+
+    $overall_progress = $total_videos > 0 ? round(($watched_videos / $total_videos) * 100) : 0;
+
+    // Get video progress details
+    $stmt = $conn->prepare("SELECT video_id, watched FROM user_video_progress WHERE user_id = ?");
+    $stmt->bind_param("i", $user_id);
+    $stmt->execute();
+    $video_progress_data = $stmt->get_result();
+
+    $video_progress = [];
+    while ($row = $video_progress_data->fetch_assoc()) {
+        $video_progress[$row['video_id']] = $row['watched'] ? 'completed' : 'pending';
+    }
+
+    // Check if quiz can be accessed (all modules watched)
+    $can_access_quiz = ($watched_videos >= $total_videos);
+
+    echo json_encode([
+        'success' => true,
+        'message' => 'Module progress updated successfully',
+        'overall_progress' => $overall_progress,
+        'course_id' => $course_id,
+        'video_progress' => $video_progress,
+        'can_access_quiz' => $can_access_quiz
+    ]);
 } else {
     echo json_encode(['success' => false, 'message' => 'Failed to update video progress: ' . $conn->error]);
-} 
+}

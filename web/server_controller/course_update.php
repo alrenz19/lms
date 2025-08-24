@@ -109,8 +109,8 @@ function handleCourseUpdate($conn) {
 
 
 function handleModuleDelete($conn) {
-    if (empty($_POST['course_id'])) {
-        echo json_encode(['success' => false, 'message' => "Missing course ID"]);
+    if (empty($_POST['course_id']) || empty($_POST['module_id'])) {
+        echo json_encode(['success' => false, 'message' => "Missing course ID or module ID"]);
         return;
     }
 
@@ -120,25 +120,25 @@ function handleModuleDelete($conn) {
     try {
         $conn->begin_transaction();
 
-        $updates = [
+        // Soft delete module
+        $stmt = $conn->prepare("UPDATE course_videos SET removed = 1 WHERE id = ?");
+        $stmt->bind_param("i", $module_id);
+        $stmt->execute();
 
-            "UPDATE course_videos SET removed = 1 WHERE id = ?"
-        ];
-
-        foreach ($updates as $query) {
-            $stmt = $conn->prepare($query);
-            $stmt->bind_param("i", $module_id);
-            $stmt->execute();
-        }
+        // Also soft delete user video progress linked to this module
+        $stmt = $conn->prepare("UPDATE user_video_progress SET removed = 1 WHERE video_id = ?");
+        $stmt->bind_param("i", $module_id);
+        $stmt->execute();
 
         $conn->commit();
-        echo json_encode(['success' => true, 'message' => "Course successfully removed.", 'course_id' => $course_id, 'module_id' => $module_id]);
+        echo json_encode(['success' => true, 'message' => "Module successfully removed.", 'course_id' => $course_id, 'module_id' => $module_id]);
 
     } catch (Exception $e) {
         $conn->rollback();
         echo json_encode(['success' => false, 'message' => "Deletion failed.", 'error' => $e->getMessage()]);
     }
 }
+
 
 
 function handleQuizAdd($conn) {

@@ -53,7 +53,7 @@ if ($is_admin) {
         FROM user_progress up
         JOIN users u ON u.id = up.user_id
         JOIN courses c ON c.id = up.course_id
-        WHERE up.completed = 1
+        WHERE up.completed = 1 AND up.removed = 0
         ORDER BY up.updated_at DESC
         LIMIT 10;
 
@@ -118,7 +118,7 @@ if (!$is_admin) {
     // Fetch quiz data: total score obtained and possible
     $result = $conn->query("SELECT 
         (SELECT SUM(score) FROM user_progress WHERE user_id = $user_id AND removed = 0) AS score_obtained,
-        (SELECT COUNT(*) FROM questions) AS total_quizzes,
+        (SELECT COUNT(*) FROM questions WHERE removed = 0) AS total_quizzes,
         (SELECT SUM(total_score) FROM user_progress WHERE user_id = $user_id AND removed = 0) AS quiz_taken
     ");
     $quiz_data = $result->fetch_assoc();
@@ -483,7 +483,7 @@ include_once 'components/dashboard_card.php';
             </div>
 
             <div class="p-6">
-                <?php if ($enrolled_courses == 0): ?>
+                <?php var_dump($completed_course); var_dump($total_modules); var_dump($score_obtained); var_dump($score_possible); if ($enrolled_courses == 0): ?>
                 <div class="flex flex-col items-center justify-center py-8 text-center">
                     <i data-lucide="book-x" class="h-16 w-16 text-gray-300 mb-4"></i>
                     <h3 class="text-lg font-medium text-gray-900 mb-2">No courses enrolled yet</h3>
