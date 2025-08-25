@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Aug 24, 2025 at 08:09 AM
+-- Generation Time: Aug 26, 2025 at 01:35 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -139,6 +139,14 @@ CREATE TABLE `courses` (
   `removed` int(1) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+--
+-- Dumping data for table `courses`
+--
+
+INSERT INTO `courses` (`id`, `title`, `description`, `department`, `division`, `section`, `company_group`, `position`, `group_id`, `created_by`, `has_video`, `created_at`, `updated_at`, `removed`) VALUES
+(207, 'Safety and Health', 'Introduction to safety and health', 0, 0, 0, 0, 0, 0, 10, 2, '2025-08-25 23:17:59', '2025-08-25 23:17:59', 0),
+(208, 'Mission and Vision', 'Company\\\'s goals', 0, 0, 0, 0, 0, 0, 10, 3, '2025-08-25 23:22:29', '2025-08-25 23:22:29', 0);
+
 -- --------------------------------------------------------
 
 --
@@ -156,6 +164,17 @@ CREATE TABLE `course_videos` (
   `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `removed` int(1) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `course_videos`
+--
+
+INSERT INTO `course_videos` (`id`, `course_id`, `module_name`, `module_description`, `video_url`, `file_size`, `created_at`, `updated_at`, `removed`) VALUES
+(121, 207, 'Safety', 'Introduction to safety', '/uploads/modules/mod_68acef27e05948.15811293_mod_68a80e6dde16e0.43244465_mod_68a801ce7c4ec2.86565938_mod_68940f7b7e5a75.36605703_JF96E7142511.pdf', 345521, '2025-08-25 23:17:59', '2025-08-25 23:17:59', 0),
+(122, 207, 'Health', 'Introduction to health', '/uploads/modules/mod_68acef27e206c4.19172643_mod_68a80e6ddf52b1.47205471_mod_68a804e0a74bb5.73820018_mod_68940f7b7e5a75.36605703_JF96E7142511.pdf', 345521, '2025-08-25 23:17:59', '2025-08-25 23:17:59', 0),
+(123, 208, 'Our Mission', '', '/uploads/modules/mod_68acf03551ae11.58389207_mod_68a80e6dde16e0.43244465_mod_68a801ce7c4ec2.86565938_mod_68940f7b7e5a75.36605703_JF96E7142511.pdf', 345521, '2025-08-25 23:22:29', '2025-08-25 23:22:29', 0),
+(124, 208, 'Our Vision', '', '/uploads/modules/mod_68acf03552abc6.30726181_mod_68a80e6ddf52b1.47205471_mod_68a804e0a74bb5.73820018_mod_68940f7b7e5a75.36605703_JF96E7142511.pdf', 345521, '2025-08-25 23:22:29', '2025-08-25 23:22:29', 0),
+(125, 208, 'Our Goal', '', '/uploads/modules/mod_68acf0355314b1.51009759_mod_68a80e9325eb74.79506166_mod_68a804e0a74bb5.73820018_mod_68940f7b7e5a75.36605703_JF96E7142511.pdf', 345521, '2025-08-25 23:22:29', '2025-08-25 23:22:29', 0);
 
 -- --------------------------------------------------------
 
@@ -253,6 +272,16 @@ CREATE TABLE `questions` (
   `option_d_image` varchar(255) DEFAULT NULL,
   `removed` int(1) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `questions`
+--
+
+INSERT INTO `questions` (`id`, `course_id`, `question_text`, `option_a`, `option_b`, `option_c`, `option_d`, `correct_answer`, `created_at`, `updated_at`, `question_image`, `option_a_image`, `option_b_image`, `option_c_image`, `option_d_image`, `removed`) VALUES
+(82, 207, 'Test ', '1', '2', '3', '4', 'd', '2025-08-25 23:18:18', '2025-08-25 23:18:18', NULL, NULL, NULL, NULL, NULL, 0),
+(83, 208, 'Test 1', '1', '2', '3', '4', 'b', '2025-08-25 23:23:06', '2025-08-25 23:23:06', NULL, NULL, NULL, NULL, NULL, 0),
+(84, 208, 'Test 2', '1', '2', '3', '4', 'c', '2025-08-25 23:23:06', '2025-08-25 23:23:06', NULL, NULL, NULL, NULL, NULL, 0),
+(85, 208, 'Test 3', '1', '2', '3', '4', 'b', '2025-08-25 23:23:06', '2025-08-25 23:23:06', NULL, NULL, NULL, NULL, NULL, 0);
 
 -- --------------------------------------------------------
 
@@ -383,6 +412,13 @@ CREATE TABLE `user_progress` (
   `removed` int(1) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+--
+-- Dumping data for table `user_progress`
+--
+
+INSERT INTO `user_progress` (`id`, `user_id`, `course_id`, `score`, `total_score`, `completed`, `user_answers`, `progress_percentage`, `is_correct`, `created_at`, `updated_at`, `removed`) VALUES
+(36, 14, 207, 0, 1, 1, '{\"82\":\"A\"}', 0, 0, '2025-08-25 23:31:00', '2025-08-25 23:31:00', 0);
+
 -- --------------------------------------------------------
 
 --
@@ -398,6 +434,14 @@ CREATE TABLE `user_video_progress` (
   `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `removed` int(1) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `user_video_progress`
+--
+
+INSERT INTO `user_video_progress` (`id`, `user_id`, `video_id`, `watched`, `created_at`, `updated_at`, `removed`) VALUES
+(66, 14, 121, 1, '2025-08-25 23:20:48', '2025-08-25 23:20:48', 0),
+(67, 14, 122, 1, '2025-08-25 23:30:54', '2025-08-25 23:30:54', 0);
 
 --
 -- Indexes for dumped tables
@@ -499,13 +543,13 @@ ALTER TABLE `company_groups`
 -- AUTO_INCREMENT for table `courses`
 --
 ALTER TABLE `courses`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=207;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=209;
 
 --
 -- AUTO_INCREMENT for table `course_videos`
 --
 ALTER TABLE `course_videos`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=121;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=126;
 
 --
 -- AUTO_INCREMENT for table `department`
@@ -529,7 +573,7 @@ ALTER TABLE `position`
 -- AUTO_INCREMENT for table `questions`
 --
 ALTER TABLE `questions`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=82;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=86;
 
 --
 -- AUTO_INCREMENT for table `quizzes`
@@ -553,13 +597,13 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `user_progress`
 --
 ALTER TABLE `user_progress`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=36;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=37;
 
 --
 -- AUTO_INCREMENT for table `user_video_progress`
 --
 ALTER TABLE `user_video_progress`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=66;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=68;
 
 --
 -- Constraints for dumped tables
