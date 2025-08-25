@@ -18,8 +18,7 @@ if (!$selected_user_id) {
         SELECT DISTINCT u.id, u.username, u.full_name
         FROM users u
         JOIN user_progress up ON u.id = up.user_id
-        JOIN quizzes q ON up.quiz_id = q.id
-        WHERE q.course_id = ? 
+        WHERE up.course_id = ? 
         AND u.role = 'user'
         ORDER BY u.full_name
     ");
@@ -106,48 +105,57 @@ $course = $stmt->get_result()->fetch_assoc();
 // Get progress information with questions, answers, and user's answers
 $stmt = $conn->prepare("
     SELECT 
-        q.title as quiz_title,
-        q.id as quiz_id,
+        c.title as course_title,
         up.progress_percentage,
         up.score,
+        up.total_score,
         up.completed,
         up.updated_at as completion_date,
         up.user_answers,
-        qs.id as question_id,
-        qs.question_text,
-        qs.option_a,
-        qs.option_b,
-        qs.option_c,
-        qs.option_d,
-        qs.correct_answer
-    FROM quizzes q
-    LEFT JOIN user_progress up ON q.id = up.quiz_id AND up.user_id = ?
-    LEFT JOIN questions qs ON q.id = qs.quiz_id
-    WHERE q.course_id = ?
-    ORDER BY q.id, qs.id
+        q.id as question_id,
+        q.question_text,
+        q.option_a,
+        q.option_b,
+        q.option_c,
+        q.option_d,
+        q.correct_answer
+    FROM courses c
+    LEFT JOIN user_progress up ON c.id = up.course_id AND up.user_id = ?
+    LEFT JOIN questions q ON c.id = q.course_id
+    WHERE c.id = ?
+    ORDER BY q.id
 ");
 $stmt->bind_param("ii", $selected_user_id, $course_id);
 $stmt->execute();
 $results = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
-// Organize results by quiz with user answers
-$quizzes = [];
+// Check if course has questions
+$has_questions = !empty($results) && !is_null($results[0]['question_id']);
+
+// Organize results by course with user answers
+$course_data = [
+    'title' => $course['title'],
+    'score' => 0,
+    'total_score' => 0,
+    'progress' => 0,
+    'completion_date' => null,
+    'questions' => []
+];
+
 foreach ($results as $row) {
-    if (!isset($quizzes[$row['quiz_title']])) {
-        $quizzes[$row['quiz_title']] = [
-            'title' => $row['quiz_title'],
-            'score' => $row['score'] ?? 0,
-            'progress' => $row['progress_percentage'] ?? 0,
-            'completion_date' => $row['completion_date'] ?? null,
-            'questions' => []
-        ];
+    if ($row['score'] !== null) {
+        $course_data['score'] = $row['score'];
+        $course_data['total_score'] = $row['total_score'];
+        $course_data['progress'] = $row['progress_percentage'];
+        $course_data['completion_date'] = $row['completion_date'];
     }
+    
     if ($row['question_text']) {
         $user_answers = json_decode($row['user_answers'] ?? '{}', true);
         $question_id = $row['question_id']; 
         $user_answer = $user_answers[$question_id] ?? null;
         
-        $quizzes[$row['quiz_title']]['questions'][] = [
+        $course_data['questions'][] = [
             'id' => $question_id,
             'text' => $row['question_text'],
             'options' => [
@@ -205,7 +213,7 @@ foreach ($results as $row) {
             }
             
             /* Layout for main sections */
-            .quiz-section {
+            .course-section {
                 page-break-after: always;
                 page-break-inside: avoid;
                 break-after: page;
@@ -215,7 +223,7 @@ foreach ($results as $row) {
                 display: block;
             }
             
-            .quiz-section:last-child {
+            .course-section:last-child {
                 page-break-after: auto;
                 break-after: auto;
             }
@@ -293,39 +301,22 @@ foreach ($results as $row) {
                     </a>
                 </div>
                 
-                <!-- Right side - compact quiz options -->
+                <!-- Right side - compact course options -->
                 <div class="flex items-center space-x-4">
                     <div class="flex items-center">
                         <input class="h-3.5 w-3.5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" 
-                               type="checkbox" id="printAllQuizzes" checked>
-                        <label class="ml-1.5 text-xs text-gray-700" for="printAllQuizzes">
-                            Print all quizzes
+                               type="checkbox" id="printExam" <?php echo $has_questions ? 'checked' : 'disabled'; ?>>
+                        <label class="ml-1.5 text-xs text-gray-700" for="printExam">
+                            Print exam questions
                         </label>
                     </div>
                     <div class="flex items-center">
                         <input class="h-3.5 w-3.5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" 
-                               type="checkbox" id="pageBreaksAfterQuiz" checked>
-                        <label class="ml-1.5 text-xs text-gray-700" for="pageBreaksAfterQuiz">
-                            Add page break after each quiz
+                               type="checkbox" id="pageBreaksAfterCourse" checked>
+                        <label class="ml-1.5 text-xs text-gray-700" for="pageBreaksAfterCourse">
+                            Add page break
                         </label>
                     </div>
-                </div>
-            </div>
-            
-            <!-- Quiz selection dropdown -->
-            <div id="quizSelectionContainer" class="mt-2 pb-2 hidden">
-                <div class="text-xs text-gray-500 mb-1">Select quizzes to print:</div>
-                <div class="flex flex-wrap gap-2">
-                    <?php foreach ($quizzes as $index => $quiz): ?>
-                    <div class="flex items-center">
-                        <input class="h-3.5 w-3.5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded quiz-checkbox" 
-                               type="checkbox" id="quiz<?php echo $index; ?>" 
-                               value="<?php echo htmlspecialchars($quiz['title']); ?>" checked>
-                        <label class="ml-1.5 text-xs text-gray-700" for="quiz<?php echo $index; ?>">
-                            <?php echo htmlspecialchars($quiz['title']); ?>
-                        </label>
-                    </div>
-                    <?php endforeach; ?>
                 </div>
             </div>
         </div>
@@ -333,43 +324,37 @@ foreach ($results as $row) {
 
     <!-- Printable content with max width for better screen viewing -->
     <div class="max-w-4xl mx-auto bg-white my-4 shadow-sm">
-        <?php foreach ($quizzes as $index => $quiz): ?>
-            <div class="quiz-section" data-quiz-title="<?php echo htmlspecialchars($quiz['title']); ?>">
-                <?php if ($index === 0): ?>
-                <!-- Report Header - Only on first quiz -->
-                <div class="report-header px-6 pt-6 pb-4">
-                    <h1 class="text-xl font-bold text-gray-800"><?php echo htmlspecialchars($course['title']); ?> - Progress Report</h1>
-                    <div class="flex flex-wrap gap-x-6 mt-1 text-sm text-gray-600">
-                        <p><span class="font-semibold">Student:</span> <?php echo htmlspecialchars($user['full_name']); ?></p>
-                        <p><span class="font-semibold">Date:</span> <?php echo date('F d, Y'); ?></p>
-                    </div>
+        <div class="course-section" data-course-title="<?php echo htmlspecialchars($course_data['title']); ?>">
+            <!-- Report Header -->
+            <div class="report-header px-6 pt-6 pb-4">
+                <h1 class="text-xl font-bold text-gray-800"><?php echo htmlspecialchars($course_data['title']); ?> - Progress Report</h1>
+                <div class="flex flex-wrap gap-x-6 mt-1 text-sm text-gray-600">
+                    <p><span class="font-semibold">Student:</span> <?php echo htmlspecialchars($user['full_name']); ?></p>
+                    <p><span class="font-semibold">Date:</span> <?php echo date('F d, Y'); ?></p>
                 </div>
-                <?php else: ?>
-                <!-- Repeat Header for subsequent pages -->
-                <div class="report-header px-6 pt-6 pb-4">
-                    <h1 class="text-xl font-bold text-gray-800"><?php echo htmlspecialchars($course['title']); ?> - Progress Report</h1>
-                    <div class="flex flex-wrap gap-x-6 mt-1 text-sm text-gray-600">
-                        <p><span class="font-semibold">Student:</span> <?php echo htmlspecialchars($user['full_name']); ?></p>
-                        <p><span class="font-semibold">Date:</span> <?php echo date('F d, Y'); ?></p>
-                    </div>
+                <?php if ($course_data['completion_date']): ?>
+                <div class="mt-2 text-sm">
+                    <p><span class="font-semibold">Completed:</span> <?php echo date('F d, Y', strtotime($course_data['completion_date'])); ?></p>
+                    <p><span class="font-semibold">Score:</span> <?php echo $course_data['score']; ?>/<?php echo $course_data['total_score']; ?> (<?php echo round($course_data['progress']); ?>%)</p>
                 </div>
                 <?php endif; ?>
+            </div>
+            
+            <!-- Course Content -->
+            <div class="px-6 pb-6">
+                <!-- Course Header -->
+                <div class="bg-blue-50 px-3 py-2 border-l-4 border-blue-500 mb-4">
+                    <h2 class="text-md font-semibold text-gray-800">Course Exam</h2>
+                </div>
                 
-                <!-- Quiz Content -->
-                <div class="px-6 pb-6">
-                    <!-- Quiz Header -->
-                    <div class="bg-blue-50 px-3 py-2 border-l-4 border-blue-500 mb-4">
-                        <div class="flex items-center justify-between">
-                            <h2 class="text-md font-semibold text-gray-800"><?php echo htmlspecialchars($quiz['title']); ?></h2>
-                            <p class="text-sm text-gray-600">
-                                Score: <?php echo $quiz['score']; ?>/<?php echo count($quiz['questions']); ?>
-                            </p>
-                        </div>
+                <?php if (!$has_questions): ?>
+                    <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
+                        <p class="text-yellow-700">This course does not have an exam or the user has not attempted it yet.</p>
                     </div>
-                    
-                    <!-- Quiz Questions -->
+                <?php else: ?>
+                    <!-- Course Questions -->
                     <div class="space-y-4">
-                        <?php foreach ($quiz['questions'] as $qIndex => $question): ?>
+                        <?php foreach ($course_data['questions'] as $qIndex => $question): ?>
                             <div class="question">
                                 <p class="font-medium text-gray-800 text-sm mb-2">
                                     <span class="mr-1"><?php echo $qIndex + 1; ?>.</span>
@@ -395,48 +380,27 @@ foreach ($results as $row) {
                             </div>
                         <?php endforeach; ?>
                     </div>
-                </div>
+                <?php endif; ?>
             </div>
-        <?php endforeach; ?>
+        </div>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const printAllQuizzesCheckbox = document.getElementById('printAllQuizzes');
-            const pageBreaksCheckbox = document.getElementById('pageBreaksAfterQuiz');
-            const quizCheckboxes = document.querySelectorAll('.quiz-checkbox');
-            const quizSections = document.querySelectorAll('.quiz-section');
+            const printExamCheckbox = document.getElementById('printExam');
+            const pageBreaksCheckbox = document.getElementById('pageBreaksAfterCourse');
             const printButton = document.getElementById('printButton');
-            const quizSelectionContainer = document.getElementById('quizSelectionContainer');
             
             // Ensure checkboxes are properly initialized
-            printAllQuizzesCheckbox.checked = true;
             pageBreaksCheckbox.checked = true;
-            
-            // Toggle quiz selection visibility
-            printAllQuizzesCheckbox.addEventListener('change', function() {
-                quizSelectionContainer.classList.toggle('hidden', this.checked);
-                toggleQuizCheckboxes(this.checked);
-            });
-            
-            // Toggle quiz checkboxes and their visibility
-            function toggleQuizCheckboxes(isChecked) {
-                quizCheckboxes.forEach(function(checkbox) {
-                    checkbox.checked = isChecked;
-                    checkbox.disabled = isChecked;
-                });
-                
-                // Show/hide quiz sections based on the main checkbox
-                quizSections.forEach(function(section) {
-                    section.style.display = isChecked ? 'block' : 'none';
-                });
-            }
             
             // Apply page break styles
             function applyPageBreaks() {
                 const usePageBreaks = pageBreaksCheckbox.checked;
-                quizSections.forEach(function(section, index) {
-                    if (usePageBreaks && index < quizSections.length - 1) {
+                const courseSections = document.querySelectorAll('.course-section');
+                
+                courseSections.forEach(function(section, index) {
+                    if (usePageBreaks && index < courseSections.length - 1) {
                         section.style.pageBreakAfter = 'always';
                         section.style.breakAfter = 'page';
                     } else {
@@ -449,23 +413,17 @@ foreach ($results as $row) {
             // Apply page breaks initially
             applyPageBreaks();
             
-            // Toggle individual quiz sections
-            quizCheckboxes.forEach(function(checkbox) {
-                checkbox.addEventListener('change', function() {
-                    const quizTitle = this.value;
-                    const isChecked = this.checked;
-                    
-                    quizSections.forEach(function(section) {
-                        if (section.dataset.quizTitle === quizTitle) {
-                            section.style.display = isChecked ? 'block' : 'none';
-                        }
-                    });
-                });
-            });
-            
             // Toggle page breaks
             pageBreaksCheckbox.addEventListener('change', function() {
                 applyPageBreaks();
+            });
+            
+            // Toggle exam questions visibility
+            printExamCheckbox.addEventListener('change', function() {
+                const questionsContainer = document.querySelector('.space-y-4');
+                if (questionsContainer) {
+                    questionsContainer.style.display = this.checked ? 'block' : 'none';
+                }
             });
             
             // Fix the print functionality to prevent double dialogs
@@ -478,7 +436,7 @@ foreach ($results as $row) {
                 document.body.style.padding = '0';
                 
                 // Force all elements to have no extra margins
-                document.querySelectorAll('.quiz-section').forEach(function(el) {
+                document.querySelectorAll('.course-section').forEach(function(el) {
                     el.style.paddingTop = '0';
                     el.style.paddingBottom = '10pt';
                     el.style.marginTop = '0';
@@ -493,4 +451,4 @@ foreach ($results as $row) {
         });
     </script>
 </body>
-</html> 
+</html>

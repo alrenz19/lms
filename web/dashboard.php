@@ -483,7 +483,7 @@ include_once 'components/dashboard_card.php';
             </div>
 
             <div class="p-6">
-                <?php var_dump($completed_course); var_dump($total_modules); var_dump($score_obtained); var_dump($score_possible); if ($enrolled_courses == 0): ?>
+                <?php if ($enrolled_courses == 0): ?>
                 <div class="flex flex-col items-center justify-center py-8 text-center">
                     <i data-lucide="book-x" class="h-16 w-16 text-gray-300 mb-4"></i>
                     <h3 class="text-lg font-medium text-gray-900 mb-2">No courses enrolled yet</h3>
