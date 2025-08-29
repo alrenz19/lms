@@ -308,7 +308,10 @@ require_once __DIR__ . '/server_controller/manage_course_controller.php';
 
                 <!-- MODULE DRAG-DROP -->
                 <div class="mb-4">
-                    <label class="block text-lg font-semibold mb-2">Course Modules</label>
+                    <div class="flex justify-between">
+                        <label class="text-lg font-semibold">Course Modules</label>
+                        <label class="text-xs font-light">Only PDF files or video format</label>
+                    </div>
                     <div id="dropZone"
                         class="relative border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:bg-gray-50 transition cursor-pointer"
                         ondragover="event.preventDefault()"
@@ -323,8 +326,11 @@ require_once __DIR__ . '/server_controller/manage_course_controller.php';
                             </p>
                         </div>
 
-                        <input type="file" id="filePicker" multiple accept="video/*,application/pdf"
-                            class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onchange="handleFiles(this.files)">
+                        <!-- Notice: `required` added here -->
+                        <input type="file" id="filePicker" multiple required
+                            accept="video/*,application/pdf"
+                            class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                            onchange="handleFiles(this.files)">
                     </div>
                 </div>
 
@@ -476,18 +482,24 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
     window.handleFiles = function (files) {
-        [...files].forEach((file, i) => {
+        [...files].forEach((file) => {
             uploadedFiles.push(file); 
             addModuleRow(file); 
         });
-
-        document.getElementById('filePicker').value = ''; 
     };
 
-    window.handleDrop = function(e) {
+    window.handleDrop = function (e) {
         e.preventDefault();
         const files = e.dataTransfer.files;
-    }
+
+        // Call your existing file handler
+        handleFiles(files);
+
+        // Assign dropped files to hidden input so "required" works
+        const fileInput = document.getElementById('filePicker');
+        fileInput.files = files;
+    };
+
         
 
     // === Refetch Courses ===

@@ -46,7 +46,7 @@ $user_id = $_SESSION['user_id'];
         FROM course_videos cv
         LEFT JOIN user_video_progress uvp 
             ON cv.id = uvp.video_id AND uvp.user_id = ? AND uvp.watched = 1
-        WHERE cv.course_id = ?
+        WHERE cv.course_id = ? AND cv.removed = 0
     ");
     $stmt->bind_param("ii", $user_id, $course_id);
     $stmt->execute();
