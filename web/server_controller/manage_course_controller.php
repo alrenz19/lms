@@ -109,6 +109,7 @@ function handleCourseAdd($conn) {
             return;
         }
     }
+    
 
     // ✅ Insert the new course
     $stmt = $conn->prepare("INSERT INTO courses (title, description, created_by) VALUES (?, ?, ?)");

@@ -71,7 +71,7 @@ class ModuleHandler {
         }
 
         $ext = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
-        if (!in_array($ext, ['mp4', 'mov', 'avi', 'mkv', 'pdf'])) {
+        if (!in_array($ext, ['mp4', 'mov', 'avi', 'mkv', 'pdf', 'webm'])) {
             throw new Exception("Invalid file type for: {$originalName}");
         }
 
@@ -166,7 +166,7 @@ class ModuleHandler {
             }
 
             $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
-            if (!in_array($ext, ['mp4', 'mov', 'avi', 'mkv', 'pdf'])) {
+            if (!in_array($ext, ['mp4', 'mov', 'avi', 'mkv', 'pdf', 'webm'])) {
                 throw new Exception("Invalid file type for: {$name}");
             }
         }

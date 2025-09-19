@@ -300,6 +300,12 @@ require_once __DIR__ . '/server_controller/manage_course_controller.php';
                 <!-- Module File Upload -->
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-2">Course Modules</label>
+                    <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Screen Recording</label>
+                    <button type="button" id="startRecordingBtn" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">Start Recording</button>
+                    <button type="button" id="stopRecordingBtn" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 ml-2" disabled>Stop Recording</button>
+                    <p id="recordingStatus" class="text-sm text-gray-500 mt-1">Not recording</p>
+                    </div>
 
                     <!-- Drag & Drop Area -->
                     <div id="dropArea" 
@@ -392,6 +398,13 @@ require_once __DIR__ . '/server_controller/manage_course_controller.php';
 let uploadedFiles = [];
 let currentCourseId = null;
 let hasModule = false;
+let screenStream;
+let micStream;
+let mediaStream;
+let mediaRecorder;
+let recordedChunks = [];
+let audioContext;
+let destination;
 
 document.addEventListener('DOMContentLoaded', function () {
 
@@ -462,7 +475,10 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!moduleList) return;
 
         const row = document.createElement('div');
-        row.className = 'group flex flex-wrap items-start gap-3 p-4 border border-gray-300 rounded relative';
+        row.className = 'group flex flex-col sm:flex-row items-start gap-3 p-4 border border-gray-300 rounded relative';
+
+        // Create a URL for the file for preview
+        const fileURL = URL.createObjectURL(file);
 
         row.innerHTML = `
             <div class="w-full sm:w-1/4 text-sm text-gray-700 truncate">📄 ${file.name}</div>
@@ -475,6 +491,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
             <input type="hidden" name="module_file_names[]" value="${file.name}">
 
+            <video class="w-full sm:w-1/4 mt-2 sm:mt-0 rounded border" controls>
+                <source src="${fileURL}" type="${file.type}">
+                Your browser does not support the video tag.
+            </video>
+
             <button type="button"
                 class="absolute top-2 right-2 text-red-500 hover:text-red-700 text-sm font-bold opacity-0 group-hover:opacity-100 transition-opacity duration-200"
                 title="Remove">❌</button>
@@ -485,10 +506,94 @@ document.addEventListener('DOMContentLoaded', function () {
             const index = uploadedFiles.findIndex(f => f.name === file.name && f.size === file.size);
             if (index > -1) uploadedFiles.splice(index, 1);
             row.remove();
+            URL.revokeObjectURL(fileURL); // free memory
         });
 
         moduleList.appendChild(row);
     }
+
+    // === SCREEN RECORDING ===
+    const startBtn = document.getElementById('startRecordingBtn');
+    const stopBtn = document.getElementById('stopRecordingBtn');
+    const statusText = document.getElementById('recordingStatus');
+
+    if (startBtn && stopBtn) {
+        startBtn.addEventListener('click', async () => {
+            try {
+                // Capture screen (video + optional system audio)
+                screenStream = await navigator.mediaDevices.getDisplayMedia({
+                    video: true,
+                    audio: true
+                });
+
+                // Capture microphone audio
+                micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+                // Mix audio
+                audioContext = new AudioContext();
+                destination = audioContext.createMediaStreamDestination();
+
+                if (screenStream.getAudioTracks().length > 0) {
+                    const screenSource = audioContext.createMediaStreamSource(new MediaStream(screenStream.getAudioTracks()));
+                    screenSource.connect(destination);
+                }
+
+                const micSource = audioContext.createMediaStreamSource(new MediaStream(micStream.getAudioTracks()));
+                micSource.connect(destination);
+
+                // Combine video + mixed audio
+                mediaStream = new MediaStream([
+                    ...screenStream.getVideoTracks(),
+                    ...destination.stream.getAudioTracks()
+                ]);
+
+                // Setup MediaRecorder
+                mediaRecorder = new MediaRecorder(mediaStream);
+                recordedChunks = [];
+
+                mediaRecorder.ondataavailable = e => {
+                    if (e.data.size > 0) recordedChunks.push(e.data);
+                };
+
+                mediaRecorder.onstop = () => {
+                    // Save recording
+                    const blob = new Blob(recordedChunks, { type: 'video/webm' });
+                    const file = new File([blob], `screen_recording_${Date.now()}.webm`, { type: 'video/webm' });
+
+                    uploadedFiles.push(file);
+                    addModuleRow(file);
+
+                    statusText.textContent = 'Recording added to module list';
+                    showToast('Screen + mic recording added to module list', 'success');
+
+                    // Stop all tracks
+                    screenStream.getTracks().forEach(track => track.stop());
+                    micStream.getTracks().forEach(track => track.stop());
+
+                    // Disconnect and close AudioContext
+                    destination.disconnect();
+                    audioContext.close();
+                };
+
+                mediaRecorder.start();
+                statusText.textContent = 'Recording...';
+                startBtn.disabled = true;
+                stopBtn.disabled = false;
+
+            } catch (err) {
+                console.error(err);
+                showToast('Cannot start screen recording with mic', 'error');
+            }
+        });
+
+        stopBtn.addEventListener('click', () => {
+            mediaRecorder?.stop();
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+            statusText.textContent = 'Processing recording...';
+        });
+    }
+
 
     // === HANDLE FILES ===
     window.handleFiles = function(files) {
@@ -704,5 +809,7 @@ function showToast(message, type = 'info') {
     if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 </script>
+
+
 </body>
 </html>
