@@ -4,8 +4,14 @@ require_once __DIR__ . '/../../config.php';
 require_once 'video_controller.php';
 
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
-    header("Location: index.php");
-    exit;
+    if ($is_ajax) {
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+        exit;
+    } else {
+        header("Location: index.php");
+        exit;
+    }
 }
 
 // -------------------- Dashboard Summary Queries --------------------
@@ -71,23 +77,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // -------------------- Handlers --------------------
 function handleCourseAdd($conn) {
+    global $is_ajax;
+
     header('Content-Type: application/json');
 
-    if (empty($_POST['title'])) {
-        echo json_encode(['success' => false, 'message' => "Missing required fields"]);
+    // Validate required fields
+    if (empty($_POST['course_title'])) {
+        echo json_encode(['success' => false, 'message' => "Missing course title"]);
         return;
     }
 
-    // Validate module upload BEFORE inserting the course
+    $title = $conn->real_escape_string(trim($_POST['course_title']));
+    $description = $conn->real_escape_string(trim($_POST['course_description'] ?? ''));
+    $created_by = $_SESSION['user_id'];
+
+    // Check if module data exists
     $has_titles = isset($_POST['module_titles']) && is_array($_POST['module_titles']);
     $has_files = isset($_FILES['module_files']) && count($_FILES['module_files']['name']) > 0;
 
+    // ✅ Pre-validate modules if provided
     if ($has_titles && $has_files) {
         try {
-            // Use a temporary fake course ID to validate files first
-            $tempCourseId = -1; // Not inserted yet
+            $tempCourseId = -1; // fake course id for validation only
             $handler = new ModuleHandler($conn, $tempCourseId);
-            $handler->validateModulesOnly(); // You’ll create this method (explained below)
+            $handler->validateModulesOnly();
         } catch (Exception $e) {
             echo json_encode([
                 'success' => false,
@@ -97,11 +110,7 @@ function handleCourseAdd($conn) {
         }
     }
 
-    // Now insert course
-    $title = $conn->real_escape_string(trim($_POST['title']));
-    $description = $conn->real_escape_string(trim($_POST['description'] ?? ''));
-    $created_by = $_SESSION['user_id'];
-
+    // ✅ Insert the new course
     $stmt = $conn->prepare("INSERT INTO courses (title, description, created_by) VALUES (?, ?, ?)");
     $stmt->bind_param("ssi", $title, $description, $created_by);
 
@@ -112,13 +121,13 @@ function handleCourseAdd($conn) {
 
     $new_course_id = $conn->insert_id;
 
-    // Now save modules (real files)
+    // ✅ Now save modules if uploaded
     if ($has_titles && $has_files) {
         try {
             $handler = new ModuleHandler($conn, $new_course_id);
-            $handler->saveModules(); // Now safe to actually move files
+            $handler->saveModules();
         } catch (Exception $e) {
-            // Rollback course creation if module saving failed
+            // Rollback course if modules failed
             $conn->query("DELETE FROM courses WHERE id = {$new_course_id}");
             echo json_encode([
                 'success' => false,
@@ -128,6 +137,7 @@ function handleCourseAdd($conn) {
         }
     }
 
+    // ✅ Success response
     echo json_encode([
         'success' => true,
         'message' => "Course created successfully!",
@@ -135,7 +145,6 @@ function handleCourseAdd($conn) {
         'has_course_module' => $has_titles && $has_files
     ]);
 }
-
 
 function handleCourseDelete($conn) {
     if (empty($_POST['course_id'])) {

@@ -266,85 +266,72 @@ require_once __DIR__ . '/server_controller/manage_course_controller.php';
         </div>
     </div>
 
-        <!-- Add Course Modal -->
-    <div class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center backdrop-blur-sm" id="addCourseModal">
-        <div class="bg-white rounded-xl shadow-xl w-full max-w-xl max-h-[90vh] overflow-y-auto">
-            <div class="bg-gradient-to-r from-blue-600 to-blue-800 p-5 rounded-t-xl flex items-center justify-between">
-            <h5 class="text-lg font-semibold text-white flex items-center">
-                <i data-lucide="plus-circle" class="h-5 w-5 mr-2"></i> Add New Course
-            </h5>
-            <button type="button" class="text-white/80 hover:text-white" onclick="hideModal('addCourseModal')">
-                <i data-lucide="x" class="h-5 w-5"></i>
-            </button>
-            </div>
-            <div class="p-6">
+     <!-- ADD COURSE MODAL -->
+    <div id="addCourseModal" class="fixed inset-0 hidden items-center justify-center bg-black bg-opacity-50 z-50">
+        <div class="bg-white rounded-2xl w-full max-w-3xl p-6 relative shadow-lg overflow-y-auto max-h-[90vh]">
+            <h2 class="text-2xl font-bold mb-4">Add New Course</h2>
             <form id="addCourseForm" action="server_controller/manage_course_controller.php" method="POST" enctype="multipart/form-data">
                 <input type="hidden" name="course_add" value="1">
                 <input type="hidden" name="course_action" value="add">
-
                 <!-- Course Title -->
-                <div class="mb-5">
-                <label for="title" class="block text-sm font-medium text-gray-700 mb-2">Course Title</label>
-                <div class="relative">
-                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                    <i data-lucide="book-open" class="w-5 h-5"></i>
-                    </div>
-                    <input type="text" name="title" id="title" required placeholder="Enter course title"
+                <div class="mb-4">
+                    <label for="courseTitle" class="block text-sm font-medium text-gray-700">Course Title</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                        <i data-lucide="book-open" class="w-5 h-5"></i>
+                        </div>
+                        <input type="text" id="courseTitle" name="course_title" required
                         class="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg text-gray-900 focus:ring-indigo-500 focus:border-indigo-500 transition">
-                </div>
+                    </div>
                 </div>
 
                 <!-- Course Description -->
-                <div class="mb-6">
-                <label for="description" class="block text-sm font-medium text-gray-700 mb-2">Course Description</label>
-                <div class="relative">
-                    <div class="absolute top-3 left-3 text-gray-400">
-                    <i data-lucide="align-left" class="w-5 h-5"></i>
-                    </div>
-                    <textarea name="description" id="description" required rows="4" placeholder="Enter course description"
-                            class="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg text-gray-900 focus:ring-indigo-500 focus:border-indigo-500 transition"></textarea>
-                </div>
-                </div>
-
-                <!-- MODULE DRAG-DROP -->
                 <div class="mb-4">
-                    <label class="block text-lg font-semibold mb-2">Course Modules</label>
-                    <div id="dropZone"
-                        class="relative border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:bg-gray-50 transition cursor-pointer"
-                        ondragover="event.preventDefault()"
-                        ondrop="handleDrop(event)">
-                        
-                        <!-- Flex container to center contents -->
-                        <div class="flex flex-col items-center justify-center" onclick="document.getElementById('filePicker').click()">
-                            <i data-lucide="upload-cloud" class="w-10 h-10 text-blue-500 mb-4"></i>
-                            <strong>Drop files here</strong> or <span class="text-black-500">click to upload</span>
-                            <p class="text-xs text-gray-500 mt-1">
-                                Max file size: 250MB
-                            </p>
+                    <label for="courseDescription" class="block text-sm font-medium text-gray-700">Course Description</label>
+                    <div class="relative">
+                        <div class="absolute top-3 left-3 text-gray-400">
+                        <i data-lucide="book-open" class="w-5 h-5"></i>
                         </div>
-
-                        <input type="file" id="filePicker" multiple accept="video/*,application/pdf"
-                            class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onchange="handleFiles(this.files)">
+                        <textarea id="courseDescription" name="course_description" rows="3" placeholder="Enter course description"
+                            class="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg text-gray-900 focus:ring-indigo-500 focus:border-indigo-500 transition"></textarea>
                     </div>
                 </div>
 
-                <!-- MODULE LIST PREVIEW -->
-                <div id="moduleList" class="space-y-3 mt-4"></div>
+                <!-- Module File Upload -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Course Modules</label>
 
-                <!-- Form Actions -->
-                <div class="flex justify-end space-x-3 mt-8">
-                <button type="button" onclick="hideModal('addCourseModal')"
-                        class="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-lg text-sm font-medium flex items-center gap-2">
-                    <i data-lucide="x" class="h-4 w-4"></i> Cancel
-                </button>
-                <button type="submit" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium flex items-center gap-2">
-                    <i data-lucide="save" class="h-4 w-4"></i> Save Course
-                </button>
+                    <!-- Drag & Drop Area -->
+                    <div id="dropArea" 
+                        class="w-full p-4 border-2 border-dashed border-gray-300 rounded text-center cursor-pointer hover:border-blue-400 transition-colors"
+                        ondragover="event.preventDefault()" 
+                        ondrop="handleDrop(event)">
+                        Drag & Drop files here or <span class="text-blue-500 underline">click to select</span>
+                        <input type="file" id="filePicker" multiple class="hidden" onchange="handleFiles(this.files)">
+                    </div>
+
+                    <!-- Module List -->
+                    <div id="moduleList" class="mt-3 flex flex-col gap-3"></div>
+                </div>
+
+                <!-- Hidden Fields -->
+                <input type="hidden" id="hiddenCourseId" name="course_id" value="">
+
+                <!-- Form Buttons -->
+                <div class="mt-6 flex justify-end gap-2">
+                    <button type="button" onclick="hideModal('addCourseModal')" 
+                        class="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-100">Cancel</button>
+                    <button type="submit" 
+                        class="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600">Save Course</button>
                 </div>
             </form>
-            </div>
+
+            <!-- Close Button -->
+            <button type="button" onclick="hideModal('addCourseModal')" 
+                class="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-xl font-bold">&times;</button>
         </div>
     </div>
+
 
     <!-- Delete Course Confirmation Modal -->
     <div class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center backdrop-blur-sm transition-all duration-300" id="deleteCourseModal" tabindex="-1" aria-labelledby="deleteCourseModalLabel" aria-hidden="true">
@@ -392,21 +379,33 @@ require_once __DIR__ . '/server_controller/manage_course_controller.php';
 <?php require_once  __DIR__ . '/view_controller/quiz_modal.php';?>
 
 <script>
-    let uploadedFiles = [];
-    let currentCourseId = null;
-    let hasModule = false;
+    // Open file picker when clicking drag & drop area
+    const dropArea = document.getElementById('dropArea');
+    const filePicker = document.getElementById('filePicker');
+
+    if(dropArea && filePicker){
+        dropArea.addEventListener('click', () => filePicker.click());
+    }
+</script>
+
+<script>
+let uploadedFiles = [];
+let currentCourseId = null;
+let hasModule = false;
+
 document.addEventListener('DOMContentLoaded', function () {
-    // === FORM HANDLER ===
+
+    // === FORM SUBMISSION HANDLER ===
     function handleFormSubmission(formId, onSuccessCallback) {
         const form = document.getElementById(formId);
         if (!form) return;
 
-        form.addEventListener('submit', async (e) => {
+        form.addEventListener("submit", async (e) => {
             e.preventDefault();
             const formData = new FormData(form);
 
-            uploadedFiles.forEach(file => {
-                formData.append('module_files[]', file);
+            uploadedFiles.forEach((file) => {
+                formData.append("module_files[]", file);
             });
 
             try {
@@ -414,36 +413,53 @@ document.addEventListener('DOMContentLoaded', function () {
                     method: form.method,
                     body: formData,
                     headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
+                        "X-Requested-With": "XMLHttpRequest"
                     }
                 });
 
-                const result = await response.json();
-                if (!response.ok || !result.success)
-                    throw new Error(result.message || 'Submission failed');
+                const text = await response.text(); // get raw response first
+                let result;
 
-                if (formId === 'addCourseForm') {
+                try {
+                    result = JSON.parse(text); // try to parse as JSON
+                } catch (parseError) {
+                    console.error("❌ Response is not JSON:", text);
+                    showToast("Server error: response was not JSON. Check console.", "error");
+                    return;
+                }
+
+                if (!response.ok || !result.success) {
+                    throw new Error(result.message || "Submission failed");
+                }
+
+                // ✅ normal flow
+                if (formId === "addCourseForm") {
                     currentCourseId = result.course_id;
                     hasModule = result.has_course_module;
-                    document.getElementById('hiddenCourseId').value = currentCourseId;
-                    if (hasModule) showModal('addQuestionModal');
-                    else window.location.href = 'edit_course.php?id=' + currentCourseId;
+                    document.getElementById("hiddenCourseId").value = currentCourseId;
+                    if (hasModule) {
+                        showModal("addQuestionModal");
+                    } else {
+                        window.location.href = "edit_course.php?id=" + currentCourseId;
+                    }
                 }
+
                 uploadedFiles = [];
-                showToast(result.message || 'Successfully submitted', 'success');
+                showToast(result.message || "Successfully submitted", "success");
                 onSuccessCallback?.(form, result);
 
             } catch (err) {
-                // Access the actual `error` field from the JSON response if available
-                const message = err.detail?.error ||  err.message;
-                console.error('Form submission failed:', message);
-                showToast(message, 'error');
+                const message = err.detail?.error || err.message;
+                console.error("Form submission failed:", message);
+                showToast(message, "error");
             }
         });
     }
 
-    function addModuleRow(file, index) {
+    // === MODULE ROW ===
+    function addModuleRow(file) {
         const moduleList = document.getElementById('moduleList');
+        if (!moduleList) return;
 
         const row = document.createElement('div');
         row.className = 'group flex flex-wrap items-start gap-3 p-4 border border-gray-300 rounded relative';
@@ -464,39 +480,38 @@ document.addEventListener('DOMContentLoaded', function () {
                 title="Remove">❌</button>
         `;
 
-        // Remove row on ❌ click
         const removeBtn = row.querySelector('button');
         removeBtn.addEventListener('click', () => {
+            const index = uploadedFiles.findIndex(f => f.name === file.name && f.size === file.size);
+            if (index > -1) uploadedFiles.splice(index, 1);
             row.remove();
         });
 
         moduleList.appendChild(row);
     }
 
-
-
-    window.handleFiles = function (files) {
-        [...files].forEach((file, i) => {
-            uploadedFiles.push(file); 
-            addModuleRow(file); 
+    // === HANDLE FILES ===
+    window.handleFiles = function(files) {
+        [...files].forEach(file => {
+            if (!uploadedFiles.some(f => f.name === file.name && f.size === file.size)) {
+                uploadedFiles.push(file);
+                addModuleRow(file);
+            }
         });
-
-        document.getElementById('filePicker').value = ''; 
+        document.getElementById('filePicker').value = '';
     };
 
+    // === HANDLE DROP ===
     window.handleDrop = function(e) {
         e.preventDefault();
-        const files = e.dataTransfer.files;
+        handleFiles(e.dataTransfer.files);
     }
-        
 
-    // === Refetch Courses ===
+    // === REFRESH COURSE LIST ===
     async function refreshCourseList() {
         try {
             const res = await fetch('server_controller/fetch_courses_controller.php', {
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
             });
 
             const result = await res.json();
@@ -512,37 +527,26 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-
-    // === Add Course Form ===
+    // === ADD COURSE FORM ===
     handleFormSubmission('addCourseForm', (form) => {
         form.reset();
         hideModal('addCourseModal');
-        // refreshCourseList();
-
     });
 
-    // === Delete Course Form ===
+    // === DELETE COURSE FORM ===
     handleFormSubmission('deleteCourseForm', (form, result) => {
         hideModal('deleteCourseModal');
-
-        // Remove the deleted course card from the DOM
         const deletedCard = document.querySelector(`.course-card[data-id="${result.course_id}"]`);
-        if (deletedCard) {
-            deletedCard.remove();
-        }
-
-        // Re-run search filter if needed
+        if (deletedCard) deletedCard.remove();
         if (typeof clearSearch === 'function') {
             document.getElementById('courseSearch')?.dispatchEvent(new Event('input'));
         }
     });
 
     // === ICON INITIALIZATION ===
-    if (typeof lucide !== 'undefined') {
-        lucide.createIcons();
-    }
+    if (typeof lucide !== 'undefined') lucide.createIcons();
 
-    // === SESSION TOAST MESSAGES (from PHP) ===
+    // === SESSION TOAST MESSAGES ===
     <?php if (isset($_SESSION['success'])): ?>
         showToast('<?php echo addslashes($_SESSION['success']); ?>', 'success');
         <?php unset($_SESSION['success']); ?>
@@ -579,68 +583,58 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
 
-        // Clear search globally
         window.clearSearch = () => {
             searchInput.value = '';
             searchInput.dispatchEvent(new Event('input'));
             searchInput.focus();
         };
     }
+
 });
 
-    // === MODAL HANDLING ===
-    function showModal(modalId) {
-        const modal = document.getElementById(modalId);
-        if (!modal) return;
-            // --- Reset file inputs and module list for addCourseModal only ---
-        if (modalId === 'addCourseForm') {
-            const form = document.getElementById('addCourseForm');
-            if (form) form.reset();
-            // Clear uploadedFiles array (declared globally in your script)
-            uploadedFiles = [];
+// === MODAL HANDLING ===
+function showModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (!modal) return;
 
-            // Clear module list
-            const moduleList = document.getElementById('moduleList');
-            if (moduleList) moduleList.innerHTML = '';
-
-            // Reset file input
-            const filePicker = document.getElementById('filePicker');
-            if (filePicker) filePicker.value = '';
-        }
-        document.body.classList.add('overflow-hidden');
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-
-        setTimeout(() => {
-            const firstInput = modal.querySelector('input:not([type="hidden"])');
-            if (firstInput) firstInput.focus();
-        }, 50);
+    if (modalId === 'addCourseModal') {
+        const form = document.getElementById('addCourseForm');
+        if (form) form.reset();
+        uploadedFiles = [];
+        const moduleList = document.getElementById('moduleList');
+        if (moduleList) moduleList.innerHTML = '';
+        const filePicker = document.getElementById('filePicker');
+        if (filePicker) filePicker.value = '';
     }
 
-    function hideModal(modalId) {
-        const modal = document.getElementById(modalId);
-        if (!modal) return;
-        // Reset form if it's the addCourseModal
-        if (modalId === 'addCourseModal') {
-            const form = document.getElementById('addCourseForm');
-            if (form && typeof form.reset === 'function') {
-                form.reset();
-            }
+    document.body.classList.add('overflow-hidden');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
 
-            uploadedFiles = [];
-            const moduleList = document.getElementById('moduleList');
-            if (moduleList) moduleList.innerHTML = '';
+    setTimeout(() => {
+        const firstInput = modal.querySelector('input:not([type="hidden"])');
+        if (firstInput) firstInput.focus();
+    }, 50);
+}
 
-            const filePicker = document.getElementById('filePicker');
-            if (filePicker) filePicker.value = '';
-        }
+function hideModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (!modal) return;
 
-        document.getElementById('moduleList').innerHTML = '';
-        document.getElementById('filePicker').value = '';
-        document.body.classList.remove('overflow-hidden');
-        modal.classList.remove('flex');
-        modal.classList.add('hidden');
+    if (modalId === 'addCourseModal') {
+        const form = document.getElementById('addCourseForm');
+        if (form && typeof form.reset === 'function') form.reset();
+        uploadedFiles = [];
+        const moduleList = document.getElementById('moduleList');
+        if (moduleList) moduleList.innerHTML = '';
+        const filePicker = document.getElementById('filePicker');
+        if (filePicker) filePicker.value = '';
     }
+
+    document.body.classList.remove('overflow-hidden');
+    modal.classList.remove('flex');
+    modal.classList.add('hidden');
+}
 
 // === DELETE CONFIRMATION ===
 function confirmDeleteCourse(courseId, courseTitle) {
@@ -648,14 +642,12 @@ function confirmDeleteCourse(courseId, courseTitle) {
     const nameDisplay = document.getElementById('courseNameToDelete');
     if (idInput) idInput.value = courseId;
     if (nameDisplay) nameDisplay.textContent = courseTitle;
-
     showModal('deleteCourseModal');
 }
 
-// === TOAST NOTIFICATION SYSTEM ===
+// === TOAST NOTIFICATIONS ===
 function showToast(message, type = 'info') {
     let toastContainer = document.getElementById('toast-container');
-
     if (!toastContainer) {
         toastContainer = document.createElement('div');
         toastContainer.id = 'toast-container';
@@ -675,26 +667,42 @@ function showToast(message, type = 'info') {
 
     const [bgColor, textColor, icon] = config[type] || config.info;
 
-    toast.className += ` ${bgColor} ${textColor} rounded-lg shadow-lg p-4 mb-2 flex items-center`;
+    toast.className += ` ${bgColor} ${textColor} rounded-lg shadow-lg p-4 mb-2 flex items-center gap-2`;
+
     toast.innerHTML = `
-        <i data-lucide="${icon}" class="w-5 h-5 mr-2"></i>
-        <span>${message}</span>
+        <i data-lucide="${icon}" class="w-5 h-5"></i>
+        <span class="flex-1">${message}</span>
+        <button class="ml-2 focus:outline-none hover:opacity-80" aria-label="Close">
+            <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
     `;
 
     toastContainer.appendChild(toast);
 
-    if (typeof lucide !== 'undefined') {
-        lucide.createIcons({ attrs: { class: ["stroke-current"] } });
+    // Animate in
+    requestAnimationFrame(() => {
+        toast.classList.remove('translate-x-full');
+        toast.classList.add('translate-x-0');
+    });
+
+    // Auto-remove after 5s
+    setTimeout(() => {
+        toast.classList.add('translate-x-full');
+        setTimeout(() => toast.remove(), 300);
+    }, 5000);
+
+    // Close button
+    const closeBtn = toast.querySelector('button');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => {
+            toast.classList.add('translate-x-full');
+            setTimeout(() => toast.remove(), 300);
+        });
     }
 
-    setTimeout(() => toast.classList.replace('translate-x-full', 'translate-x-0'), 10);
-    setTimeout(() => {
-        toast.classList.replace('translate-x-0', 'translate-x-full');
-        setTimeout(() => toast.remove(), 300);
-    }, 3000);
+    // Re-init lucide icons
+    if (typeof lucide !== 'undefined') lucide.createIcons();
 }
-
 </script>
-
 </body>
 </html>
