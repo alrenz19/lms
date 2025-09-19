@@ -192,27 +192,26 @@ if ($video_result->num_rows > 0) {
                                         <?php endforeach; ?>
                                     <?php endif; ?>
                                     <div class="mb-4">
-                                        <label class="block text-lg font-semibold mb-2">Course Modules</label>
-                                        <div id="dropZone"
-                                            class="relative border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:bg-gray-50 transition cursor-pointer"
-                                            ondragover="event.preventDefault()"
-                                            ondrop="handleDrop(event)">
-                                            
-                                            <!-- Flex container to center contents -->
-                                            <div class="flex flex-col items-center justify-center" onclick="document.getElementById('filePicker').click()">
-                                                <i data-lucide="upload-cloud" class="w-10 h-10 text-blue-500 mb-4"></i>
-                                                <strong>Drop files here</strong> or <span class="text-black-500">click to upload</span>
-                                                <p class="text-xs text-gray-500 mt-1">
-                                                    Max file size: 250MB
-                                                </p>
-                                            </div>
-
-                                            <input type="file" id="filePicker" multiple accept="video/*,application/pdf"
-                                                class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onchange="handleFiles(this.files)">
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Course Modules</label>
+                                        <div class="mb-4">
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">Screen Recording</label>
+                                            <button type="button" id="startRecordingBtn" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">Start Recording</button>
+                                            <button type="button" id="stopRecordingBtn" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 ml-2" disabled>Stop Recording</button>
+                                            <p id="recordingStatus" class="text-sm text-gray-500 mt-1">Not recording</p>
                                         </div>
+
+                                        <!-- Drag & Drop Area -->
+                                        <div id="dropArea" 
+                                            class="w-full p-4 border-2 border-dashed border-gray-300 rounded text-center cursor-pointer hover:border-blue-400 transition-colors"
+                                            ondragover="event.preventDefault()" 
+                                            ondrop="handleDrop(event)">
+                                            Drag & Drop files here or <span class="text-blue-500 underline">click to select</span>
+                                            <input type="file" id="filePicker" multiple class="hidden" onchange="handleFiles(this.files)">
+                                        </div>
+
+                                        <!-- Module List -->
+                                        <div id="moduleList" class="mt-3 flex flex-col gap-3"></div>
                                     </div>
-                                                    <!-- MODULE LIST PREVIEW -->
-                                    <div id="moduleList" class="space-y-3 mt-4"></div>
                                 </div>
                             </div>
                             
@@ -396,7 +395,24 @@ if ($video_result->num_rows > 0) {
 </script>
 
 <script>
+    // Open file picker when clicking drag & drop area
+    const dropArea = document.getElementById('dropArea');
+    const filePicker = document.getElementById('filePicker');
+
+    if(dropArea && filePicker){
+        dropArea.addEventListener('click', () => filePicker.click());
+    }
+</script>
+
+<script>
     let uploadedFiles = [];
+    let screenStream;
+    let micStream;
+    let mediaStream;
+    let mediaRecorder;
+    let recordedChunks = [];
+    let audioContext;
+    let destination;
 document.addEventListener('DOMContentLoaded', function () {
     const form = document.getElementById('updateCourseForm');
     if (!form) return;
@@ -460,23 +476,25 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    window.handleFiles = function (files) {
-        [...files].forEach((file, i) => {
-            uploadedFiles.push(file); 
-            addModuleRow(file); 
+    window.handleFiles = function(files) {
+        [...files].forEach(file => {
+            if (!uploadedFiles.some(f => f.name === file.name && f.size === file.size)) {
+                uploadedFiles.push(file);
+                addModuleRow(file);
+            }
         });
-
-        document.getElementById('filePicker').value = ''; 
+        document.getElementById('filePicker').value = '';
     };
 
     window.handleDrop = function(e) {
         e.preventDefault();
-        const files = e.dataTransfer.files;
+        handleFiles(e.dataTransfer.files);
     }
 
-        function addModuleRow(file, index) {
+    function addModuleRow(file, index) {
             
         const moduleList = document.getElementById('moduleList');
+        const fileURL = URL.createObjectURL(file);
 
 
         const row = document.createElement('div');
@@ -491,8 +509,12 @@ document.addEventListener('DOMContentLoaded', function () {
             <input type="text" name="module_descriptions[]" placeholder="Module Description (optional)"
                 class="w-full sm:w-1/3 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring focus:ring-blue-300">
 
-            <input type="hidden" name="module_files_name[]" value="${file.name}">
-            
+            <input type="hidden" name="module_file_names[]" value="${file.name}">
+
+            <video class="w-full sm:w-1/4 mt-2 sm:mt-0 rounded border" controls>
+                <source src="${fileURL}" type="${file.type}">
+                Your browser does not support the video tag.
+            </video>
 
             <button type="button"
                 class="absolute top-2 right-2 text-red-500 hover:text-red-700 text-sm font-bold opacity-0 group-hover:opacity-100 transition-opacity duration-200"
@@ -510,6 +532,88 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         moduleList.appendChild(row);
+    }
+
+    // === SCREEN RECORDING ===
+    const startBtn = document.getElementById('startRecordingBtn');
+    const stopBtn = document.getElementById('stopRecordingBtn');
+    const statusText = document.getElementById('recordingStatus');
+
+    if (startBtn && stopBtn) {
+        startBtn.addEventListener('click', async () => {
+            try {
+                // Capture screen (video + optional system audio)
+                screenStream = await navigator.mediaDevices.getDisplayMedia({
+                    video: true,
+                    audio: true
+                });
+
+                // Capture microphone audio
+                micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+                // Mix audio
+                audioContext = new AudioContext();
+                destination = audioContext.createMediaStreamDestination();
+
+                if (screenStream.getAudioTracks().length > 0) {
+                    const screenSource = audioContext.createMediaStreamSource(new MediaStream(screenStream.getAudioTracks()));
+                    screenSource.connect(destination);
+                }
+
+                const micSource = audioContext.createMediaStreamSource(new MediaStream(micStream.getAudioTracks()));
+                micSource.connect(destination);
+
+                // Combine video + mixed audio
+                mediaStream = new MediaStream([
+                    ...screenStream.getVideoTracks(),
+                    ...destination.stream.getAudioTracks()
+                ]);
+
+                // Setup MediaRecorder
+                mediaRecorder = new MediaRecorder(mediaStream);
+                recordedChunks = [];
+
+                mediaRecorder.ondataavailable = e => {
+                    if (e.data.size > 0) recordedChunks.push(e.data);
+                };
+
+                mediaRecorder.onstop = () => {
+                    // Save recording
+                    const blob = new Blob(recordedChunks, { type: 'video/webm' });
+                    const file = new File([blob], `screen_recording_${Date.now()}.webm`, { type: 'video/webm' });
+
+                    uploadedFiles.push(file);
+                    addModuleRow(file);
+
+                    statusText.textContent = 'Recording added to module list';
+                    showToast('Screen + mic recording added to module list', 'success');
+
+                    // Stop all tracks
+                    screenStream.getTracks().forEach(track => track.stop());
+                    micStream.getTracks().forEach(track => track.stop());
+
+                    // Disconnect and close AudioContext
+                    destination.disconnect();
+                    audioContext.close();
+                };
+
+                mediaRecorder.start();
+                statusText.textContent = 'Recording...';
+                startBtn.disabled = true;
+                stopBtn.disabled = false;
+
+            } catch (err) {
+                console.error(err);
+                showToast('Cannot start screen recording with mic', 'error');
+            }
+        });
+
+        stopBtn.addEventListener('click', () => {
+            mediaRecorder?.stop();
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+            statusText.textContent = 'Processing recording...';
+        });
     }
 });
 

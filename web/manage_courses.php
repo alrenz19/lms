@@ -301,10 +301,10 @@ require_once __DIR__ . '/server_controller/manage_course_controller.php';
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-2">Course Modules</label>
                     <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Screen Recording</label>
-                    <button type="button" id="startRecordingBtn" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">Start Recording</button>
-                    <button type="button" id="stopRecordingBtn" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 ml-2" disabled>Stop Recording</button>
-                    <p id="recordingStatus" class="text-sm text-gray-500 mt-1">Not recording</p>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Screen Recording</label>
+                        <button type="button" id="startRecordingBtn" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">Start Recording</button>
+                        <button type="button" id="stopRecordingBtn" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 ml-2" disabled>Stop Recording</button>
+                        <p id="recordingStatus" class="text-sm text-gray-500 mt-1">Not recording</p>
                     </div>
 
                     <!-- Drag & Drop Area -->
