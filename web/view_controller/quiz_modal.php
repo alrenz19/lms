@@ -16,7 +16,7 @@
                 <div class="max-w-4xl mx-auto px-4">
                 <form id="quizForm" action="server_controller/manage_course_controller.php" method="POST" enctype="multipart/form-data" class="space-y-6">
                     <input type="hidden" name="add_question" value="2">
-                    <input type="hidden" name="course_id" id="hiddenCourseId" value="">
+                    <input type="hidden" name="course_id" id="hiddenCourseId" value="<?php echo $course_id; ?>">
                     <div id="questionContainer"></div>
                 </form>
                 </div>

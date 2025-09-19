@@ -52,7 +52,8 @@ foreach ($questions as $question) {
     <meta charset="UTF-8">
     <title>Quiz Review - <?php echo htmlspecialchars($quiz['title']); ?></title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="./public/css/tailwind.min.css" />
+    <!--<link rel="stylesheet" href="./public/css/tailwind.min.css" />-->
+    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script>
         tailwind.config = {

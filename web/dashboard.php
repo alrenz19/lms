@@ -46,13 +46,14 @@ if ($is_admin) {
     $activity_query = "
         SELECT 
             u.username,
+            u.full_name,
             'quiz_completed' AS activity_type,
             c.title AS course_title,
             up.updated_at AS timestamp
         FROM user_progress up
         JOIN users u ON u.id = up.user_id
         JOIN courses c ON c.id = up.course_id
-        WHERE up.completed = 1
+        WHERE up.completed = 1 AND up.removed = 0
         ORDER BY up.updated_at DESC
         LIMIT 10;
 
@@ -66,7 +67,6 @@ $stmt = $conn->prepare($course_query);
 $stmt->bind_param("iii", $user_id, $user_id, $user_id);
 $stmt->execute();
 $courses_result = $stmt->get_result();
-
 
 $courses = [];
 $total_progress = 0;
@@ -107,26 +107,26 @@ $average_score = round($average_score, 2);
 // For student dashboard (non-admin users)
 if (!$is_admin) {
     // Get enrolled courses count
-    $result = $conn->query("SELECT COUNT(DISTINCT q.course_id) as count FROM questions q JOIN user_progress up ON q.course_id = up.course_id WHERE up.user_id = $user_id");
+    $result = $conn->query("SELECT COUNT(DISTINCT q.course_id) as count FROM questions q JOIN user_progress up ON q.course_id = up.course_id WHERE up.user_id = $user_id AND up.removed = 0");
     $enrolled_courses = count($courses);
     
     // Get completed quizzes count
-    $result = $conn->query("SELECT COUNT(*) as count FROM user_progress WHERE user_id = $user_id");
+    $result = $conn->query("SELECT COUNT(*) as count FROM user_progress WHERE user_id = $user_id AND removed = 0");
     $completed_quizzes = $result->fetch_assoc()['count'];
     
     // Calculate course progress and quiz completion percentages
     // Fetch quiz data: total score obtained and possible
     $result = $conn->query("SELECT 
-        (SELECT SUM(score) FROM user_progress WHERE user_id = $user_id) AS score_obtained,
-        (SELECT COUNT(*) FROM questions) AS total_quizzes,
-        (SELECT SUM(total_score) FROM user_progress WHERE user_id = $user_id) AS quiz_taken
+        (SELECT SUM(score) FROM user_progress WHERE user_id = $user_id AND removed = 0) AS score_obtained,
+        (SELECT COUNT(*) FROM questions WHERE removed = 0) AS total_quizzes,
+        (SELECT SUM(total_score) FROM user_progress WHERE user_id = $user_id AND removed = 0) AS quiz_taken
     ");
     $quiz_data = $result->fetch_assoc();
 
     // Fetch course/module progress data
     $result = $conn->query("SELECT 
-        (SELECT COUNT(*) FROM user_video_progress WHERE user_id = $user_id) AS completed_course,
-        (SELECT COUNT(*) FROM course_videos) AS total_module
+        (SELECT COUNT(*) FROM user_video_progress WHERE user_id = $user_id AND removed = 0) AS completed_course,
+        (SELECT COUNT(*) FROM course_videos WHERE removed = 0) AS total_module
     ");
     $progress_data = $result->fetch_assoc();
 
@@ -282,6 +282,7 @@ include_once 'components/dashboard_card.php';
                     <thead>
                         <tr class="bg-gray-50">
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Activity</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Course</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date/Time</th>
@@ -308,6 +309,16 @@ include_once 'components/dashboard_card.php';
                                         </div>
                                         <div class="text-sm font-medium text-gray-900">
                                             <?php echo htmlspecialchars($activity['username']); ?>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center">
+                                        <div class="w-8 h-8 flex-shrink-0 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                                            <i data-lucide="user" class="w-4 h-4 text-blue-600"></i>
+                                        </div>
+                                        <div class="text-sm font-medium text-gray-900">
+                                            <?php echo htmlspecialchars($activity['full_name']); ?>
                                         </div>
                                     </div>
                                 </td>
@@ -373,7 +384,7 @@ include_once 'components/dashboard_card.php';
 
         <?php else: ?>
         <!-- Student Dashboard -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
             <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200 hover:shadow-md transition-all duration-300">
                 <div class="flex items-center justify-between mb-4">
                     <h3 class="text-gray-700 font-medium">My Courses</h3>
@@ -415,20 +426,6 @@ include_once 'components/dashboard_card.php';
                     <span>Quizzes completed</span>
                 </div>
             </div>
-
-            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200 hover:shadow-md transition-all duration-300">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-gray-700 font-medium">Average Score</h3>
-                    <div class="bg-indigo-100 text-indigo-800 p-2 rounded-lg">
-                        <i data-lucide="percent" class="w-5 h-5"></i>
-                    </div>
-                </div>
-                <div class="text-3xl font-bold text-gray-900 mb-1"><?php echo $average_score; ?>%</div>
-                <div class="text-sm text-gray-500 flex items-center">
-                    <i data-lucide="trending-up" class="w-4 h-4 mr-1 text-blue-500"></i>
-                    <span>Your average</span>
-                </div>
-            </div>
         </div>
 
         <!-- Overall Progress -->
@@ -440,19 +437,11 @@ include_once 'components/dashboard_card.php';
                 </h2>
             </div>
             <div class="p-6">
-                <div class="flex items-center justify-between mb-2">
-                    <div class="text-sm font-medium text-gray-700">Overall Completion</div>
-                    <div class="text-sm font-medium text-blue-600"><?php echo $overall_progress; ?>%</div>
-                </div>
-                <div class="w-full bg-gray-200 rounded-full h-2.5 mb-6">
-                    <div class="bg-blue-600 h-2.5 rounded-full" style="width: <?php echo $overall_progress; ?>%"></div>
-                </div>
-                
                 <!-- Progress by Course Type -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div class="bg-blue-50 rounded-lg p-4">
                         <div class="flex justify-between items-center mb-2">
-                            <h3 class="text-sm font-medium text-gray-700">Course Progress</h3>
+                            <h3 class="text-sm font-medium text-gray-700">Module Progress</h3>
                             <span class="text-sm font-medium text-blue-600"><?php echo $course_progress; ?>%</span>
                         </div>
                         <div class="w-full bg-gray-200 rounded-full h-2">
@@ -467,16 +456,6 @@ include_once 'components/dashboard_card.php';
                         </div>
                         <div class="w-full bg-gray-200 rounded-full h-2">
                             <div class="bg-green-600 h-2 rounded-full" style="width: <?php echo $quiz_completion; ?>%"></div>
-                        </div>
-                    </div>
-                    
-                    <div class="bg-amber-50 rounded-lg p-4">
-                        <div class="flex justify-between items-center mb-2">
-                            <h3 class="text-sm font-medium text-gray-700">Score Percentage</h3>
-                            <span class="text-sm font-medium text-amber-600"><?php echo $average_score; ?>%</span>
-                        </div>
-                        <div class="w-full bg-gray-200 rounded-full h-2">
-                            <div class="bg-amber-600 h-2 rounded-full" style="width: <?php echo $average_score; ?>%"></div>
                         </div>
                     </div>
                 </div>
@@ -502,7 +481,7 @@ include_once 'components/dashboard_card.php';
                     <i data-lucide="chevron-right" class="w-4 h-4 ml-1"></i>
                 </a>
             </div>
-            
+
             <div class="p-6">
                 <?php if ($enrolled_courses == 0): ?>
                 <div class="flex flex-col items-center justify-center py-8 text-center">
@@ -534,22 +513,38 @@ include_once 'components/dashboard_card.php';
                                 </div>
                             </div>
                             
-                            <div class="flex items-center text-xs text-gray-500 mb-4">
+                            <div class="flex items-center justify-between text-xs text-gray-500 mb-4">
+                                <?php if ($course['total_questions'] != 0): ?>
                                 <div class="flex items-center mr-3">
                                     <i data-lucide="help-circle" class="w-3 h-3 mr-1 text-blue-500"></i>
-                                    <span><?php echo $course['user_score']; ?>/<?php echo $course['total_questions']; ?> quizzes score</span>
+                                    <span>Score: <?php echo $course['user_score']; ?>/<?php echo $course['total_questions']; ?></span>
                                 </div>
+                                <?php else: ?>
+                                <div class="flex items-center mr-3">
+                                    <i data-lucide="help-circle" class="w-3 h-3 mr-1 text-blue-500"></i>
+                                    <span>No Quiz</span>
+                                </div>
+                                <?php endif; ?>
                                 <?php if ($course_progress == 100): ?>
-                                <span class="px-2 py-0.5 bg-green-100 text-green-800 rounded-full text-xs font-medium flex items-center">
-                                    <i data-lucide="check" class="w-3 h-3 mr-1"></i>
-                                    Completed
-                                </span>
+                                    <span class="px-2 py-0.5 bg-green-100 text-green-800 rounded-full text-xs font-medium flex items-center">
+                                        <i data-lucide="check" class="w-3 h-3 mr-1"></i>
+                                        Completed
+                                    </span>
+                                <?php elseif ($course_progress == 0): ?>
+                                    <span class="px-2 py-0.5 bg-gray-100 text-gray-800 rounded-full text-xs font-medium flex items-center">
+                                        <i data-lucide="circle-dot-dashed" class="w-3 h-3 mr-1"></i>
+                                        Not Started
+                                    </span>
+                                <?php else: ?>
+                                    <span class="px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded-full text-xs font-medium flex items-center">
+                                        <i data-lucide="circle-dot-dashed" class="w-3 h-3 mr-1"></i>
+                                        In Progress
+                                    </span>
                                 <?php endif; ?>
                             </div>
-                            
                             <a href="view_course.php?id=<?php echo $course['course_id']; ?>" 
-                               class="w-full inline-flex items-center justify-center px-4 py-2 bg-blue-100 text-blue-700 
-                               rounded-lg hover:bg-blue-200 transition-colors text-sm font-medium">
+                            class="w-full inline-flex items-center justify-center px-4 py-2 bg-blue-100 text-blue-700 
+                            rounded-lg hover:bg-blue-200 transition-colors text-sm font-medium">
                                 <?php if ($course_progress == 0): ?>
                                 <i data-lucide="play" class="w-4 h-4 mr-2"></i>
                                 Start Course

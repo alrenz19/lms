@@ -7,7 +7,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
     exit;
 }
 
-// Update the main query to get comprehensive user progress
+// Updated query without referencing the quizzes table
 $query = "
     SELECT 
         u.id as user_id,
@@ -16,27 +16,11 @@ $query = "
         u.email,
         COUNT(DISTINCT c.id) as total_enrolled_courses,
         (
-            SELECT COUNT(DISTINCT c.id)
-            FROM courses c
-            WHERE (
-                SELECT COUNT(q.id)
-                FROM quizzes q
-                WHERE q.course_id = c.id
-            ) = (
-                SELECT COUNT(DISTINCT up2.quiz_id)
-                FROM user_progress up2
-                WHERE up2.user_id = u.id
-                AND up2.quiz_id IN (
-                    SELECT q2.id 
-                    FROM quizzes q2 
-                    WHERE q2.course_id = c.id
-                )
-            )
-            AND (
-                SELECT COUNT(q.id)
-                FROM quizzes q
-                WHERE q.course_id = c.id
-            ) > 0
+            SELECT COUNT(DISTINCT c2.id)
+            FROM courses c2
+            JOIN user_progress up2 ON c2.id = up2.course_id
+            WHERE up2.user_id = u.id
+            AND up2.completed = 1
         ) as completed_courses,
         (
             SELECT COUNT(*)
@@ -47,14 +31,13 @@ $query = "
         (
             SELECT COUNT(*)
             FROM questions qs
-            JOIN quizzes qz ON qs.quiz_id = qz.id
-            JOIN courses c ON qz.course_id = c.id
+            WHERE qs.course_id = c.id
+            AND qs.removed = 0
         ) as total_questions,
         MAX(up.updated_at) as last_activity
     FROM users u
     LEFT JOIN user_progress up ON u.id = up.user_id
-    LEFT JOIN quizzes q ON up.quiz_id = q.id
-    LEFT JOIN courses c ON q.course_id = c.id
+    LEFT JOIN courses c ON up.course_id = c.id
     WHERE u.role = 'user'
     GROUP BY u.id
     ORDER BY u.full_name";
@@ -62,7 +45,7 @@ $query = "
 $result = $conn->query($query);
 
 // Get total courses and active users
-$total_courses = $conn->query("SELECT COUNT(*) as total FROM courses")->fetch_assoc()['total'];
+$total_courses = $conn->query("SELECT COUNT(*) as total FROM courses WHERE removed = 0")->fetch_assoc()['total'];
 $total_users = $result->num_rows;
 
 // Calculate overall platform statistics
@@ -173,15 +156,24 @@ include_once 'components/dashboard_card.php';
                     <i data-lucide="users" class="w-5 h-5 text-blue-600 mr-2"></i>
                     User Progress Details
                 </h2>
-                <div class="relative w-full sm:w-auto">
-                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
-                        <i data-lucide="search" class="w-4 h-4"></i>
-                    </span>
-                    <input type="search" 
-                           class="w-full sm:w-64 pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
-                           id="searchProgress" 
-                           placeholder="Search users..." 
-                           autocomplete="off">
+                <div class="flex items-center gap-2">
+                    <!-- Download CSV Button -->
+                    <button onclick="downloadCSV()" 
+                            class="flex items-center gap-2 px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors text-sm font-medium">
+                        <i data-lucide="download" class="w-4 h-4"></i>
+                    </button>
+                    
+                    <!-- Search Input -->
+                    <div class="relative w-full sm:w-64">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
+                            <i data-lucide="search" class="w-4 h-4"></i>
+                        </span>
+                        <input type="search" 
+                            class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                            id="searchProgress" 
+                            placeholder="Search users..." 
+                            autocomplete="off">
+                    </div>
                 </div>
             </div>
             <div class="overflow-x-auto">
@@ -237,7 +229,7 @@ include_once 'components/dashboard_card.php';
                                              title="<?php echo round($completion_rate); ?>% completed"></div>
                                     </div>
                                     <div class="flex justify-between items-center">
-                                        <div class="text-xs text-gray-500">
+                                        <div class="text-xs text-gray-500 myProgress">
                                             <?php echo round($completion_rate); ?>%
                                         </div>
                                         <?php if ($completion_rate === 100): ?>
@@ -299,6 +291,51 @@ include_once 'components/dashboard_card.php';
 </div>
 
 <script>
+    function downloadCSV() {
+        // Get table data
+        const rows = document.querySelectorAll('#progressTableBody tr:not(.hidden)');
+        let csvContent = "data:text/csv;charset=utf-8,";
+        
+        // Add headers
+        const headers = ["User", "Username", "Email", "Enrolled Courses", "Completed Courses", "Progress", "Last Activity"];
+        csvContent += headers.join(",") + "\r\n";
+        
+        // Add rows
+        rows.forEach(row => {
+            if (row.getAttribute('colspan')) return; // Skip the "no data" row
+            
+            const name = row.querySelector('.text-gray-900')?.textContent.trim() || '';
+            const username = row.querySelector('.text-gray-500')?.textContent.trim().replace('@', '') || '';
+            const email = row.querySelectorAll('td')[1]?.textContent.trim() || '';
+            const enrolled = row.querySelectorAll('td')[3]?.textContent.trim().split(' / ')[1] || '0';
+            const completed = row.querySelectorAll('td')[3]?.textContent.trim().split(' / ')[0] || '0';
+            const progress = row.querySelector('.myProgress')?.textContent.trim() || '0%';
+            const lastActivity = row.querySelectorAll('td')[4]?.textContent.trim() || 'No activity';
+            
+            const rowData = [
+                `"${name}"`,
+                `"${username}"`,
+                `"${email}"`,
+                enrolled,
+                completed,
+                progress,
+                `"${lastActivity}"`
+            ];
+            
+            csvContent += rowData.join(",") + "\r\n";
+        });
+        
+        // Create download link
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "user_progress_report.csv");
+        document.body.appendChild(link);
+        
+        // Trigger download
+        link.click();
+        document.body.removeChild(link);
+    }
     document.addEventListener('DOMContentLoaded', function() {
         // Initialize Lucide icons
         lucide.createIcons();

@@ -160,14 +160,12 @@ function handleCourseDelete($conn) {
         $updates = [
             // Soft delete user progress
             "UPDATE user_progress up 
-             JOIN questions q ON up.course_id = q.course_id 
-             SET up.removed = 1 
-             WHERE q.course_id = ?",
+            JOIN questions q ON up.course_id = q.course_id 
+            SET up.removed = 1 
+            WHERE q.course_id = ?",
 
             // Soft delete questions
-            "UPDATE questions
-             SET removed = 1 
-             WHERE course_id = ?",
+            "UPDATE questions SET removed = 1 WHERE course_id = ?",
 
             // Soft delete quizzes
             "UPDATE quizzes SET removed = 1 WHERE course_id = ?",
@@ -176,8 +174,18 @@ function handleCourseDelete($conn) {
             "UPDATE courses SET removed = 1 WHERE id = ?",
 
             // Soft delete the modules
-            "UPDATE course_videos SET removed = 1 WHERE course_id = ?"
+            "UPDATE course_videos SET removed = 1 WHERE course_id = ?",
+
+            // Soft delete user progress (course-level)
+            "UPDATE user_progress SET removed = 1 WHERE course_id = ?",
+
+            // 🔹 NEW: Soft delete user video progress (module-level)
+            "UPDATE user_video_progress uvp
+            JOIN course_videos cv ON uvp.video_id = cv.id
+            SET uvp.removed = 1
+            WHERE cv.course_id = ?"
         ];
+
 
         foreach ($updates as $query) {
             $stmt = $conn->prepare($query);

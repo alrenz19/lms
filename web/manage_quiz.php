@@ -271,17 +271,19 @@ unset($_SESSION['new_question_id']);
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
                                     <?php
                                     $options = [
-                                        'A' => $row['option_a'],
-                                        'B' => $row['option_b'],
-                                        'C' => $row['option_c'],
-                                        'D' => $row['option_d']
+                                        'a' => $row['option_a'],
+                                        'b' => $row['option_b'],
+                                        'c' => $row['option_c'],
+                                        'd' => $row['option_d']
                                     ];
                                     
                                     foreach ($options as $letter => $option):
                                         $is_correct = ($letter === $row['correct_answer']);
                                         $bg_class = $is_correct ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200';
                                         $option_image_field = 'option_' . strtolower($letter) . '_image';
-                                        $has_image = !empty($row[$option_image_field]);
+                                        $has_image = !empty($row[$option_image_field]); 
+
+                                        
                                     ?>
                                     <div class="option-container rounded-lg p-4 flex flex-col <?php echo $bg_class; ?> border hover:shadow-sm transition-all duration-200">
                                         <div class="flex justify-between items-center">
