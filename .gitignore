@@ -1,6 +1,0 @@
-.sqlconfig
-*.sqlconfig
-.env
-.vscode/
-*.sqltools
-*.sql-workspace

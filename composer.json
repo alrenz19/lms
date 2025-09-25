@@ -1,8 +1,0 @@
-{
-    "require": {
-        "james-heinrich/getid3": "^1.9"
-    },
-    "require-dev": {
-        "kint-php/kint": "^6.0"
-    }
-}
