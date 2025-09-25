@@ -2,11 +2,18 @@
 include './get_progress.php';
 include 'includes/header.php';
 ?>
-
+<style>
+.tab-btn:hover{
+    background-color: #f6f9ff;
+}
+.active-tab{
+    background-color: #eff4ff;
+}
+</style>
 <div class="p-8 sm:ml-72">
   <div class="container mx-auto max-w-7xl">
     <!-- Course Header -->
-    <div class="course-banner rounded-2xl p-10 shadow-lg mb-8 text-white relative overflow-hidden">
+    <div class="bg-gradient-to-r from-blue-600 to-blue-800 rounded-2xl p-10 shadow-lg mb-8 text-white relative overflow-hidden">
       <div class="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full -mr-20 -mt-20"></div>
       <div class="absolute bottom-0 left-0 w-48 h-48 bg-white opacity-5 rounded-full -ml-10 -mb-10"></div>
       <div class="absolute bottom-20 right-20 w-32 h-32 bg-white opacity-5 rounded-full"></div>
@@ -92,21 +99,27 @@ include 'includes/header.php';
                       </div>
                     <?php elseif ($file_extension === 'pdf'): ?>
                       <div class="relative w-full">
-                        <embed src="get_pdf.php?course_id=<?= $course_id ?>&id=<?= $video_id ?>" type="application/pdf" width="100%" height="500px" <?= $canAccess ? '' : 'data-locked="1"' ?>>
+                        <!-- Scrollable wrapper -->
+                        <div class="pdf-scroll-wrapper overflow-y-scroll h-[500px] border rounded" data-video-id="<?= $video_id ?>">
+                          <div class="h-[1200px]"> <!-- Force tall container for demo -->
+                            <embed src="get_pdf.php?course_id=<?= $course_id ?>&id=<?= $video_id ?>" 
+                                  type="application/pdf" 
+                                  width="100%" 
+                                  height="100%">
+                          </div>
+                        </div>
+
                         <div class="completion-status" data-video-id="<?= $video_id ?>">
                           <?php if (!isset($video_progress[$video_id])): ?>
-                            <form method="post" class="mark-complete-form text-right">
-                              <input type="hidden" name="video_id" value="<?= $video_id ?>">
-                              <input type="hidden" name="course_id" value="<?= $course_id ?>">
-                              <button type="submit" class="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-                                Mark as Complete
-                              </button>
-                            </form>
+                            <p class="text-sm text-gray-500 mt-2 text-center">
+                              
+                            </p>
                           <?php else: ?>
                             <p class="text-right text-green-600 font-medium mt-4">✔ Completed</p>
                           <?php endif; ?>
                         </div>
                       </div>
+
                     <?php endif; ?>
 
                     <?php if (!$canAccess): ?>
@@ -259,13 +272,21 @@ document.addEventListener('DOMContentLoaded', function() {
     if (prevCompleted) nextBtn.click();
   }
 
-  document.querySelectorAll('.mark-complete-form').forEach(form => {
-    form.addEventListener('submit', function (e) {
-      e.preventDefault();
-      const videoId = form.querySelector('input[name="video_id"]').value;
-      markModuleAsWatched(videoId);
+  document.querySelectorAll('.pdf-scroll-wrapper').forEach(wrapper => {
+    let marked = false;
+    const videoId = wrapper.getAttribute('data-video-id');
+
+    wrapper.addEventListener('scroll', function() {
+      if (marked) return;
+      const atBottom = wrapper.scrollTop + wrapper.clientHeight >= wrapper.scrollHeight - 5;
+      if (atBottom) {
+        marked = true;
+        markModuleAsWatched(videoId); // <-- your existing function
+      }
     });
   });
+
+
 
   function markModuleAsWatched(videoId) {
     fetch('update_video_progress.php', {

@@ -114,6 +114,7 @@ LEFT JOIN (
     GROUP BY cv.course_id
 ) AS uvp_data ON c.id = uvp_data.course_id
 
+WHERE c.removed = 0
 ORDER BY last_activity DESC, c.title ASC;
 ");
 

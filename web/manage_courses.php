@@ -1,5 +1,17 @@
 <?php 
 require_once __DIR__ . '/server_controller/manage_course_controller.php';
+
+$courses_query = "
+    SELECT c.id, c.title, c.description, c.created_at, c.created_by,
+           (SELECT COUNT(*) FROM user_progress up WHERE up.course_id = c.id) AS enrollment_count,
+           (SELECT COUNT(*) FROM questions q WHERE q.course_id = c.id) AS question_count
+    FROM courses c
+    WHERE c.removed = 0
+    ORDER BY c.created_at DESC
+";
+
+$courses_result = $conn->query($courses_query);
+
 ?>
 
 <!DOCTYPE html>
@@ -177,15 +189,26 @@ require_once __DIR__ . '/server_controller/manage_course_controller.php';
                         <i data-lucide="layout-grid" class="w-5 h-5 text-blue-600 mr-2"></i>
                         Course List
                     </h2>
-                    <div class="relative w-full sm:w-auto">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
-                            <i data-lucide="search" class="w-4 h-4"></i>
-                        </span>
-                        <input type="search" 
-                            id="courseSearch" 
-                            class="w-full sm:w-64 pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
-                            placeholder="Search courses..." 
-                            autocomplete="off">
+                    <div class="flex items-center gap-3 w-full sm:w-auto">
+                        <!-- Filter Button -->
+                        <button id="filterBtn" 
+                            class="px-4 py-2 border border-gray-200 bg-white text-gray-700 rounded-lg flex items-center gap-2 hover:bg-gray-50 hover:border-gray-300 transition-colors"
+                            data-filter="all">
+                            <i data-lucide="sliders-horizontal" class="w-4 h-4"></i>
+                            <span class="hidden sm:inline">My Courses</span>
+                        </button>
+
+                        <!-- Search Box -->
+                        <div class="relative w-full sm:w-64">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
+                                <i data-lucide="search" class="w-4 h-4"></i>
+                            </span>
+                            <input type="search" 
+                                id="courseSearch" 
+                                class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                placeholder="Search courses..." 
+                                autocomplete="off">
+                        </div>
                     </div>
                 </div>
 
@@ -236,14 +259,18 @@ require_once __DIR__ . '/server_controller/manage_course_controller.php';
                                                 Created: <?php echo $course_date_str; ?>
                                             </span>
                                         </div>
-                                        <div class="flex space-x-2">
-                                            <a href="edit_course.php?id=<?php echo $course['id']; ?>" class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
-                                                <i data-lucide="edit-3" class="w-5 h-5"></i>
-                                            </a>
-                                            <button class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors" onclick="confirmDeleteCourse(<?php echo $course['id']; ?>, '<?php echo htmlspecialchars(addslashes($course['title'])); ?>')">
-                                                <i data-lucide="trash-2" class="w-5 h-5"></i>
-                                            </button>
-                                        </div>
+                                        <?php if ($course['created_by'] == $_SESSION['user_id']): ?>
+                                            <div class="flex space-x-2">
+                                                <a href="edit_course.php?id=<?php echo $course['id']; ?>" 
+                                                class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                                                    <i data-lucide="edit-3" class="w-5 h-5"></i>
+                                                </a>
+                                                <button class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors" 
+                                                        onclick="confirmDeleteCourse(<?php echo $course['id']; ?>, '<?php echo htmlspecialchars(addslashes($course['title'])); ?>')">
+                                                    <i data-lucide="trash-2" class="w-5 h-5"></i>
+                                                </button>
+                                            </div>
+                                        <?php endif; ?>
                                     </div>
                                 </div>
                             </div>
@@ -266,91 +293,78 @@ require_once __DIR__ . '/server_controller/manage_course_controller.php';
         </div>
     </div>
 
-        <!-- Add Course Modal -->
-    <div class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center backdrop-blur-sm" id="addCourseModal">
-        <div class="bg-white rounded-xl shadow-xl w-full max-w-xl max-h-[90vh] overflow-y-auto">
-            <div class="bg-gradient-to-r from-blue-600 to-blue-800 p-5 rounded-t-xl flex items-center justify-between">
-            <h5 class="text-lg font-semibold text-white flex items-center">
-                <i data-lucide="plus-circle" class="h-5 w-5 mr-2"></i> Add New Course
-            </h5>
-            <button type="button" class="text-white/80 hover:text-white" onclick="hideModal('addCourseModal')">
-                <i data-lucide="x" class="h-5 w-5"></i>
-            </button>
-            </div>
-            <div class="p-6">
+     <!-- ADD COURSE MODAL -->
+    <div id="addCourseModal" class="fixed inset-0 hidden items-center justify-center bg-black bg-opacity-50 z-50">
+        <div class="bg-white rounded-2xl w-full max-w-3xl p-6 relative shadow-lg overflow-y-auto max-h-[90vh]">
+            <h2 class="text-2xl font-bold mb-4">Add New Course</h2>
             <form id="addCourseForm" action="server_controller/manage_course_controller.php" method="POST" enctype="multipart/form-data">
                 <input type="hidden" name="course_add" value="1">
                 <input type="hidden" name="course_action" value="add">
-
                 <!-- Course Title -->
-                <div class="mb-5">
-                <label for="title" class="block text-sm font-medium text-gray-700 mb-2">Course Title</label>
-                <div class="relative">
-                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                    <i data-lucide="book-open" class="w-5 h-5"></i>
-                    </div>
-                    <input type="text" name="title" id="title" required placeholder="Enter course title"
+                <div class="mb-4">
+                    <label for="courseTitle" class="block text-sm font-medium text-gray-700">Course Title</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                        <i data-lucide="book-open" class="w-5 h-5"></i>
+                        </div>
+                        <input type="text" id="courseTitle" name="course_title" placeholder="Enter course title" required
                         class="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg text-gray-900 focus:ring-indigo-500 focus:border-indigo-500 transition">
-                </div>
+                    </div>
                 </div>
 
                 <!-- Course Description -->
-                <div class="mb-6">
-                <label for="description" class="block text-sm font-medium text-gray-700 mb-2">Course Description</label>
-                <div class="relative">
-                    <div class="absolute top-3 left-3 text-gray-400">
-                    <i data-lucide="align-left" class="w-5 h-5"></i>
-                    </div>
-                    <textarea name="description" id="description" required rows="4" placeholder="Enter course description"
-                            class="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg text-gray-900 focus:ring-indigo-500 focus:border-indigo-500 transition"></textarea>
-                </div>
-                </div>
-
-                <!-- MODULE DRAG-DROP -->
                 <div class="mb-4">
-                    <div class="flex justify-between">
-                        <label class="text-lg font-semibold">Course Modules</label>
-                        <label class="text-xs font-light">Only PDF files or video format</label>
-                    </div>
-                    <div id="dropZone"
-                        class="relative border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:bg-gray-50 transition cursor-pointer"
-                        ondragover="event.preventDefault()"
-                        ondrop="handleDrop(event)">
-                        
-                        <!-- Flex container to center contents -->
-                        <div class="flex flex-col items-center justify-center" onclick="document.getElementById('filePicker').click()">
-                            <i data-lucide="upload-cloud" class="w-10 h-10 text-blue-500 mb-4"></i>
-                            <strong>Drop files here</strong> or <span class="text-black-500">click to upload</span>
-                            <p class="text-xs text-gray-500 mt-1">
-                                Max file size: 250MB
-                            </p>
+                    <label for="courseDescription" class="block text-sm font-medium text-gray-700">Course Description</label>
+                    <div class="relative">
+                        <div class="absolute top-3 left-3 text-gray-400">
+                        <i data-lucide="book-open" class="w-5 h-5"></i>
                         </div>
-
-                        <!-- Notice: `required` added here -->
-                        <input type="file" id="filePicker" multiple required
-                            accept="video/*,application/pdf"
-                            class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                            onchange="handleFiles(this.files)">
+                        <textarea id="courseDescription" name="course_description" rows="3" placeholder="Enter course description"
+                            class="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg text-gray-900 focus:ring-indigo-500 focus:border-indigo-500 transition"></textarea>
                     </div>
                 </div>
 
-                <!-- MODULE LIST PREVIEW -->
-                <div id="moduleList" class="space-y-3 mt-4"></div>
+                <!-- Module File Upload -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Course Modules</label>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Screen Recording</label>
+                        <button type="button" id="startRecordingBtn" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">Start Recording</button>
+                        <button type="button" id="stopRecordingBtn" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 ml-2" disabled>Stop Recording</button>
+                        <p id="recordingStatus" class="text-sm text-gray-500 mt-1">Not recording</p>
+                    </div>
 
-                <!-- Form Actions -->
-                <div class="flex justify-end space-x-3 mt-8">
-                <button type="button" onclick="hideModal('addCourseModal')"
-                        class="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-lg text-sm font-medium flex items-center gap-2">
-                    <i data-lucide="x" class="h-4 w-4"></i> Cancel
-                </button>
-                <button type="submit" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium flex items-center gap-2">
-                    <i data-lucide="save" class="h-4 w-4"></i> Save Course
-                </button>
+                    <!-- Drag & Drop Area -->
+                    <div id="dropArea" 
+                        class="w-full p-4 border-2 border-dashed border-gray-300 rounded text-center cursor-pointer hover:border-blue-400 transition-colors"
+                        ondragover="event.preventDefault()" 
+                        ondrop="handleDrop(event)">
+                        Drag & Drop files here or <span class="text-blue-500 underline">click to select</span>
+                        <input type="file" id="filePicker" multiple class="hidden" onchange="handleFiles(this.files)">
+                    </div>
+
+                    <!-- Module List -->
+                    <div id="moduleList" class="mt-3 flex flex-col gap-3"></div>
+                </div>
+
+                <!-- Hidden Fields -->
+                <input type="hidden" id="hiddenCourseId" name="course_id" value="">
+
+                <!-- Form Buttons -->
+                <div class="mt-6 flex justify-end gap-2">
+                    <button type="button" onclick="hideModal('addCourseModal')" 
+                        class="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-100">Cancel</button>
+                    <button type="submit" 
+                        class="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600">Save Course</button>
                 </div>
             </form>
-            </div>
+
+            <!-- Close Button -->
+            <button type="button" onclick="hideModal('addCourseModal')" 
+                class="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-xl font-bold">&times;</button>
         </div>
     </div>
+
 
     <!-- Delete Course Confirmation Modal -->
     <div class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center backdrop-blur-sm transition-all duration-300" id="deleteCourseModal" tabindex="-1" aria-labelledby="deleteCourseModalLabel" aria-hidden="true">
@@ -398,21 +412,128 @@ require_once __DIR__ . '/server_controller/manage_course_controller.php';
 <?php require_once  __DIR__ . '/view_controller/quiz_modal.php';?>
 
 <script>
-    let uploadedFiles = [];
-    let currentCourseId = null;
-    let hasModule = false;
+document.getElementById("filterBtn").addEventListener("click", function() {
+    let btn = this;
+    let filter = btn.getAttribute("data-filter");
+
+    if (filter === "all") {
+        btn.setAttribute("data-filter", "mine");
+        btn.querySelector("span").textContent = "All Courses";
+        fetchCourses("mine");
+    } else {
+        btn.setAttribute("data-filter", "all");
+        btn.querySelector("span").textContent = "My Courses";
+        fetchCourses("all");
+    }
+});
+
+
+function fetchCourses(filterType) {
+    fetch("manage_courses.php?filter=" + filterType, {
+        headers: { "X-Requested-With": "XMLHttpRequest" }
+    })
+    .then(res => res.json())
+    .then(courses => {
+        const container = document.getElementById("courseContainer");
+        container.innerHTML = "";
+
+        if (courses.length === 0) {
+            container.innerHTML = `
+                <div class="col-span-full flex flex-col items-center justify-center p-12 text-center">
+                    <i data-lucide="book-x" class="h-16 w-16 text-gray-300 mb-4"></i>
+                    <h3 class="text-xl font-medium text-gray-900 mb-2">No courses available</h3>
+                    <p class="text-gray-500 mb-6 max-w-md">Start creating courses by clicking the "Add New Course" button above</p>
+                </div>
+            `;
+        } else {
+            courses.forEach(course => {
+                container.innerHTML += `
+                    <div class="course-card bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300">
+                        <div class="h-48 bg-gradient-to-r from-blue-600 to-blue-800 p-6 flex items-end">
+                            <h3 class="text-xl font-semibold text-white">${course.title}</h3>
+                        </div>
+                        <div class="p-6">
+                            <p class="text-gray-600 text-sm mb-4 line-clamp-3">${course.description ?? ""}</p>
+                            <div class="flex items-center text-sm text-gray-500 mb-4">
+                                <div class="flex items-center mr-4">
+                                    <i data-lucide="users" class="w-4 h-4 mr-1 text-blue-500"></i>
+                                    <span>${course.enrollment_count} enrolled</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <i data-lucide="clipboard-list" class="w-4 h-4 mr-1 text-amber-500"></i>
+                                    <span>${course.question_count} questions</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs text-gray-500 flex items-center">
+                                    <i data-lucide="calendar" class="w-3 h-3 mr-1"></i>
+                                    Created: ${new Date(course.created_at).toLocaleDateString()}
+                                </span>
+                                ${course.created_by == <?php echo $_SESSION['user_id']; ?> ? `
+                                    <div class="flex space-x-2">
+                                        <a href="edit_course.php?id=${course.id}" 
+                                           class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                                           <i data-lucide="edit-3" class="w-5 h-5"></i>
+                                        </a>
+                                        <button class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                            onclick="confirmDeleteCourse(${course.id}, '${course.title.replace(/'/g, "\\'")}')">
+                                            <i data-lucide="trash-2" class="w-5 h-5"></i>
+                                        </button>
+                                    </div>` : ``}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+        lucide.createIcons(); // re-render icons
+    });
+}
+</script>
+
+
+<script>
+    // Open file picker when clicking drag & drop area
+    const dropArea = document.getElementById('dropArea');
+    const filePicker = document.getElementById('filePicker');
+
+    if(dropArea && filePicker){
+        dropArea.addEventListener('click', () => filePicker.click());
+    }
+</script>
+
+<script>
+let uploadedFiles = [];
+let currentCourseId = null;
+let hasModule = false;
+let screenStream;
+let micStream;
+let mediaStream;
+let mediaRecorder;
+let recordedChunks = [];
+let audioContext;
+let destination;
+
 document.addEventListener('DOMContentLoaded', function () {
-    // === FORM HANDLER ===
+
+    // === FORM SUBMISSION HANDLER ===
     function handleFormSubmission(formId, onSuccessCallback) {
         const form = document.getElementById(formId);
         if (!form) return;
 
-        form.addEventListener('submit', async (e) => {
+        form.addEventListener("submit", async (e) => {
             e.preventDefault();
             const formData = new FormData(form);
 
-            uploadedFiles.forEach(file => {
-                formData.append('module_files[]', file);
+            // let the callback run first for validation
+            const proceed = onSuccessCallback?.(form, null);
+            if (proceed === false) {
+                // ❌ cancel fetch if validation fails
+                return;
+            }
+
+            uploadedFiles.forEach((file) => {
+                formData.append("module_files[]", file);
             });
 
             try {
@@ -420,39 +541,60 @@ document.addEventListener('DOMContentLoaded', function () {
                     method: form.method,
                     body: formData,
                     headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
+                        "X-Requested-With": "XMLHttpRequest"
                     }
                 });
 
-                const result = await response.json();
-                if (!response.ok || !result.success)
-                    throw new Error(result.message || 'Submission failed');
+                const text = await response.text();
+                let result;
 
-                if (formId === 'addCourseForm') {
+                try {
+                    result = JSON.parse(text);
+                } catch (parseError) {
+                    console.error("❌ Response is not JSON:", text);
+                    showToast("Server error: response was not JSON. Check console.", "error");
+                    return;
+                }
+
+                if (!response.ok || !result.success) {
+                    throw new Error(result.message || "Submission failed");
+                }
+
+                // ✅ normal flow
+                if (formId === "addCourseForm") {
                     currentCourseId = result.course_id;
                     hasModule = result.has_course_module;
-                    document.getElementById('hiddenCourseId').value = currentCourseId;
-                    if (hasModule) showModal('addQuestionModal');
-                    else window.location.href = 'edit_course.php?id=' + currentCourseId;
+                    document.getElementById("hiddenCourseId").value = currentCourseId;
+                    if (hasModule) {
+                        showModal("addQuestionModal");
+                    } else {
+                        window.location.href = "edit_course.php?id=" + currentCourseId;
+                    }
                 }
+
                 uploadedFiles = [];
-                showToast(result.message || 'Successfully submitted', 'success');
+                showToast(result.message || "Successfully submitted", "success");
                 onSuccessCallback?.(form, result);
 
             } catch (err) {
-                // Access the actual `error` field from the JSON response if available
-                const message = err.detail?.error ||  err.message;
-                console.error('Form submission failed:', message);
-                showToast(message, 'error');
+                const message = err.detail?.error || err.message;
+                console.error("Form submission failed:", message);
+                showToast(message, "error");
             }
         });
     }
 
-    function addModuleRow(file, index) {
+
+    // === MODULE ROW ===
+    function addModuleRow(file) {
         const moduleList = document.getElementById('moduleList');
+        if (!moduleList) return;
 
         const row = document.createElement('div');
-        row.className = 'group flex flex-wrap items-start gap-3 p-4 border border-gray-300 rounded relative';
+        row.className = 'group flex flex-col sm:flex-row items-start gap-3 p-4 border border-gray-300 rounded relative';
+
+        // Create a URL for the file for preview
+        const fileURL = URL.createObjectURL(file);
 
         row.innerHTML = `
             <div class="w-full sm:w-1/4 text-sm text-gray-700 truncate">📄 ${file.name}</div>
@@ -465,50 +607,132 @@ document.addEventListener('DOMContentLoaded', function () {
 
             <input type="hidden" name="module_file_names[]" value="${file.name}">
 
+            <video class="w-full sm:w-1/4 mt-2 sm:mt-0 rounded border" controls>
+                <source src="${fileURL}" type="${file.type}">
+                Your browser does not support the video tag.
+            </video>
+
             <button type="button"
                 class="absolute top-2 right-2 text-red-500 hover:text-red-700 text-sm font-bold opacity-0 group-hover:opacity-100 transition-opacity duration-200"
                 title="Remove">❌</button>
         `;
 
-        // Remove row on ❌ click
         const removeBtn = row.querySelector('button');
         removeBtn.addEventListener('click', () => {
+            const index = uploadedFiles.findIndex(f => f.name === file.name && f.size === file.size);
+            if (index > -1) uploadedFiles.splice(index, 1);
             row.remove();
+            URL.revokeObjectURL(fileURL); // free memory
         });
 
         moduleList.appendChild(row);
     }
 
+    // === SCREEN RECORDING ===
+    const startBtn = document.getElementById('startRecordingBtn');
+    const stopBtn = document.getElementById('stopRecordingBtn');
+    const statusText = document.getElementById('recordingStatus');
 
+    if (startBtn && stopBtn) {
+        startBtn.addEventListener('click', async () => {
+            try {
+                // Capture screen (video + optional system audio)
+                screenStream = await navigator.mediaDevices.getDisplayMedia({
+                    video: true,
+                    audio: true
+                });
 
-    window.handleFiles = function (files) {
-        [...files].forEach((file) => {
-            uploadedFiles.push(file); 
-            addModuleRow(file); 
+                // Capture microphone audio
+                micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+                // Mix audio
+                audioContext = new AudioContext();
+                destination = audioContext.createMediaStreamDestination();
+
+                if (screenStream.getAudioTracks().length > 0) {
+                    const screenSource = audioContext.createMediaStreamSource(new MediaStream(screenStream.getAudioTracks()));
+                    screenSource.connect(destination);
+                }
+
+                const micSource = audioContext.createMediaStreamSource(new MediaStream(micStream.getAudioTracks()));
+                micSource.connect(destination);
+
+                // Combine video + mixed audio
+                mediaStream = new MediaStream([
+                    ...screenStream.getVideoTracks(),
+                    ...destination.stream.getAudioTracks()
+                ]);
+
+                // Setup MediaRecorder
+                mediaRecorder = new MediaRecorder(mediaStream);
+                recordedChunks = [];
+
+                mediaRecorder.ondataavailable = e => {
+                    if (e.data.size > 0) recordedChunks.push(e.data);
+                };
+
+                mediaRecorder.onstop = () => {
+                    // Save recording
+                    const blob = new Blob(recordedChunks, { type: 'video/webm' });
+                    const file = new File([blob], `screen_recording_${Date.now()}.webm`, { type: 'video/webm' });
+
+                    uploadedFiles.push(file);
+                    addModuleRow(file);
+
+                    statusText.textContent = 'Recording added to module list';
+                    showToast('Screen + mic recording added to module list', 'success');
+
+                    // Stop all tracks
+                    screenStream.getTracks().forEach(track => track.stop());
+                    micStream.getTracks().forEach(track => track.stop());
+
+                    // Disconnect and close AudioContext
+                    destination.disconnect();
+                    audioContext.close();
+                };
+
+                mediaRecorder.start();
+                statusText.textContent = 'Recording...';
+                startBtn.disabled = true;
+                stopBtn.disabled = false;
+
+            } catch (err) {
+                console.error(err);
+                showToast('Cannot start screen recording with mic', 'error');
+            }
         });
+
+        stopBtn.addEventListener('click', () => {
+            mediaRecorder?.stop();
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+            statusText.textContent = 'Processing recording...';
+        });
+    }
+
+
+    // === HANDLE FILES ===
+    window.handleFiles = function(files) {
+        [...files].forEach(file => {
+            if (!uploadedFiles.some(f => f.name === file.name && f.size === file.size)) {
+                uploadedFiles.push(file);
+                addModuleRow(file);
+            }
+        });
+        document.getElementById('filePicker').value = '';
     };
 
-    window.handleDrop = function (e) {
+    // === HANDLE DROP ===
+    window.handleDrop = function(e) {
         e.preventDefault();
-        const files = e.dataTransfer.files;
+        handleFiles(e.dataTransfer.files);
+    }
 
-        // Call your existing file handler
-        handleFiles(files);
-
-        // Assign dropped files to hidden input so "required" works
-        const fileInput = document.getElementById('filePicker');
-        fileInput.files = files;
-    };
-
-        
-
-    // === Refetch Courses ===
+    // === REFRESH COURSE LIST ===
     async function refreshCourseList() {
         try {
             const res = await fetch('server_controller/fetch_courses_controller.php', {
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
             });
 
             const result = await res.json();
@@ -524,37 +748,38 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-
-    // === Add Course Form ===
-    handleFormSubmission('addCourseForm', (form) => {
-        form.reset();
-        hideModal('addCourseModal');
-        // refreshCourseList();
-
-    });
-
-    // === Delete Course Form ===
-    handleFormSubmission('deleteCourseForm', (form, result) => {
-        hideModal('deleteCourseModal');
-
-        // Remove the deleted course card from the DOM
-        const deletedCard = document.querySelector(`.course-card[data-id="${result.course_id}"]`);
-        if (deletedCard) {
-            deletedCard.remove();
+    // === ADD COURSE FORM ===
+    handleFormSubmission('addCourseForm', (form, result) => {
+        // Only run validation before fetch (result === null here)
+        if (result === null && uploadedFiles.length === 0) {
+            showToast("Please add at least 1 module before saving.", "error");
+            dropArea.classList.add('border-red-500');
+            return false; // 🚫 stop fetch
         }
 
-        // Re-run search filter if needed
+        // After successful fetch
+        if (result) {
+            form.reset();
+            hideModal('addCourseModal');
+        }
+    });
+
+
+
+    // === DELETE COURSE FORM ===
+    handleFormSubmission('deleteCourseForm', (form, result) => {
+        hideModal('deleteCourseModal');
+        const deletedCard = document.querySelector(`.course-card[data-id="${result.course_id}"]`);
+        if (deletedCard) deletedCard.remove();
         if (typeof clearSearch === 'function') {
             document.getElementById('courseSearch')?.dispatchEvent(new Event('input'));
         }
     });
 
     // === ICON INITIALIZATION ===
-    if (typeof lucide !== 'undefined') {
-        lucide.createIcons();
-    }
+    if (typeof lucide !== 'undefined') lucide.createIcons();
 
-    // === SESSION TOAST MESSAGES (from PHP) ===
+    // === SESSION TOAST MESSAGES ===
     <?php if (isset($_SESSION['success'])): ?>
         showToast('<?php echo addslashes($_SESSION['success']); ?>', 'success');
         <?php unset($_SESSION['success']); ?>
@@ -591,68 +816,58 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
 
-        // Clear search globally
         window.clearSearch = () => {
             searchInput.value = '';
             searchInput.dispatchEvent(new Event('input'));
             searchInput.focus();
         };
     }
+
 });
 
-    // === MODAL HANDLING ===
-    function showModal(modalId) {
-        const modal = document.getElementById(modalId);
-        if (!modal) return;
-            // --- Reset file inputs and module list for addCourseModal only ---
-        if (modalId === 'addCourseForm') {
-            const form = document.getElementById('addCourseForm');
-            if (form) form.reset();
-            // Clear uploadedFiles array (declared globally in your script)
-            uploadedFiles = [];
+// === MODAL HANDLING ===
+function showModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (!modal) return;
 
-            // Clear module list
-            const moduleList = document.getElementById('moduleList');
-            if (moduleList) moduleList.innerHTML = '';
-
-            // Reset file input
-            const filePicker = document.getElementById('filePicker');
-            if (filePicker) filePicker.value = '';
-        }
-        document.body.classList.add('overflow-hidden');
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-
-        setTimeout(() => {
-            const firstInput = modal.querySelector('input:not([type="hidden"])');
-            if (firstInput) firstInput.focus();
-        }, 50);
+    if (modalId === 'addCourseModal') {
+        const form = document.getElementById('addCourseForm');
+        if (form) form.reset();
+        uploadedFiles = [];
+        const moduleList = document.getElementById('moduleList');
+        if (moduleList) moduleList.innerHTML = '';
+        const filePicker = document.getElementById('filePicker');
+        if (filePicker) filePicker.value = '';
     }
 
-    function hideModal(modalId) {
-        const modal = document.getElementById(modalId);
-        if (!modal) return;
-        // Reset form if it's the addCourseModal
-        if (modalId === 'addCourseModal') {
-            const form = document.getElementById('addCourseForm');
-            if (form && typeof form.reset === 'function') {
-                form.reset();
-            }
+    document.body.classList.add('overflow-hidden');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
 
-            uploadedFiles = [];
-            const moduleList = document.getElementById('moduleList');
-            if (moduleList) moduleList.innerHTML = '';
+    setTimeout(() => {
+        const firstInput = modal.querySelector('input:not([type="hidden"])');
+        if (firstInput) firstInput.focus();
+    }, 50);
+}
 
-            const filePicker = document.getElementById('filePicker');
-            if (filePicker) filePicker.value = '';
-        }
+function hideModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (!modal) return;
 
-        document.getElementById('moduleList').innerHTML = '';
-        document.getElementById('filePicker').value = '';
-        document.body.classList.remove('overflow-hidden');
-        modal.classList.remove('flex');
-        modal.classList.add('hidden');
+    if (modalId === 'addCourseModal') {
+        const form = document.getElementById('addCourseForm');
+        if (form && typeof form.reset === 'function') form.reset();
+        uploadedFiles = [];
+        const moduleList = document.getElementById('moduleList');
+        if (moduleList) moduleList.innerHTML = '';
+        const filePicker = document.getElementById('filePicker');
+        if (filePicker) filePicker.value = '';
     }
+
+    document.body.classList.remove('overflow-hidden');
+    modal.classList.remove('flex');
+    modal.classList.add('hidden');
+}
 
 // === DELETE CONFIRMATION ===
 function confirmDeleteCourse(courseId, courseTitle) {
@@ -660,14 +875,12 @@ function confirmDeleteCourse(courseId, courseTitle) {
     const nameDisplay = document.getElementById('courseNameToDelete');
     if (idInput) idInput.value = courseId;
     if (nameDisplay) nameDisplay.textContent = courseTitle;
-
     showModal('deleteCourseModal');
 }
 
-// === TOAST NOTIFICATION SYSTEM ===
+// === TOAST NOTIFICATIONS ===
 function showToast(message, type = 'info') {
     let toastContainer = document.getElementById('toast-container');
-
     if (!toastContainer) {
         toastContainer = document.createElement('div');
         toastContainer.id = 'toast-container';
@@ -687,26 +900,44 @@ function showToast(message, type = 'info') {
 
     const [bgColor, textColor, icon] = config[type] || config.info;
 
-    toast.className += ` ${bgColor} ${textColor} rounded-lg shadow-lg p-4 mb-2 flex items-center`;
+    toast.className += ` ${bgColor} ${textColor} rounded-lg shadow-lg p-4 mb-2 flex items-center gap-2`;
+
     toast.innerHTML = `
-        <i data-lucide="${icon}" class="w-5 h-5 mr-2"></i>
-        <span>${message}</span>
+        <i data-lucide="${icon}" class="w-5 h-5"></i>
+        <span class="flex-1">${message}</span>
+        <button class="ml-2 focus:outline-none hover:opacity-80" aria-label="Close">
+            <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
     `;
 
     toastContainer.appendChild(toast);
 
-    if (typeof lucide !== 'undefined') {
-        lucide.createIcons({ attrs: { class: ["stroke-current"] } });
+    // Animate in
+    requestAnimationFrame(() => {
+        toast.classList.remove('translate-x-full');
+        toast.classList.add('translate-x-0');
+    });
+
+    // Auto-remove after 5s
+    setTimeout(() => {
+        toast.classList.add('translate-x-full');
+        setTimeout(() => toast.remove(), 300);
+    }, 5000);
+
+    // Close button
+    const closeBtn = toast.querySelector('button');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => {
+            toast.classList.add('translate-x-full');
+            setTimeout(() => toast.remove(), 300);
+        });
     }
 
-    setTimeout(() => toast.classList.replace('translate-x-full', 'translate-x-0'), 10);
-    setTimeout(() => {
-        toast.classList.replace('translate-x-0', 'translate-x-full');
-        setTimeout(() => toast.remove(), 300);
-    }, 3000);
+    // Re-init lucide icons
+    if (typeof lucide !== 'undefined') lucide.createIcons();
 }
-
 </script>
+
 
 </body>
 </html>

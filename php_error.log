@@ -14,3 +14,7 @@ Stack trace:
 #3 C:\xampp\htdocs\lms\web\server_controller\manage_course_controller.php(50): handleCourseAdd(Object(mysqli))
 #4 {main}
   thrown in C:\xampp\htdocs\lms\web\server_controller\video_controller.php on line 93
+[03-Sep-2025 14:36:16 Asia/Taipei] Module upload failed: Field 'removed' doesn't have a default value
+[03-Sep-2025 14:39:41 Asia/Taipei] Module upload failed: Field 'removed' doesn't have a default value
+[03-Sep-2025 14:47:07 Asia/Taipei] Module upload failed: Field 'removed' doesn't have a default value
+[03-Sep-2025 14:49:32 Asia/Taipei] Module upload failed: Field 'removed' doesn't have a default value

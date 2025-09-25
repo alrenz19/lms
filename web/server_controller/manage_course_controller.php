@@ -3,10 +3,53 @@ session_start();
 require_once __DIR__ . '/../../config.php';
 require_once 'video_controller.php';
 
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
-    header("Location: index.php");
+if (!isset($_SESSION['user_id']) || ($_SESSION['role'] !== 'admin' && $_SESSION['role'] !== 'super_admin')) {
+    if ($is_ajax) {
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+        exit;
+    } else {
+        header("Location: index.php");
+        exit;
+    }
+}
+
+// -------------------- Handle AJAX GET for filtering --------------------
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['filter'])) {
+    header('Content-Type: application/json');
+
+    $filter = $_GET['filter'];
+    $userId = $_SESSION['user_id'];
+
+    if ($filter === 'mine') {
+        $stmt = $conn->prepare("
+            SELECT c.id, c.title, c.description, c.created_at, c.created_by,
+                   (SELECT COUNT(*) FROM user_progress up WHERE up.course_id = c.id) AS enrollment_count,
+                   (SELECT COUNT(*) FROM questions q WHERE q.course_id = c.id) AS question_count
+            FROM courses c
+            WHERE c.created_by = ? AND c.removed = 0
+            ORDER BY c.created_at DESC
+        ");
+        $stmt->bind_param("i", $userId);
+        $stmt->execute();
+        $courses_result = $stmt->get_result();
+    } else {
+        $courses_result = $conn->query("
+            SELECT c.id, c.title, c.description, c.created_at, c.created_by,
+                   (SELECT COUNT(*) FROM user_progress up WHERE up.course_id = c.id) AS enrollment_count,
+                   (SELECT COUNT(*) FROM questions q WHERE q.course_id = c.id) AS question_count
+            FROM courses c
+            WHERE c.removed = 0
+            ORDER BY c.created_at DESC
+        ");
+    }
+
+    $courses = $courses_result->fetch_all(MYSQLI_ASSOC);
+    echo json_encode($courses);
     exit;
 }
+
+
 
 // -------------------- Dashboard Summary Queries --------------------
 
@@ -71,23 +114,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // -------------------- Handlers --------------------
 function handleCourseAdd($conn) {
+    global $is_ajax;
+
     header('Content-Type: application/json');
 
-    if (empty($_POST['title'])) {
-        echo json_encode(['success' => false, 'message' => "Missing required fields"]);
+    // Validate required fields
+    if (empty($_POST['course_title'])) {
+        echo json_encode(['success' => false, 'message' => "Missing course title"]);
         return;
     }
 
-    // Validate module upload BEFORE inserting the course
+    $title = $conn->real_escape_string(trim($_POST['course_title']));
+    $description = $conn->real_escape_string(trim($_POST['course_description'] ?? ''));
+    $created_by = $_SESSION['user_id'];
+
+    // Check if module data exists
     $has_titles = isset($_POST['module_titles']) && is_array($_POST['module_titles']);
     $has_files = isset($_FILES['module_files']) && count($_FILES['module_files']['name']) > 0;
 
+    // ✅ Pre-validate modules if provided
     if ($has_titles && $has_files) {
         try {
-            // Use a temporary fake course ID to validate files first
-            $tempCourseId = -1; // Not inserted yet
+            $tempCourseId = -1; // fake course id for validation only
             $handler = new ModuleHandler($conn, $tempCourseId);
-            $handler->validateModulesOnly(); // You’ll create this method (explained below)
+            $handler->validateModulesOnly();
         } catch (Exception $e) {
             echo json_encode([
                 'success' => false,
@@ -97,11 +147,7 @@ function handleCourseAdd($conn) {
         }
     }
 
-    // Now insert course
-    $title = $conn->real_escape_string(trim($_POST['title']));
-    $description = $conn->real_escape_string(trim($_POST['description'] ?? ''));
-    $created_by = $_SESSION['user_id'];
-
+    // ✅ Insert the new course
     $stmt = $conn->prepare("INSERT INTO courses (title, description, created_by) VALUES (?, ?, ?)");
     $stmt->bind_param("ssi", $title, $description, $created_by);
 
@@ -112,13 +158,13 @@ function handleCourseAdd($conn) {
 
     $new_course_id = $conn->insert_id;
 
-    // Now save modules (real files)
+    // ✅ Now save modules if uploaded
     if ($has_titles && $has_files) {
         try {
             $handler = new ModuleHandler($conn, $new_course_id);
-            $handler->saveModules(); // Now safe to actually move files
+            $handler->saveModules();
         } catch (Exception $e) {
-            // Rollback course creation if module saving failed
+            // Rollback course if modules failed
             $conn->query("DELETE FROM courses WHERE id = {$new_course_id}");
             echo json_encode([
                 'success' => false,
@@ -128,6 +174,7 @@ function handleCourseAdd($conn) {
         }
     }
 
+    // ✅ Success response
     echo json_encode([
         'success' => true,
         'message' => "Course created successfully!",
@@ -135,7 +182,6 @@ function handleCourseAdd($conn) {
         'has_course_module' => $has_titles && $has_files
     ]);
 }
-
 
 function handleCourseDelete($conn) {
     if (empty($_POST['course_id'])) {
@@ -151,12 +197,14 @@ function handleCourseDelete($conn) {
         $updates = [
             // Soft delete user progress
             "UPDATE user_progress up 
-            JOIN questions q ON up.course_id = q.course_id 
-            SET up.removed = 1 
-            WHERE q.course_id = ?",
+             JOIN questions q ON up.course_id = q.course_id 
+             SET up.removed = 1 
+             WHERE q.course_id = ?",
 
             // Soft delete questions
-            "UPDATE questions SET removed = 1 WHERE course_id = ?",
+            "UPDATE questions
+             SET removed = 1 
+             WHERE course_id = ?",
 
             // Soft delete quizzes
             "UPDATE quizzes SET removed = 1 WHERE course_id = ?",
@@ -165,18 +213,8 @@ function handleCourseDelete($conn) {
             "UPDATE courses SET removed = 1 WHERE id = ?",
 
             // Soft delete the modules
-            "UPDATE course_videos SET removed = 1 WHERE course_id = ?",
-
-            // Soft delete user progress (course-level)
-            "UPDATE user_progress SET removed = 1 WHERE course_id = ?",
-
-            // 🔹 NEW: Soft delete user video progress (module-level)
-            "UPDATE user_video_progress uvp
-            JOIN course_videos cv ON uvp.video_id = cv.id
-            SET uvp.removed = 1
-            WHERE cv.course_id = ?"
+            "UPDATE course_videos SET removed = 1 WHERE course_id = ?"
         ];
-
 
         foreach ($updates as $query) {
             $stmt = $conn->prepare($query);

@@ -31,7 +31,7 @@ if ($video_result->num_rows === 0) {
     exit(`"File not found"`.$course_id .$id);
 }
 
-$video_file_path = __DIR__ . '/../' . $video_info['video_url'];
+$video_file_path = $video_info['video_url'];
 
 if (!file_exists($video_file_path)) {
     header("HTTP/1.1 404 Not Found");

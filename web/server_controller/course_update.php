@@ -3,7 +3,7 @@ session_start();
 require_once __DIR__ . '/../../config.php';
 require_once 'video_controller.php';
 
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
+if (!isset($_SESSION['user_id']) || ($_SESSION['role'] !== 'admin' && $_SESSION['role'] !== 'super_admin')) {
     header("Location: index.php");
     exit;
 }
@@ -22,7 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     // === Delete Course ===
-    if ($is_ajax && isset($_POST['course_delete'])) {
+    if ($is_ajax && isset($_POST['module_id'])) {
         handleModuleDelete($conn);
         exit;
     }

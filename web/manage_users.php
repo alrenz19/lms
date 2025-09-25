@@ -7,7 +7,7 @@ require_once 'includes/security.php';
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
+if (!isset($_SESSION['user_id']) || ($_SESSION['role'] !== 'admin' && $_SESSION['role'] !== 'super_admin')) {
     header("Location: index.php");
     exit;
 }
@@ -198,7 +198,7 @@ include 'includes/header.php';
                         <?php 
                         $admin_count = 0;
                         foreach ($users as $user) {
-                            if ($user['role'] === 'admin') {
+                            if ($user['role'] === 'admin' || $user['role'] === 'super_admin') {
                                 $admin_count++;
                             }
                         }
@@ -294,13 +294,24 @@ include 'includes/header.php';
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <span class="px-3 py-1.5 text-xs font-medium rounded-full 
-                                            <?php echo $user['role'] === 'admin' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800'; ?>">
+                                            <?php echo $user['role'] === 'admin' || $user['role'] === 'super_admin' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800'; ?>">
                                             <?php echo htmlspecialchars($user['role']); ?>
                                         </span>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-center">
                                         <div class="flex justify-center items-center space-x-2">
-                                            <?php if ($user['id'] != $_SESSION['user_id']): ?>
+                                            <?php if ($_SESSION['role'] == 'super_admin'): ?>
+                                                <button class="p-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors" 
+                                                        onclick="openEditUserModal(<?php echo $user['id']; ?>, '<?php echo htmlspecialchars($user['username']); ?>', '<?php echo htmlspecialchars($user['email']); ?>', '<?php echo htmlspecialchars($user['full_name']); ?>', '<?php echo htmlspecialchars($user['role']); ?>')"
+                                                        title="Edit User">
+                                                    <i data-lucide="pencil" class="h-4 w-4"></i>
+                                                </button>
+                                                <button class="p-1.5 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors" 
+                                                        onclick="openDeleteUserModal(<?php echo $user['id']; ?>, '<?php echo htmlspecialchars($user['full_name']); ?>')"
+                                                        title="Delete User">
+                                                    <i data-lucide="trash-2" class="h-4 w-4"></i>
+                                                </button>
+                                            <?php elseif ($user['id'] == $_SESSION['user_id']): ?>
                                                 <button class="p-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors" 
                                                         onclick="openEditUserModal(<?php echo $user['id']; ?>, '<?php echo htmlspecialchars($user['username']); ?>', '<?php echo htmlspecialchars($user['email']); ?>', '<?php echo htmlspecialchars($user['full_name']); ?>', '<?php echo htmlspecialchars($user['role']); ?>')"
                                                         title="Edit User">
@@ -312,7 +323,7 @@ include 'includes/header.php';
                                                     <i data-lucide="trash-2" class="h-4 w-4"></i>
                                                 </button>
                                             <?php else: ?>
-                                                <span class="text-xs text-gray-400 italic">Current user</span>
+                                                <span class="text-xs text-gray-400 italic">User</span>
                                             <?php endif; ?>
                                         </div>
                                     </td>
@@ -402,6 +413,14 @@ include 'includes/header.php';
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                 <i data-lucide="shield" class="h-5 w-5 text-gray-400"></i>
                             </div>
+                            <?php if ($_SESSION['role'] === 'admin'){?>
+                            <select class="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition" 
+                                    id="role" 
+                                    name="role" 
+                                    required>
+                                <option value="user">User</option>
+                            </select>
+                          <?php } else { ?>
                             <select class="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition" 
                                     id="role" 
                                     name="role" 
@@ -409,6 +428,7 @@ include 'includes/header.php';
                                 <option value="user">User</option>
                                 <option value="admin">Admin</option>
                             </select>
+                            <?php }?>
                         </div>
                     </div>
                 </div>

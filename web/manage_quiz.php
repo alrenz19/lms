@@ -257,12 +257,12 @@ unset($_SESSION['new_question_id']);
                                 <?php if (!empty($row['question_image'])): ?>
                                 <div class="mb-5">
                                     <?php if (strpos($row['question_image'], 'assets:') === 0): ?>
-                                        <img src="../assets/<?php echo htmlspecialchars(substr($row['question_image'], 7)); ?>" 
-                                             alt="Question Image" 
+                                        <img src="serve_video.php?file=<?php echo htmlspecialchars(substr($row['question_image'], 7)); ?>" 
+                                             alt="Question Image test" 
                                              class="max-w-full h-auto rounded-lg border border-gray-200 max-h-64">
                                     <?php else: ?>
-                                        <img src="../uploads/question_images/<?php echo htmlspecialchars($row['question_image']); ?>" 
-                                             alt="Question Image" 
+                                        <img src="serve_video.php?file=<?php echo htmlspecialchars($row['question_image']); ?>" 
+                                             alt="Question Image here" 
                                              class="max-w-full h-auto rounded-lg border border-gray-200 max-h-64">
                                     <?php endif; ?>
                                 </div>
@@ -278,7 +278,7 @@ unset($_SESSION['new_question_id']);
                                     ];
                                     
                                     foreach ($options as $letter => $option):
-                                        $is_correct = ($letter === $row['correct_answer']);
+                                        $is_correct = ($letter === strtolower($row['correct_answer']));
                                         $bg_class = $is_correct ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200';
                                         $option_image_field = 'option_' . strtolower($letter) . '_image';
                                         $has_image = !empty($row[$option_image_field]); 
@@ -303,11 +303,11 @@ unset($_SESSION['new_question_id']);
                                         <?php if ($has_image): ?>
                                         <div class="mt-3 w-full">
                                             <?php if (strpos($row[$option_image_field], 'assets:') === 0): ?>
-                                                <img src="../assets/<?php echo htmlspecialchars(substr($row[$option_image_field], 7)); ?>" 
+                                                <img src="serve_video.php?file=<?php echo htmlspecialchars(substr($row[$option_image_field], 7)); ?>" 
                                                      alt="Option <?php echo $letter; ?> Image" 
                                                      class="max-w-full h-auto rounded-lg border border-gray-100 max-h-36">
                                             <?php else: ?>
-                                                <img src="../uploads/question_images/<?php echo htmlspecialchars($row[$option_image_field]); ?>" 
+                                                <img src="serve_video.php?file=<?php echo htmlspecialchars($row[$option_image_field]); ?>" 
                                                      alt="Option <?php echo $letter; ?> Image" 
                                                      class="max-w-full h-auto rounded-lg border border-gray-100 max-h-36">
                                             <?php endif; ?>
@@ -353,6 +353,10 @@ unset($_SESSION['new_question_id']);
             </div>
         </div>
     </div>
+
+    <script>
+        const currentCourseId = <?php echo (int)$course_id; ?>;
+    </script>
 
     <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -512,7 +516,7 @@ unset($_SESSION['new_question_id']);
                     letter,
                     text,
                     imageUrl,
-                    isCorrect: correctAnswer === letter.toUpperCase()
+                    isCorrect: correctAnswer === letter.toLowerCase()
                 };
             });
 
@@ -730,7 +734,7 @@ unset($_SESSION['new_question_id']);
 
             container.appendChild(clone);
             updateQuestionLabels();
-            setupCorrectAnswerHandler(clone); // 👈 re-initialize the logic for new block
+            setupCorrectAnswerHandler(clone); // ߑ蠲e-initialize the logic for new block
         });
 
         const removeBtn = document.getElementById('removeQuestion');

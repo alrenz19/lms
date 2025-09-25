@@ -100,7 +100,15 @@ $courses = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
                             <a href="view_course.php?id=<?php echo $course['id']; ?>" class="place-content-center col-span-1 block w-full text-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors flex items-center justify-center">
                                 <i data-lucide="<?php echo $course['progress'] == 100 ? 'check-circle' : 'play'; ?>" class="w-4 h-4 mr-2"></i>
                                 <div class="max-md:hidden">
-                                    <?php echo $course['progress'] == 100 ? 'Review' : 'Continue'; ?>
+                                    <?php
+                                        if ($course['progress'] == 100) {
+                                            echo 'Review';
+                                        } elseif ($course['progress'] == 0) {
+                                            echo 'Start';
+                                        } else {
+                                            echo 'Continue';
+                                        }
+                                    ?>
                                 </div>
                             </a>
                         </div>

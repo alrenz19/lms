@@ -14,7 +14,7 @@
             <div class="flex-grow overflow-y-auto pr-2" id="formScrollArea">
                 <!-- Scrollable area -->
                 <div class="max-w-4xl mx-auto px-4">
-                <form id="quizForm" action="server_controller/manage_course_controller.php" method="POST" enctype="multipart/form-data" class="space-y-6">
+                <form id="quizForm" action="server_controller/manage_course_controller.php" method="POST" data-course-id="<?= $course_id ?> enctype="multipart/form-data" class="space-y-6">
                     <input type="hidden" name="add_question" value="2">
                     <input type="hidden" name="course_id" id="hiddenCourseId" value="<?php echo $course_id; ?>">
                     <div id="questionContainer"></div>
@@ -53,7 +53,7 @@
 
                 <button type="button"
                     class="remove-question-btn mt-6 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition">
-                    🗑️ Remove Question
+                    Remove Question
                 </button>
                 </div>
             </template>
@@ -157,29 +157,36 @@
   function reindexQuestions() {
     const blocks = container.querySelectorAll('.question-block');
     blocks.forEach((block, index) => {
+      // Update label
       block.querySelector('.question-label').textContent = `Question ${index + 1}.`;
 
-      block.innerHTML = block.innerHTML
-        .replace(/questions\[\d+\]/g, `questions[${index}]`)
-        .replace(/name="questions\[\d+\]\[options\]\[([a-d])\]"/g, `name="questions[${index}][options][$1]"`)
-        .replace(/name="questions\[\d+\]\[option_images\]\[([a-d])\]"/g, `name="questions[${index}][option_images][$1]"`);
+      // Update textarea name
+      const textarea = block.querySelector('textarea[name^="questions["]');
+      if (textarea) textarea.name = `questions[${index}][text]`;
 
-      block.querySelectorAll('.correct-answer-radio').forEach(radio => {
-        radio.addEventListener('change', () => {
-          block.querySelectorAll('.correct-indicator').forEach(ind => ind.classList.add('hidden'));
-          radio.closest('div').querySelector('.correct-indicator').classList.remove('hidden');
-        });
+      // Update question image input
+      const qImage = block.querySelector('input[type="file"][name*="[image]"]');
+      if (qImage) qImage.name = `questions[${index}][image]`;
+
+      // Update options
+      ['a', 'b', 'c', 'd'].forEach(letter => {
+        const optText = block.querySelector(`input[type="text"][name*="[options][${letter}]"]`);
+        if (optText) optText.name = `questions[${index}][options][${letter}]`;
+
+        const optFile = block.querySelector(`input[type="file"][name*="[option_images][${letter}]"]`);
+        if (optFile) optFile.name = `questions[${index}][option_images][${letter}]`;
       });
 
-      block.querySelector('.remove-question-btn').addEventListener('click', () => {
-        block.remove();
-        reindexQuestions();
+      // Update correct answer radios
+      block.querySelectorAll('input[type="radio"]').forEach(radio => {
+        radio.name = `questions[${index}][correct_answer]`;
       });
     });
 
     questionCount = blocks.length;
     updateRemoveButtons();
   }
+
 
   function updateRemoveButtons() {
     const removeBtns = container.querySelectorAll('.remove-question-btn');
@@ -194,7 +201,7 @@
     }
   }
 
-  // 🛠️ Check and remove required attribute when file is used
+  // ߛ௸heck and remove required attribute when file is used
   function checkRequired(input) {
     const questionBlock = input.closest('.question-block');
 
@@ -227,9 +234,11 @@
 <script>
   document.getElementById('quizForm').addEventListener('submit', function (e) {
     e.preventDefault();
-
+	
     const form = this;
     const formData = new FormData(form);
+    formData.set('course_id', currentCourseId);
+    
 
     fetch(form.action, {
         method: 'POST',
@@ -240,12 +249,12 @@
     })
     .then(response => response.json())
     .then(data => {
-        form.reset();
         document.getElementById('questionContainer').innerHTML = '';
         questionCount = 0;
         showToast(data.message || 'Successfully submitted', 'success');
         if (data.ok || data.success) window.location.href = 'edit_course.php?id=' + currentCourseId;
         hideModal('addQuestionModal');
+        form.reset();
         addQuestion();
     })
     .catch(error => {

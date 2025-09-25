@@ -247,10 +247,10 @@ include_once 'components/dashboard_card.php';
                                         <?php endif; ?>
                                     </div>
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
+                                <td class="px-10 py-4 whitespace-nowrap">
                                     <span class="text-sm font-medium text-emerald-600 flex items-center">
                                         <i data-lucide="check-circle" class="w-4 h-4 mr-1 <?php echo $row['completed_courses'] > 0 ? 'text-emerald-500' : 'text-gray-300'; ?>"></i>
-                                        <?php echo $row['completed_courses']; ?> / <?php echo $row['total_enrolled_courses']; ?>
+                                        <?php echo $row['completed_courses']; ?>
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">

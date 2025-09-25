@@ -8,7 +8,7 @@ class ModuleHandler {
     public function __construct($conn, $course_id) {
         $this->conn = $conn;
         $this->course_id = $course_id;
-        $this->upload_dir = __DIR__ . '/../../uploads/modules';
+        $this->upload_dir = '/volume1/video';
 
         $this->ensureUploadDirExists();
     }
@@ -49,9 +49,10 @@ class ModuleHandler {
             return true;
 
         } catch (Exception $e) {
-            $this->conn->rollback();
-            $this->respondWithError("Module upload failed.", $e->getMessage());
-        }
+		    $this->conn->rollback();
+		    error_log("Module upload failed: " . $e->getMessage());
+		    $this->respondWithError("Module upload failed", $e->getMessage());
+		}
     }
 
     private function saveSingleModule($title, $des, $originalName, $tmpPath, $size, $error) {
@@ -71,7 +72,7 @@ class ModuleHandler {
         }
 
         $ext = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
-        if (!in_array($ext, ['mp4', 'mov', 'avi', 'mkv', 'pdf'])) {
+        if (!in_array($ext, ['mp4', 'mov', 'avi', 'mkv', 'pdf', 'webm'])) {
             throw new Exception("Invalid file type for: {$originalName}");
         }
 
@@ -83,7 +84,7 @@ class ModuleHandler {
             throw new Exception("Failed to move uploaded file: {$originalName}");
         }
 
-        $relativePath = '/uploads/modules/' . $uniqueName;
+        $relativePath = '/volume1/video/' . $uniqueName;
 
         $stmt = $this->conn->prepare("INSERT INTO course_videos (course_id, module_name, module_description, video_url, file_size)
             VALUES (?, ?, ?, ?, ?)
@@ -166,7 +167,7 @@ class ModuleHandler {
             }
 
             $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
-            if (!in_array($ext, ['mp4', 'mov', 'avi', 'mkv', 'pdf'])) {
+            if (!in_array($ext, ['mp4', 'mov', 'avi', 'mkv', 'pdf', 'webm'])) {
                 throw new Exception("Invalid file type for: {$name}");
             }
         }

@@ -1,9 +1,17 @@
 <?php
+
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 session_start();
 require_once '../config.php';
 
 // Check if admin exists
-$stmt = $conn->prepare("SELECT COUNT(*) as admin_count FROM users WHERE role = 'admin'");
+$stmt = $conn->prepare("
+    SELECT COUNT(*) as admin_count 
+    FROM users 
+    WHERE role IN ('admin', 'super_admin')
+");
 $stmt->execute();
 $result = $stmt->get_result();
 $admin_exists = $result->fetch_assoc()['admin_count'] > 0;

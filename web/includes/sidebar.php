@@ -21,7 +21,7 @@ $base_path = $is_in_includes ? '..' : '.';
 
         <div class="mt-10 mb-6 px-2">
             <div class="text-xs uppercase tracking-wider text-gray-400 mb-1">
-                <?php echo $_SESSION['role'] === 'admin' ? 'ADMIN' : 'USER'; ?>
+                <?php echo $_SESSION['role'] === 'admin' || $_SESSION['role'] === 'super_admin' ? 'ADMIN' : 'USER'; ?>
             </div>
             <div class="font-medium">
                 <?php echo htmlspecialchars($_SESSION['full_name'] ?? 'System Administrator'); ?>
@@ -35,7 +35,7 @@ $base_path = $is_in_includes ? '..' : '.';
                     <span class="ml-3 text-gray-600 transition duration-75 group-hover:text-white <?php echo $current_page === 'dashboard.php' ? 'text-white' : ''; ?>">Dashboard</span>
                 </a>
             </li>
-            <?php if ($_SESSION['role'] === 'admin'): ?>
+            <?php if ($_SESSION['role'] === 'admin' || $_SESSION['role'] === 'super_admin'): ?>
             <li>
                 <a href="manage_courses.php" class="flex items-center p-2 rounded-lg hover:bg-gradient-to-r from-blue-600 to-blue-800 group <?php echo $current_page === 'manage_courses.php' ? 'bg-gradient-to-r from-blue-600 to-blue-800' : ''; ?>">
                     <i data-lucide="book-open" class="w-5 h-5 text-gray-600 transition duration-75 group-hover:text-white <?php echo $current_page === 'manage_courses.php' ? 'text-white' : ''; ?>"></i>

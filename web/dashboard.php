@@ -18,7 +18,7 @@ if ($is_admin) {
     $users_count = $result->fetch_assoc()['count'];
 
     // Get total courses count
-    $result = $conn->query("SELECT COUNT(*) as count FROM courses");
+    $result = $conn->query("SELECT COUNT(*) as count FROM courses WHERE removed = 0");
     $courses_count = $result->fetch_assoc()['count'];
     
     // Get admin and student counts
@@ -40,7 +40,6 @@ if ($is_admin) {
     // Get average score
     $result = $conn->query("SELECT AVG(score) as avg_score FROM user_progress WHERE score > 0");
     $avg_row = $result->fetch_assoc();
-    $avg_score = $avg_row['avg_score'] ? round($avg_row['avg_score']) : 0;
     
     // Get recent activity
     $activity_query = "
@@ -171,7 +170,7 @@ include_once 'components/dashboard_card.php';
 
         <?php if ($is_admin): ?>
         <!-- Admin Dashboard -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
             <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200 hover:shadow-md transition-all duration-300">
                 <div class="flex items-center justify-between mb-4">
                     <h3 class="text-gray-700 font-medium">Total Users</h3>
@@ -215,19 +214,6 @@ include_once 'components/dashboard_card.php';
                 </div>
             </div>
 
-            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200 hover:shadow-md transition-all duration-300">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-gray-700 font-medium">Average Score</h3>
-                    <div class="bg-indigo-100 text-indigo-800 p-2 rounded-lg">
-                        <i data-lucide="percent" class="w-5 h-5"></i>
-                    </div>
-                </div>
-                <div class="text-3xl font-bold text-gray-900 mb-1"><?php echo $avg_score; ?>%</div>
-                <div class="text-sm text-gray-500 flex items-center">
-                    <i data-lucide="trending-up" class="w-4 h-4 mr-1 text-blue-500"></i>
-                    <span>Platform average</span>
-                </div>
-            </div>
         </div>
 
         <!-- Quick Links Section -->
@@ -291,7 +277,7 @@ include_once 'components/dashboard_card.php';
                     <tbody class="divide-y divide-gray-200">
                         <?php if ($recent_activity->num_rows === 0): ?>
                         <tr>
-                            <td colspan="4" class="px-6 py-12 text-center">
+                            <td colspan="5" class="px-6 py-12 text-center">
                                 <div class="flex flex-col items-center justify-center text-gray-500">
                                     <i data-lucide="activity-square" class="h-12 w-12 text-gray-300 mb-4"></i>
                                     <h3 class="text-lg font-medium text-gray-900 mb-1">No recent activity</h3>
