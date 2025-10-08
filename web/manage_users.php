@@ -323,7 +323,7 @@ include 'includes/header.php';
                                                     <i data-lucide="trash-2" class="h-4 w-4"></i>
                                                 </button>
                                             <?php else: ?>
-                                                <span class="text-xs text-gray-400 italic">User</span>
+                                                <span class="text-xs text-gray-400 italic">Not Allowed</span>
                                             <?php endif; ?>
                                         </div>
                                     </td>

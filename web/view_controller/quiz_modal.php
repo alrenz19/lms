@@ -252,7 +252,7 @@
         document.getElementById('questionContainer').innerHTML = '';
         questionCount = 0;
         showToast(data.message || 'Successfully submitted', 'success');
-        if (data.ok || data.success) window.location.href = 'edit_course.php?id=' + currentCourseId;
+        if (data.ok || data.success) window.location.reload();
         hideModal('addQuestionModal');
         form.reset();
         addQuestion();

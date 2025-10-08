@@ -307,7 +307,7 @@ unset($_SESSION['new_question_id']);
                                                      alt="Option <?php echo $letter; ?> Image" 
                                                      class="max-w-full h-auto rounded-lg border border-gray-100 max-h-36">
                                             <?php else: ?>
-                                                <img src="serve_video.php?file=<?php echo htmlspecialchars($row[$option_image_field]); ?>" 
+                                                <img src="../<?php echo htmlspecialchars($row[$option_image_field]); ?>" 
                                                      alt="Option <?php echo $letter; ?> Image" 
                                                      class="max-w-full h-auto rounded-lg border border-gray-100 max-h-36">
                                             <?php endif; ?>
@@ -496,7 +496,7 @@ unset($_SESSION['new_question_id']);
                 questionImageURL = URL.createObjectURL(questionImageFile);
                 setTimeout(() => URL.revokeObjectURL(questionImageURL), 5000);
             } else if (questionImagePath) {
-                questionImageURL = `../assets/${questionImagePath}`;
+                questionImageURL = `../assets/uploads/question_images/${questionImagePath}`;
             }
 
             // ✅ Prepare options data

@@ -334,20 +334,6 @@ document.addEventListener('DOMContentLoaded', function() {
       const isCompleted = data.video_progress[videoId] === 'completed';
       if (isCompleted) {
         container.innerHTML = `<p class="text-right text-green-600 font-medium mt-4">✔ Completed</p>`;
-      } else {
-        container.innerHTML = `
-          <form method="post" class="mark-complete-form text-right">
-            <input type="hidden" name="video_id" value="${videoId}">
-            <input type="hidden" name="course_id" value="${data.course_id}">
-            <button type="submit" class="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-              Mark as Complete
-            </button>
-          </form>
-        `;
-        container.querySelector('form.mark-complete-form').addEventListener('submit', function(e) {
-          e.preventDefault();
-          markModuleAsWatched(videoId);
-        });
       }
     });
 

@@ -54,7 +54,7 @@ if ($result->num_rows > 0) {
 if ($stmt->execute()) {
     // ✅ Fetch updated progress
     // Get total videos in course
-    $stmt = $conn->prepare("SELECT COUNT(*) as total FROM course_videos WHERE course_id = ?");
+    $stmt = $conn->prepare("SELECT COUNT(*) as total FROM course_videos WHERE course_id = ? AND removed = 0");
     $stmt->bind_param("i", $course_id);
     $stmt->execute();
     $total_videos = $stmt->get_result()->fetch_assoc()['total'];
@@ -62,7 +62,7 @@ if ($stmt->execute()) {
     // Get watched videos count
     $stmt = $conn->prepare("SELECT COUNT(*) as watched FROM user_video_progress uv 
                             JOIN course_videos cv ON uv.video_id = cv.id 
-                            WHERE uv.user_id = ? AND cv.course_id = ? AND uv.watched = 1");
+                            WHERE uv.user_id = ? AND cv.course_id = ? AND uv.watched = 1 AND cv.removed = 0");
     $stmt->bind_param("ii", $user_id, $course_id);
     $stmt->execute();
     $watched_videos = $stmt->get_result()->fetch_assoc()['watched'];
@@ -89,7 +89,9 @@ if ($stmt->execute()) {
         'overall_progress' => $overall_progress,
         'course_id' => $course_id,
         'video_progress' => $video_progress,
-        'can_access_quiz' => $can_access_quiz
+        'can_access_quiz' => $can_access_quiz,
+        'total_vids' => $total_videos,
+        'watched' => $watched_videos
     ]);
 } else {
     echo json_encode(['success' => false, 'message' => 'Failed to update video progress: ' . $conn->error]);

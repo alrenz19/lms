@@ -1,5 +1,6 @@
 <?php 
 require_once __DIR__ . '/server_controller/manage_course_controller.php';
+require_once 'reusable_source_code/get_course_sql_query.php';
 
 $courses_query = "
     SELECT c.id, c.title, c.description, c.created_at, c.created_by,
@@ -10,7 +11,75 @@ $courses_query = "
     ORDER BY c.created_at DESC
 ";
 
-$courses_result = $conn->query($courses_query);
+$user_id = $_SESSION['user_id'];
+
+$course_result = $conn->query($courses_query);
+
+$stmt = $conn->prepare($course_query);
+$stmt->bind_param("iii", $user_id, $user_id, $user_id);
+$stmt->execute();
+$courses_result = $stmt->get_result();
+
+$courses = [];
+$total_progress = 0;
+$total_score_percentage = 0;
+$completed_courses = 0;
+$courses_with_score = 0;
+
+
+while ($course = $courses_result->fetch_assoc()) {
+    $courses[] = $course;
+
+    $total_progress += $course['course_progress'];
+
+    if ($course['course_progress'] == 100) {
+        $completed_courses++;
+    }
+
+    // Add only if there is a total_score > 0 to avoid division by zero
+    if ($course['total_questions'] > 0) {
+        $total_score_percentage += $course['user_score'];
+        $courses_with_score++;
+    }
+}
+
+$result = $conn->query("SELECT COUNT(DISTINCT q.course_id) as count FROM questions q JOIN user_progress up ON q.course_id = up.course_id WHERE up.user_id = $user_id AND up.removed = 0");
+$enrolled_courses = count($courses);
+
+// Get completed quizzes count
+$result = $conn->query("SELECT COUNT(*) as count FROM user_progress WHERE user_id = $user_id AND removed = 0");
+$completed_quizzes = $result->fetch_assoc()['count'];
+
+// Calculate course progress and quiz completion percentages
+// Fetch quiz data: total score obtained and possible
+$result = $conn->query("SELECT 
+    (SELECT SUM(score) FROM user_progress WHERE user_id = $user_id AND removed = 0) AS score_obtained,
+    (SELECT COUNT(*) FROM questions WHERE removed = 0) AS total_quizzes,
+    (SELECT SUM(total_score) FROM user_progress WHERE user_id = $user_id AND removed = 0) AS quiz_taken
+");
+$quiz_data = $result->fetch_assoc();
+
+// Fetch course/module progress data
+$result = $conn->query("SELECT 
+    (SELECT COUNT(*) FROM user_video_progress WHERE user_id = $user_id AND removed = 0) AS completed_course,
+    (SELECT COUNT(*) FROM course_videos WHERE removed = 0) AS total_module
+");
+$progress_data = $result->fetch_assoc();
+
+// Sanitize and prevent division by zero
+$score_obtained = isset($quiz_data['quiz_taken']) ? (int)$quiz_data['quiz_taken'] : 0;
+$score_possible = isset($quiz_data['total_quizzes']) && $quiz_data['total_quizzes'] > 0 
+    ? (int)$quiz_data['total_quizzes'] 
+    : 1;
+
+$completed_course = isset($progress_data['completed_course']) ? (int)$progress_data['completed_course'] : 0;
+$total_modules = isset($progress_data['total_module']) && $progress_data['total_module'] > 0 
+    ? (int)$progress_data['total_module'] 
+    : 1;
+
+// Final computed percentages
+$course_progress = round(($completed_course / $total_modules) * 100);
+$quiz_completion = round(($score_obtained / $score_possible) * 100);
 
 ?>
 
@@ -215,7 +284,7 @@ $courses_result = $conn->query($courses_query);
                 <!-- Course List -->
                 <div class="p-6">
                     <div id="courseContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <?php if ($courses_result->num_rows === 0): ?>
+                        <?php if ($course_result->num_rows === 0): ?>
                         <div class="col-span-full flex flex-col items-center justify-center p-12 text-center">
                             <i data-lucide="book-x" class="h-16 w-16 text-gray-300 mb-4"></i>
                             <h3 class="text-xl font-medium text-gray-900 mb-2">No courses available</h3>
@@ -226,7 +295,7 @@ $courses_result = $conn->query($courses_query);
                             </button>
                         </div>
                         <?php else: ?>
-                            <?php while ($course = $courses_result->fetch_assoc()): ?>
+                            <?php while ($course = $course_result->fetch_assoc()): ?>
                             <div class="course-card bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300"
                                 data-id="<?php echo $course['id']; ?>"
                                 data-title="<?php echo strtolower(htmlspecialchars($course['title'])); ?>">
@@ -259,7 +328,7 @@ $courses_result = $conn->query($courses_query);
                                                 Created: <?php echo $course_date_str; ?>
                                             </span>
                                         </div>
-                                        <?php if ($course['created_by'] == $_SESSION['user_id']): ?>
+                                        <?php if ($_SESSION['role'] === 'super_admin'): ?>
                                             <div class="flex space-x-2">
                                                 <a href="edit_course.php?id=<?php echo $course['id']; ?>" 
                                                 class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
@@ -270,6 +339,32 @@ $courses_result = $conn->query($courses_query);
                                                     <i data-lucide="trash-2" class="w-5 h-5"></i>
                                                 </button>
                                             </div>
+                                        <?php elseif ($course['created_by'] == $_SESSION['user_id']): ?>
+                                            <div class="flex space-x-2">
+                                                <a href="edit_course.php?id=<?php echo $course['id']; ?>" 
+                                                class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                                                    <i data-lucide="edit-3" class="w-5 h-5"></i>
+                                                </a>
+                                                <button class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors" 
+                                                        onclick="confirmDeleteCourse(<?php echo $course['id']; ?>, '<?php echo htmlspecialchars(addslashes($course['title'])); ?>')">
+                                                    <i data-lucide="trash-2" class="w-5 h-5"></i>
+                                                </button>
+                                            </div>
+                                        <?php else: ?>
+                                            <a href="view_course.php?id=<?php echo $course['id']; ?>" 
+                                            class="w-full inline-flex items-center justify-center px-4 py-2 bg-blue-100 text-blue-700 
+                                            rounded-lg hover:bg-blue-200 transition-colors text-sm font-medium">
+                                                <?php if ($course_progress == 0): ?>
+                                                <i data-lucide="play" class="w-4 h-4 mr-2"></i>
+                                                Start Course
+                                                <?php elseif ($course_progress == 100): ?>
+                                                <i data-lucide="rotate-ccw" class="w-4 h-4 mr-2"></i>
+                                                Review Course
+                                                <?php else: ?>
+                                                <i data-lucide="arrow-right" class="w-4 h-4 mr-2"></i>
+                                                Continue Course
+                                                <?php endif; ?>
+                                            </a>
                                         <?php endif; ?>
                                     </div>
                                 </div>
@@ -673,8 +768,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 mediaRecorder.onstop = () => {
                     // Save recording
-                    const blob = new Blob(recordedChunks, { type: 'video/webm' });
-                    const file = new File([blob], `screen_recording_${Date.now()}.webm`, { type: 'video/webm' });
+                    const blob = new Blob(recordedChunks, { type: 'video/mp4' });
+                    const file = new File([blob], `screen_recording_${Date.now()}.mp4`, { type: 'video/mp4' });
 
                     uploadedFiles.push(file);
                     addModuleRow(file);

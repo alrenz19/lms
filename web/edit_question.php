@@ -237,7 +237,7 @@ $quiz = $stmt->get_result()->fetch_assoc();
                                             class="max-w-full h-auto rounded-lg border border-gray-200 max-h-48">
                                         <p class="mt-1 text-xs text-gray-500">Path: <?php echo htmlspecialchars(substr($question['question_image'], 7)); ?></p>
                                     <?php else: ?>
-                                        <img src="../uploads/question_images/<?php echo htmlspecialchars($question['question_image']); ?>" 
+                                        <img src="../<?php echo htmlspecialchars($question['question_image']); ?>" 
                                             alt="Question Image" 
                                             class="max-w-full h-auto rounded-lg border border-gray-200 max-h-48">
                                     <?php endif; ?>
@@ -266,7 +266,7 @@ $quiz = $stmt->get_result()->fetch_assoc();
                             <div class="p-4 border border-gray-200 rounded-lg option-container">
                                 <div class="flex items-center mb-3">
                                     <input type="radio" name="correct_answer" value="A" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 mr-2"
-                                           <?php echo ($question['correct_answer'] === 'a') ? 'checked' : ''; ?>>
+                                           <?php echo ($question['correct_answer'] === 'A') ? 'checked' : 'disabled'; ?>>
                                     <label class="inline-block w-8 text-center font-medium text-indigo-600 bg-indigo-50 rounded-md py-1 mr-3">A</label>
                                     <p class="text-sm text-gray-700 font-medium">Option A</p>
                                 </div>
@@ -317,7 +317,7 @@ $quiz = $stmt->get_result()->fetch_assoc();
                             <div class="p-4 border border-gray-200 rounded-lg option-container">
                                 <div class="flex items-center mb-3">
                                     <input type="radio" name="correct_answer" value="B" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 mr-2"
-                                           <?php echo ($question['correct_answer'] === 'b') ? 'checked' : ''; ?>>
+                                           <?php echo ($question['correct_answer'] === 'B') ? 'checked' : 'disabled'; ?>>
                                     <label class="inline-block w-8 text-center font-medium text-indigo-600 bg-indigo-50 rounded-md py-1 mr-3">B</label>
                                     <p class="text-sm text-gray-700 font-medium">Option B</p>
                                 </div>
@@ -368,7 +368,7 @@ $quiz = $stmt->get_result()->fetch_assoc();
                             <div class="p-4 border border-gray-200 rounded-lg option-container">
                                 <div class="flex items-center mb-3">
                                     <input type="radio" name="correct_answer" value="C" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 mr-2"
-                                           <?php echo ($question['correct_answer'] === 'c') ? 'checked' : ''; ?>>
+                                           <?php echo ($question['correct_answer'] === 'C') ? 'checked' : 'disabled'; ?>>
                                     <label class="inline-block w-8 text-center font-medium text-indigo-600 bg-indigo-50 rounded-md py-1 mr-3">C</label>
                                     <p class="text-sm text-gray-700 font-medium">Option C</p>
                                 </div>
@@ -419,7 +419,7 @@ $quiz = $stmt->get_result()->fetch_assoc();
                             <div class="p-4 border border-gray-200 rounded-lg option-container">
                                 <div class="flex items-center mb-3">
                                     <input type="radio" name="correct_answer" value="D" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 mr-2"
-                                           <?php echo ($question['correct_answer'] === 'd') ? 'checked' : ''; ?>>
+                                           <?php echo ($question['correct_answer'] === 'D') ? 'checked' : 'disabled'; ?>>
                                     <label class="inline-block w-8 text-center font-medium text-indigo-600 bg-indigo-50 rounded-md py-1 mr-3">D</label>
                                     <p class="text-sm text-gray-700 font-medium">Option D</p>
                                 </div>

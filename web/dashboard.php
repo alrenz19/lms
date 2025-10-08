@@ -8,7 +8,7 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
-$is_admin = ($_SESSION['role'] === 'admin');
+$is_admin = ($_SESSION['role'] === 'admin' || $_SESSION['role'] === 'super_admin');
 $user_id = $_SESSION['user_id'];
 
 // Add these queries for admin dashboard statistics
