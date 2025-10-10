@@ -234,6 +234,16 @@ if ($video_result->num_rows > 0) {
                             </h2>
                         </div>
                         <div class="p-6 space-y-4">
+                            <a href="manage_all_users.php?course_id=<?php echo $course_id; ?>" class="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-all group">
+                                <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center group-hover:bg-blue-200 transition-all">
+                                    <i data-lucide="help-circle" class="w-5 h-5 text-blue-600"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-sm font-medium text-gray-900">Manage Users/Division</h3>
+                                    <p class="text-xs text-gray-500">Add or edit users, manage divisions for this course</p>
+                                </div>
+                            </a>
+
                             <a href="manage_quiz.php?course_id=<?php echo $course_id; ?>" class="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-all group">
                                 <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center group-hover:bg-blue-200 transition-all">
                                     <i data-lucide="help-circle" class="w-5 h-5 text-blue-600"></i>
@@ -249,8 +259,8 @@ if ($video_result->num_rows > 0) {
                                     <i data-lucide="printer" class="w-5 h-5 text-blue-600"></i>
                                 </div>
                                 <div>
-                                    <h3 class="text-sm font-medium text-gray-900">Print Course</h3>
-                                    <p class="text-xs text-gray-500">Print course details and quizzes</p>
+                                    <h3 class="text-sm font-medium text-gray-900">Print Progress</h3>
+                                    <p class="text-xs text-gray-500">Print user progress details</p>
                                 </div>
                             </a>
                             

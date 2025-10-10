@@ -44,6 +44,10 @@ foreach ($questions as $question) {
         $correct_count++;
     }
 }
+
+$total_questions = count($questions);
+$percentage_score = $total_questions > 0 ? round(($correct_count / $total_questions) * 100) : 0;
+
 ?>
 
 <!DOCTYPE html>
@@ -138,7 +142,7 @@ foreach ($questions as $question) {
                         <p class="text-blue-100">Review your answers and see what you got right</p>
                     </div>
                     <div class="flex flex-col items-end justify-center">
-                        <div class="text-5xl font-bold mb-2"><?php echo $quiz['score']; ?>%</div>
+                        <div class="text-5xl font-bold mb-2"><?php echo $percentage_score; ?>%</div>
                         <div class="text-lg"><?php echo $correct_count; ?> of <?php echo count($questions); ?> correct</div>
                     </div>
                 </div>
@@ -170,7 +174,6 @@ foreach ($questions as $question) {
                                             '" alt="Option ' . htmlspecialchars($question['question_text']) . ' Image" class="max-w-full h-auto rounded-lg border border-gray-100 max-h-48">';
                                     ?>
                                     
-                                <?php echo htmlspecialchars($question['question_text']); ?>
                             
                                 </h3>
                                 <?php if (!empty($user_answer)): ?>

@@ -2,23 +2,35 @@
 require_once __DIR__ . '/server_controller/manage_course_controller.php';
 require_once 'reusable_source_code/get_course_sql_query.php';
 
+$user_id = $_SESSION['user_id'];
+
 $courses_query = "
-    SELECT c.id, c.title, c.description, c.created_at, c.created_by,
-           (SELECT COUNT(*) FROM user_progress up WHERE up.course_id = c.id) AS enrollment_count,
-           (SELECT COUNT(*) FROM questions q WHERE q.course_id = c.id) AS question_count
+    SELECT 
+        c.id, 
+        c.title, 
+        c.description, 
+        c.created_at, 
+        c.created_by,
+        (SELECT COUNT(*) FROM user_progress up WHERE up.course_id = c.id) AS enrollment_count,
+        (SELECT COUNT(*) FROM questions q WHERE q.course_id = c.id) AS question_count
     FROM courses c
-    WHERE c.removed = 0
+    WHERE 
+        c.removed = 0
+        AND (
+            ? IN (SELECT id FROM users WHERE role = 'super_admin')
+            OR c.created_by = ? 
+            OR c.id IN (
+                SELECT course_id FROM user_courses 
+                WHERE user_id = ? AND removed = 0
+            )
+        )
     ORDER BY c.created_at DESC
 ";
 
-$user_id = $_SESSION['user_id'];
-
-$course_result = $conn->query($courses_query);
-
-$stmt = $conn->prepare($course_query);
-$stmt->bind_param("iii", $user_id, $user_id, $user_id);
-$stmt->execute();
-$courses_result = $stmt->get_result();
+$stmt_all = $conn->prepare($courses_query);
+$stmt_all->bind_param("iii", $user_id, $user_id, $user_id);
+$stmt_all->execute();
+$course_result = $stmt_all->get_result();
 
 $courses = [];
 $total_progress = 0;
@@ -26,22 +38,6 @@ $total_score_percentage = 0;
 $completed_courses = 0;
 $courses_with_score = 0;
 
-
-while ($course = $courses_result->fetch_assoc()) {
-    $courses[] = $course;
-
-    $total_progress += $course['course_progress'];
-
-    if ($course['course_progress'] == 100) {
-        $completed_courses++;
-    }
-
-    // Add only if there is a total_score > 0 to avoid division by zero
-    if ($course['total_questions'] > 0) {
-        $total_score_percentage += $course['user_score'];
-        $courses_with_score++;
-    }
-}
 
 $result = $conn->query("SELECT COUNT(DISTINCT q.course_id) as count FROM questions q JOIN user_progress up ON q.course_id = up.course_id WHERE up.user_id = $user_id AND up.removed = 0");
 $enrolled_courses = count($courses);
@@ -691,6 +687,29 @@ document.addEventListener('DOMContentLoaded', function () {
         // Create a URL for the file for preview
         const fileURL = URL.createObjectURL(file);
 
+        let previewHTML = "";
+
+        // Decide preview type based on file type
+        if (file.type === "application/pdf") {
+            previewHTML = `
+                <iframe src="${fileURL}" class="w-full sm:w-1/4 mt-2 sm:mt-0 rounded border"></iframe>
+            `;
+        } else if (file.type === "video/mp4") {
+            previewHTML = `
+                <video class="w-full sm:w-1/4 mt-2 sm:mt-0 rounded border" controls>
+                    <source src="${fileURL}" type="${file.type}">
+                    Your browser does not support the video tag.
+                </video>
+            `;
+        } else {
+            previewHTML = `
+                <div class="w-full sm:w-1/4 mt-2 sm:mt-0 text-red-600 text-sm">
+                    Unsupported file type
+                </div>
+            `;
+        }
+
+        // Now build the entire row using that previewHTML
         row.innerHTML = `
             <div class="w-full sm:w-1/4 text-sm text-gray-700 truncate">📄 ${file.name}</div>
 
@@ -702,10 +721,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             <input type="hidden" name="module_file_names[]" value="${file.name}">
 
-            <video class="w-full sm:w-1/4 mt-2 sm:mt-0 rounded border" controls>
-                <source src="${fileURL}" type="${file.type}">
-                Your browser does not support the video tag.
-            </video>
+            ${previewHTML}
 
             <button type="button"
                 class="absolute top-2 right-2 text-red-500 hover:text-red-700 text-sm font-bold opacity-0 group-hover:opacity-100 transition-opacity duration-200"

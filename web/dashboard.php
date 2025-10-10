@@ -63,7 +63,7 @@ if ($is_admin) {
 // Calculate overall progress across all courses
 
 $stmt = $conn->prepare($course_query);
-$stmt->bind_param("iii", $user_id, $user_id, $user_id);
+$stmt->bind_param("iiii", $user_id, $user_id, $user_id, $user_id);
 $stmt->execute();
 $courses_result = $stmt->get_result();
 

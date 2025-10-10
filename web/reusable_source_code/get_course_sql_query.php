@@ -41,7 +41,8 @@ SELECT
     -- Last activity
     COALESCE(uqs.last_activity, uvp_data.last_video_activity, c.created_at) AS last_activity
 
-FROM courses c
+FROM user_courses uc
+JOIN courses c ON uc.course_id = c.id
 
 -- Total questions per course
 LEFT JOIN (
@@ -96,8 +97,12 @@ LEFT JOIN (
       AND cv.removed = 0
     GROUP BY cv.course_id
 ) AS uvp_data ON c.id = uvp_data.course_id
-WHERE c.removed = 0
-ORDER BY last_activity DESC, c.title ASC;
-"
 
+WHERE 
+    uc.user_id = ?        -- ✅ Only courses assigned to this user
+    AND uc.removed = 0
+    AND c.removed = 0
+
+ORDER BY last_activity DESC, c.title ASC;
+";
 ?>

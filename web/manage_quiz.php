@@ -261,7 +261,7 @@ unset($_SESSION['new_question_id']);
                                              alt="Question Image test" 
                                              class="max-w-full h-auto rounded-lg border border-gray-200 max-h-64">
                                     <?php else: ?>
-                                        <img src="serve_video.php?file=<?php echo htmlspecialchars($row['question_image']); ?>" 
+                                        <img src="../uploads/question_images/<?php echo htmlspecialchars($row['question_image']); ?>" 
                                              alt="Question Image here" 
                                              class="max-w-full h-auto rounded-lg border border-gray-200 max-h-64">
                                     <?php endif; ?>
@@ -307,7 +307,7 @@ unset($_SESSION['new_question_id']);
                                                      alt="Option <?php echo $letter; ?> Image" 
                                                      class="max-w-full h-auto rounded-lg border border-gray-100 max-h-36">
                                             <?php else: ?>
-                                                <img src="../<?php echo htmlspecialchars($row[$option_image_field]); ?>" 
+                                                <img src="../uploads/question_images/<?php echo htmlspecialchars($row[$option_image_field]); ?>" 
                                                      alt="Option <?php echo $letter; ?> Image" 
                                                      class="max-w-full h-auto rounded-lg border border-gray-100 max-h-36">
                                             <?php endif; ?>

@@ -237,7 +237,7 @@ $quiz = $stmt->get_result()->fetch_assoc();
                                             class="max-w-full h-auto rounded-lg border border-gray-200 max-h-48">
                                         <p class="mt-1 text-xs text-gray-500">Path: <?php echo htmlspecialchars(substr($question['question_image'], 7)); ?></p>
                                     <?php else: ?>
-                                        <img src="../<?php echo htmlspecialchars($question['question_image']); ?>" 
+                                        <img src="../uploads/question_images/<?php echo htmlspecialchars($question['question_image']); ?>" 
                                             alt="Question Image" 
                                             class="max-w-full h-auto rounded-lg border border-gray-200 max-h-48">
                                     <?php endif; ?>

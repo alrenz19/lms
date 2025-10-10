@@ -104,7 +104,7 @@
     return ['a', 'b', 'c', 'd'].map(letter => `
       <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
         <div class="flex items-center mb-3">
-          <input type="radio" name="questions[${index}][correct_answer]" value="${letter}" class="h-5 w-5 text-indigo-600 mr-2 correct-answer-radio" required>
+          <input type="radio" name="questions[${index}][correct_answer]" value="${letter.toUpperCase()}" class="h-5 w-5 text-indigo-600 mr-2 correct-answer-radio" required>
           <label class="w-8 text-center font-medium text-indigo-600 bg-indigo-50 rounded-md py-1 mr-3 uppercase">${letter}</label>
           <span class="text-sm font-medium text-gray-700">Option ${letter.toUpperCase()}</span>
           <span class="ml-auto px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full hidden correct-indicator">Correct</span>

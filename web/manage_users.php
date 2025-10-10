@@ -15,6 +15,18 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role'] !== 'admin' && $_SESSION[
 $error = '';
 $success = '';
 
+// Fetch dropdown lists for divisions, sections, departments
+$divisions_result = $conn->query("SELECT Id AS id, name FROM division ORDER BY name");
+$divisions = $divisions_result ? $divisions_result->fetch_all(MYSQLI_ASSOC) : [];
+
+$sections_result = $conn->query("SELECT Id AS id, name FROM section ORDER BY name");
+$sections = $sections_result ? $sections_result->fetch_all(MYSQLI_ASSOC) : [];
+
+$departments_result = $conn->query("SELECT id AS id, Name AS name FROM department ORDER BY Name");
+$departments = $departments_result ? $departments_result->fetch_all(MYSQLI_ASSOC) : [];
+
+
+
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if (isset($_POST['add_user'])) {
         try {
@@ -36,12 +48,27 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             // Begin transaction
             $conn->begin_transaction();
             
-            $stmt = $conn->prepare("INSERT INTO users (username, email, full_name, password, role) VALUES (?, ?, ?, ?, ?)");
+            $stmt = $conn->prepare("INSERT INTO users (username, email, full_name, password, role, division, section, department) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
             if (!$stmt) {
                 throw new Exception("Prepare failed: " . $conn->error);
             }
-            
-            $stmt->bind_param("sssss", $username, $email, $full_name, $password, $role);
+
+            $division = !empty($_POST['division']) ? (int)$_POST['division'] : null;
+            $section = !empty($_POST['section']) ? (int)$_POST['section'] : null;
+            $department = !empty($_POST['department']) ? (int)$_POST['department'] : null;
+
+            $stmt->bind_param(
+                "ssssssss",
+                $username,
+                $email,
+                $full_name,
+                $password,
+                $role,
+                $division,
+                $section,
+                $department
+            );
+
             if (!$stmt->execute()) {
                 throw new Exception("Execute failed: " . $stmt->error);
             }
@@ -406,6 +433,36 @@ include 'includes/header.php';
                                    placeholder="Enter password"
                                    required>
                         </div>
+                    </div>
+                    <div>
+                        <label for="division" class="block text-sm font-medium text-gray-700 mb-1">Division</label>
+                        <select id="division" name="division" 
+                                class="w-full rounded-lg border border-gray-300 px-3 py-2.5 focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition">
+                            <option value="">-- Select Division --</option>
+                            <?php foreach ($divisions as $d): ?>
+                                <option value="<?php echo (int)$d['id']; ?>"><?php echo htmlspecialchars($d['name']); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="section" class="block text-sm font-medium text-gray-700 mb-1">Section</label>
+                        <select id="section" name="section" 
+                                class="w-full rounded-lg border border-gray-300 px-3 py-2.5 focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition">
+                            <option value="">-- Select Section --</option>
+                            <?php foreach ($sections as $s): ?>
+                                <option value="<?php echo (int)$s['id']; ?>"><?php echo htmlspecialchars($s['name']); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="department" class="block text-sm font-medium text-gray-700 mb-1">Department</label>
+                        <select id="department" name="department" 
+                                class="w-full rounded-lg border border-gray-300 px-3 py-2.5 focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition">
+                            <option value="">-- Select Department --</option>
+                            <?php foreach ($departments as $dep): ?>
+                                <option value="<?php echo (int)$dep['id']; ?>"><?php echo htmlspecialchars($dep['name']); ?></option>
+                            <?php endforeach; ?>
+                        </select>
                     </div>
                     <div>
                         <label for="role" class="block text-sm font-medium text-gray-700 mb-1">Role</label>

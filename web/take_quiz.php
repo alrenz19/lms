@@ -98,7 +98,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     ];
 
     // Redirect to results
-    header("Location: quiz_results.php?id=" . $course_id);
+    header("Location: quiz_review.php?id=" . $course_id);
     exit;
 }
 
@@ -236,7 +236,7 @@ $questions = $conn->query("SELECT * FROM questions WHERE course_id = $course_id 
                                                  alt="Question Image" 
                                                  class="max-w-full h-auto rounded-lg border border-gray-200 max-h-64">
                                         <?php else: ?>
-                                            <img src="serve_video.php?file=<?php echo htmlspecialchars($question['question_image']); ?>" 
+                                            <img src="..<?php echo htmlspecialchars($question['question_image']); ?>" 
                                                  alt="Question Image" 
                                                  class="max-w-full h-auto rounded-lg border border-gray-200 max-h-64">
                                         <?php endif; ?>
@@ -262,7 +262,7 @@ $questions = $conn->query("SELECT * FROM questions WHERE course_id = $course_id 
                                                 </div>
                                                 <?php if ($has_image): ?>
                                                     <div class="mt-3 w-full">
-                                                        <img src="serve_video.php?file=<?php echo htmlspecialchars($question[$option_image_field]); ?>" 
+                                                        <img src="../uploads/question_images/<?php echo htmlspecialchars($question[$option_image_field]); ?>" 
                                                             alt="Option <?php echo $letter; ?> Image" 
                                                             class="max-w-full h-auto rounded-lg border border-gray-100 max-h-48">
                                                     </div>

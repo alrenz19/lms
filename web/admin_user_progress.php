@@ -16,11 +16,11 @@ $query = "
         u.email,
         COUNT(DISTINCT c.id) as total_enrolled_courses,
         (
-            SELECT COUNT(DISTINCT c2.id)
+            SELECT GROUP_CONCAT(DISTINCT c2.title SEPARATOR ', ')
             FROM courses c2
             JOIN user_progress up2 ON c2.id = up2.course_id
             WHERE up2.user_id = u.id
-            AND up2.completed = 1
+              AND up2.completed = 1
         ) as completed_courses,
         (
             SELECT COUNT(*)
@@ -55,13 +55,24 @@ $active_users_last_week = 0;
 $current_time = time();
 
 while ($row = $result->fetch_assoc()) {
-    $total_completed_courses += $row['completed_courses'];
+    // Count how many completed courses (if any)
+    $completed_count = 0;
+    if (!empty($row['completed_courses'])) {
+        $completed_count = count(explode(',', $row['completed_courses']));
+    }
+
+    $total_completed_courses += $completed_count;
     $total_correct_answers += $row['total_correct_answers'];
-    
+
     if ($row['last_activity'] && strtotime($row['last_activity']) > ($current_time - 7 * 24 * 60 * 60)) {
         $active_users_last_week++;
     }
+
+    // Save the count for later use in the table (optional)
+    $row['completed_courses_count'] = $completed_count;
+    $rows[] = $row;
 }
+
 
 $result->data_seek(0); // Reset result pointer
 
@@ -182,8 +193,8 @@ include_once 'components/dashboard_card.php';
                         <tr class="bg-gray-50">
                             <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
                             <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                            <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Course Progress</th>
-                            <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Completed</th>
+                            <!-- <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Course Progress</th> -->
+                            <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Completed Courses</th>
                             <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Activity</th>
                         </tr>
                     </thead>
@@ -199,9 +210,10 @@ include_once 'components/dashboard_card.php';
                                 </td>
                             </tr>
                         <?php else: ?>
-                            <?php while ($row = $result->fetch_assoc()): 
-                                $completion_rate = $row['total_enrolled_courses'] > 0 ? 
-                                    ($row['completed_courses'] / $row['total_enrolled_courses']) * 100 : 0;
+                            <?php 
+                            $result->free_result(); // free memory
+                                foreach ($rows as $row):
+                                $completion_rate = $row['total_enrolled_courses'] > 0 ? (($row['completed_courses_count'] ?? 0) / $row['total_enrolled_courses']) * 100 : 0;
                             ?>
                             <tr class="hover:bg-blue-50/50 transition-colors" data-name="<?php echo strtolower($row['full_name']); ?>" data-email="<?php echo strtolower($row['email']); ?>">
                                 <td class="px-6 py-4 whitespace-nowrap">
@@ -222,7 +234,7 @@ include_once 'components/dashboard_card.php';
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                     <?php echo htmlspecialchars($row['email']); ?>
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
+                                <!-- <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="w-full bg-gray-200 rounded-full h-2.5 mb-2">
                                         <div class="bg-blue-600 h-2.5 rounded-full" 
                                              style="width: <?php echo round($completion_rate); ?>%" 
@@ -246,12 +258,24 @@ include_once 'components/dashboard_card.php';
                                             </span>
                                         <?php endif; ?>
                                     </div>
-                                </td>
-                                <td class="px-10 py-4 whitespace-nowrap">
-                                    <span class="text-sm font-medium text-emerald-600 flex items-center">
-                                        <i data-lucide="check-circle" class="w-4 h-4 mr-1 <?php echo $row['completed_courses'] > 0 ? 'text-emerald-500' : 'text-gray-300'; ?>"></i>
-                                        <?php echo $row['completed_courses']; ?>
-                                    </span>
+                                </td> -->
+                                <td class="px-10 py-4 whitespace-nowrap align-top">
+                                    <div class="text-sm font-medium text-emerald-600 flex items-center mb-1">
+                                        <i data-lucide="check-circle" class="w-4 h-4 mr-1 <?php echo !empty($row['completed_courses']) ? 'text-emerald-500' : 'text-gray-300'; ?>"></i>
+                                        <?php echo $row['completed_courses_count'] ?? 0; ?>
+                                    </div>
+
+                                    <?php if (!empty($row['completed_courses'])): ?>
+                                        <?php 
+                                            // Split the string into course names
+                                            $courses_list = array_map('trim', explode(',', $row['completed_courses']));
+                                        ?>
+                                        <ul class="[list-style-type:'▹'] list-inside text-xs text-gray-600 space-y-0.5">
+                                            <?php foreach ($courses_list as $course): ?>
+                                                <li><?php echo htmlspecialchars($course); ?></li>
+                                            <?php endforeach; ?>
+                                        </ul>
+                                    <?php endif; ?>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <?php if ($row['last_activity']): ?>
@@ -271,7 +295,7 @@ include_once 'components/dashboard_card.php';
                                     <?php endif; ?>
                                 </td>
                             </tr>
-                            <?php endwhile; ?>
+                            <?php endforeach; ?>
                         <?php endif; ?>
                     </tbody>
                 </table>
