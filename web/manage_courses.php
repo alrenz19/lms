@@ -2,33 +2,93 @@
 require_once __DIR__ . '/server_controller/manage_course_controller.php';
 require_once 'reusable_source_code/get_course_sql_query.php';
 
+// --- FILTER (replace existing filter handling) ---
+$filter = isset($_GET['filter']) ? $_GET['filter'] : 'all';
 $user_id = $_SESSION['user_id'];
+$role = $_SESSION['role'];
 
-$courses_query = "
-    SELECT 
-        c.id, 
-        c.title, 
-        c.description, 
-        c.created_at, 
-        c.created_by,
-        (SELECT COUNT(*) FROM user_progress up WHERE up.course_id = c.id) AS enrollment_count,
-        (SELECT COUNT(*) FROM questions q WHERE q.course_id = c.id) AS question_count
-    FROM courses c
-    WHERE 
-        c.removed = 0
-        AND (
-            ? IN (SELECT id FROM users WHERE role = 'super_admin')
-            OR c.created_by = ? 
-            OR c.id IN (
-                SELECT course_id FROM user_courses 
-                WHERE user_id = ? AND removed = 0
-            )
-        )
-    ORDER BY c.created_at DESC
-";
+$stmt_all = null;
 
-$stmt_all = $conn->prepare($courses_query);
-$stmt_all->bind_param("iii", $user_id, $user_id, $user_id);
+
+if ($role === 'super_admin') {
+    // Super Admin sees ALL courses
+    $courses_query = "
+        SELECT 
+            c.id, c.title, c.description, c.created_at, c.created_by,
+            (SELECT COUNT(*) FROM user_progress up WHERE up.course_id = c.id) AS enrollment_count,
+            (SELECT COUNT(*) FROM questions q WHERE q.course_id = c.id) AS question_count
+        FROM courses c
+        WHERE c.removed = 0
+        ORDER BY c.created_at DESC
+    ";
+    $stmt_all = $conn->prepare($courses_query);
+} elseif ($filter === 'my') {
+    // 🔹 My Courses — created by the user
+    $courses_query = "
+        SELECT 
+            c.id, 
+            c.title, 
+            c.description, 
+            c.created_at, 
+            c.created_by,
+            (SELECT COUNT(*) FROM user_progress up WHERE up.course_id = c.id) AS enrollment_count,
+            (SELECT COUNT(*) FROM questions q WHERE q.course_id = c.id) AS question_count
+        FROM courses c
+        WHERE c.removed = 0
+          AND c.created_by = ?
+        ORDER BY c.created_at DESC
+    ";
+    $stmt_all = $conn->prepare($courses_query);
+    $stmt_all->bind_param("i", $user_id);
+
+} elseif ($filter === 'enrolled') {
+    // 🔹 Enrolled Courses — only those the user is enrolled in
+    $courses_query = "
+        SELECT DISTINCT 
+            c.id, 
+            c.title, 
+            c.description, 
+            c.created_at, 
+            c.created_by,
+            (SELECT COUNT(*) FROM user_progress up WHERE up.course_id = c.id) AS enrollment_count,
+            (SELECT COUNT(*) FROM questions q WHERE q.course_id = c.id) AS question_count
+        FROM courses c
+        INNER JOIN user_courses uc ON uc.course_id = c.id
+        WHERE c.removed = 0
+          AND uc.removed = 0
+          AND uc.user_id = ?
+        ORDER BY c.created_at DESC
+    ";
+    $stmt_all = $conn->prepare($courses_query);
+    $stmt_all->bind_param("i", $user_id);
+
+
+} else {
+    // 🔹 All Courses — owned OR enrolled by user
+    $courses_query = "
+        SELECT DISTINCT
+            c.id, 
+            c.title, 
+            c.description, 
+            c.created_at, 
+            c.created_by,
+            (SELECT COUNT(*) FROM user_progress up WHERE up.course_id = c.id) AS enrollment_count,
+            (SELECT COUNT(*) FROM questions q WHERE q.course_id = c.id) AS question_count
+        FROM courses c
+        WHERE c.removed = 0
+          AND (
+              c.created_by = ?
+              OR c.id IN (
+                  SELECT course_id FROM user_courses 
+                  WHERE user_id = ? AND removed = 0
+              )
+          )
+        ORDER BY c.created_at DESC
+    ";
+    $stmt_all = $conn->prepare($courses_query);
+    $stmt_all->bind_param("ii", $user_id, $user_id);
+}
+
 $stmt_all->execute();
 $course_result = $stmt_all->get_result();
 
@@ -254,14 +314,26 @@ $quiz_completion = round(($score_obtained / $score_possible) * 100);
                         <i data-lucide="layout-grid" class="w-5 h-5 text-blue-600 mr-2"></i>
                         Course List
                     </h2>
-                    <div class="flex items-center gap-3 w-full sm:w-auto">
-                        <!-- Filter Button -->
-                        <button id="filterBtn" 
-                            class="px-4 py-2 border border-gray-200 bg-white text-gray-700 rounded-lg flex items-center gap-2 hover:bg-gray-50 hover:border-gray-300 transition-colors"
-                            data-filter="all">
-                            <i data-lucide="sliders-horizontal" class="w-4 h-4"></i>
-                            <span class="hidden sm:inline">My Courses</span>
-                        </button>
+                    <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+                       <!-- Filter Buttons (Admins only) -->
+                        <?php if ($_SESSION['role'] === 'admin'): ?>
+                        <div class="flex space-x-2">
+                            <?php
+                            $filters = [
+                                'all' => 'All Courses',
+                                'enrolled' => 'Enrolled Courses',
+                                'my' => 'My Courses'
+                            ];
+                            foreach ($filters as $key => $label):
+                                $active = ($filter === $key) ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-100';
+                            ?>
+                                <a href="?filter=<?php echo $key; ?>" 
+                                class="px-4 py-2 rounded-lg border border-gray-300 text-sm font-medium transition <?php echo $active; ?>">
+                                <?php echo $label; ?>
+                                </a>
+                            <?php endforeach; ?>
+                        </div>
+                        <?php endif; ?>
 
                         <!-- Search Box -->
                         <div class="relative w-full sm:w-64">
@@ -501,88 +573,6 @@ $quiz_completion = round(($score_obtained / $score_possible) * 100);
 
 
 <?php require_once  __DIR__ . '/view_controller/quiz_modal.php';?>
-
-<script>
-document.getElementById("filterBtn").addEventListener("click", function() {
-    let btn = this;
-    let filter = btn.getAttribute("data-filter");
-
-    if (filter === "all") {
-        btn.setAttribute("data-filter", "mine");
-        btn.querySelector("span").textContent = "All Courses";
-        fetchCourses("mine");
-    } else {
-        btn.setAttribute("data-filter", "all");
-        btn.querySelector("span").textContent = "My Courses";
-        fetchCourses("all");
-    }
-});
-
-
-function fetchCourses(filterType) {
-    fetch("manage_courses.php?filter=" + filterType, {
-        headers: { "X-Requested-With": "XMLHttpRequest" }
-    })
-    .then(res => res.json())
-    .then(courses => {
-        const container = document.getElementById("courseContainer");
-        container.innerHTML = "";
-
-        if (courses.length === 0) {
-            container.innerHTML = `
-                <div class="col-span-full flex flex-col items-center justify-center p-12 text-center">
-                    <i data-lucide="book-x" class="h-16 w-16 text-gray-300 mb-4"></i>
-                    <h3 class="text-xl font-medium text-gray-900 mb-2">No courses available</h3>
-                    <p class="text-gray-500 mb-6 max-w-md">Start creating courses by clicking the "Add New Course" button above</p>
-                </div>
-            `;
-        } else {
-            courses.forEach(course => {
-                container.innerHTML += `
-                    <div class="course-card bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300">
-                        <div class="h-48 bg-gradient-to-r from-blue-600 to-blue-800 p-6 flex items-end">
-                            <h3 class="text-xl font-semibold text-white">${course.title}</h3>
-                        </div>
-                        <div class="p-6">
-                            <p class="text-gray-600 text-sm mb-4 line-clamp-3">${course.description ?? ""}</p>
-                            <div class="flex items-center text-sm text-gray-500 mb-4">
-                                <div class="flex items-center mr-4">
-                                    <i data-lucide="users" class="w-4 h-4 mr-1 text-blue-500"></i>
-                                    <span>${course.enrollment_count} enrolled</span>
-                                </div>
-                                <div class="flex items-center">
-                                    <i data-lucide="clipboard-list" class="w-4 h-4 mr-1 text-amber-500"></i>
-                                    <span>${course.question_count} questions</span>
-                                </div>
-                            </div>
-                            <div class="flex items-center justify-between">
-                                <span class="text-xs text-gray-500 flex items-center">
-                                    <i data-lucide="calendar" class="w-3 h-3 mr-1"></i>
-                                    Created: ${new Date(course.created_at).toLocaleDateString()}
-                                </span>
-                                ${course.created_by == <?php echo $_SESSION['user_id']; ?> ? `
-                                    <div class="flex space-x-2">
-                                        <a href="edit_course.php?id=${course.id}" 
-                                           class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
-                                           <i data-lucide="edit-3" class="w-5 h-5"></i>
-                                        </a>
-                                        <button class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                            onclick="confirmDeleteCourse(${course.id}, '${course.title.replace(/'/g, "\\'")}')">
-                                            <i data-lucide="trash-2" class="w-5 h-5"></i>
-                                        </button>
-                                    </div>` : ``}
-                            </div>
-                        </div>
-                    </div>
-                `;
-            });
-        }
-        lucide.createIcons(); // re-render icons
-    });
-}
-</script>
-
-
 <script>
     // Open file picker when clicking drag & drop area
     const dropArea = document.getElementById('dropArea');

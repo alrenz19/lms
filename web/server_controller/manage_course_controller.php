@@ -15,7 +15,12 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role'] !== 'admin' && $_SESSION[
 }
 
 // -------------------- Handle AJAX GET for filtering --------------------
-if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['filter'])) {
+if (
+    $_SERVER['REQUEST_METHOD'] === 'GET' &&
+    isset($_GET['filter']) &&
+    isset($_SERVER['HTTP_X_REQUESTED_WITH']) &&
+    strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest'
+) {
     header('Content-Type: application/json');
 
     $filter = $_GET['filter'];
@@ -48,6 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['filter'])) {
     echo json_encode($courses);
     exit;
 }
+
 
 
 
