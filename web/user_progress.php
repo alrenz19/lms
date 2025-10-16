@@ -28,97 +28,88 @@ SELECT
     -- Watched videos by user
     COALESCE(uvp_data.watched_videos, 0) AS watched_videos,
 
-    -- Final course progress logic - MODIFIED TO HANDLE COURSES WITHOUT QUESTIONS
+    -- Final course progress logic
     CASE
-        -- If no videos and no questions, 0% progress
         WHEN COALESCE(cv_data.total_videos, 0) = 0 AND COALESCE(qs.total_questions, 0) = 0 THEN 0
-        
-        -- If no questions, only use video progress
         WHEN COALESCE(qs.total_questions, 0) = 0 THEN
             ROUND(COALESCE(uvp_data.watched_videos, 0) * 100.0 / NULLIF(cv_data.total_videos, 0), 2)
-            
-        -- If no videos, only use question progress
         WHEN COALESCE(cv_data.total_videos, 0) = 0 THEN
             ROUND(COALESCE(uqs.has_completed_exam, 0) * 100.0, 2)
-            
-        -- If both exist, average them
         ELSE
             ROUND((
-                (COALESCE(uqs.has_completed_exam, 0) * 100.0) +  -- 0 or 1 only
+                (COALESCE(uqs.has_completed_exam, 0) * 100.0) + 
                 (COALESCE(uvp_data.watched_videos, 0) * 100.0 / NULLIF(cv_data.total_videos, 0))
             ) / 2, 2)
     END AS course_progress,
 
     -- Correct score fallback logic
-    CASE
-        WHEN c.id = 7 THEN 2
-        ELSE COALESCE(score_data.user_score, 0)
-    END AS user_score,
+    COALESCE(score_data.user_score, 0) AS user_score,
 
     -- Last activity
     COALESCE(uqs.last_activity, uvp_data.last_video_activity, c.created_at) AS last_activity
 
-FROM courses c
+FROM user_courses uc
+INNER JOIN courses c 
+    ON uc.course_id = c.id
+    AND uc.user_id = ?
+    AND uc.removed = 0
+    AND c.removed = 0
 
 -- Total questions per course
 LEFT JOIN (
-    SELECT 
-        course_id,
-        COUNT(*) AS total_questions
+    SELECT course_id, COUNT(*) AS total_questions
     FROM questions
+    WHERE removed = 0
     GROUP BY course_id
 ) AS qs ON c.id = qs.course_id
 
--- Whether the user completed the exam (one row per course)
+-- Whether the user completed the exam
 LEFT JOIN (
-    SELECT 
-        course_id,
-        MAX(CASE WHEN completed = 1 THEN 1 ELSE 0 END) AS has_completed_exam,
-        MAX(updated_at) AS last_activity
+    SELECT course_id,
+           MAX(CASE WHEN completed = 1 THEN 1 ELSE 0 END) AS has_completed_exam,
+           MAX(updated_at) AS last_activity
     FROM user_progress
-    WHERE user_id = ?  -- Bind first param
+    WHERE user_id = ?
+      AND removed = 0
     GROUP BY course_id
 ) AS uqs ON c.id = uqs.course_id
 
--- Sum of scores per course by user
+-- Sum of scores per course
 LEFT JOIN (
-    SELECT 
-        course_id,
-        SUM(score) AS user_score
+    SELECT course_id, SUM(score) AS user_score
     FROM user_progress
-    WHERE user_id = ?  -- Bind second param
+    WHERE user_id = ?
+      AND removed = 0
     GROUP BY course_id
 ) AS score_data ON c.id = score_data.course_id
 
 -- Total videos per course
 LEFT JOIN (
-    SELECT 
-        course_id,
-        COUNT(*) AS total_videos
+    SELECT course_id, COUNT(*) AS total_videos
     FROM course_videos
     WHERE removed = 0
     GROUP BY course_id
 ) AS cv_data ON c.id = cv_data.course_id
 
--- Watched videos by user per course
+-- Watched videos per user
 LEFT JOIN (
-    SELECT 
-        cv.course_id,
-        COUNT(*) AS watched_videos,
-        MAX(uvp.updated_at) AS last_video_activity
+    SELECT cv.course_id,
+           COUNT(*) AS watched_videos,
+           MAX(uvp.updated_at) AS last_video_activity
     FROM course_videos cv
     INNER JOIN user_video_progress uvp ON uvp.video_id = cv.id
-    WHERE uvp.user_id = ?  -- Bind third param
+    WHERE uvp.user_id = ?
       AND uvp.watched = 1
+      AND uvp.removed = 0
       AND cv.removed = 0
     GROUP BY cv.course_id
 ) AS uvp_data ON c.id = uvp_data.course_id
 
-WHERE c.removed = 0
 ORDER BY last_activity DESC, c.title ASC;
 ");
 
-$stmt->bind_param("iii", $user_id, $user_id, $user_id);
+
+$stmt->bind_param("iiii", $user_id, $user_id, $user_id, $user_id);
 $stmt->execute();
 $courses = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 

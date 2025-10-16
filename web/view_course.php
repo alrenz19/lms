@@ -161,42 +161,25 @@ include 'includes/header.php';
                         <h3 class="text-xl font-bold text-gray-900 mb-4">Quiz</h3>
                         
                         <?php if ($question['is_completed']): ?>
-                            <div class="mb-5">
-                                <div class="flex justify-between items-center mb-2">
-                                    <span class="text-sm text-gray-600 font-medium">Quiz Completed</span>
-                                    <span class="text-sm font-bold text-green-600">Score: <?php echo $question['score']; ?> / <?php echo $question['total_score']; ?></span>
-                                </div>
-                                <div class="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
-                                    <div class="bg-green-500 h-2.5 rounded-full" style="width: 100%"></div>
-                                </div>
-                            </div>
-                            <a href="quiz_review.php?id=<?php echo $question['course_id']; ?>" 
-                            class="w-full inline-flex items-center justify-center gap-2 px-5 py-3 border-2 border-blue-600 text-blue-600 rounded-xl hover:bg-blue-50 transition-colors font-medium">
+                            <a href="quiz_review.php?id=<?= $question['course_id']; ?>"
+                              class="w-full inline-flex items-center justify-center gap-2 px-5 py-3 border-2 border-blue-600 text-blue-600 rounded-xl hover:bg-blue-50 transition-colors font-medium">
                                 <i class="bi bi-eye"></i> Review Quiz
                             </a>
+                        <?php elseif ($question['attempts'] >= 1 && $question['score_percentage'] < 70): ?>
+                            <a href="take_quiz.php?id=<?= $question['course_id']; ?>"
+                              class="w-full inline-flex items-center justify-center gap-2 px-5 py-3 bg-amber-500 text-white rounded-xl hover:bg-amber-600 transition-colors font-medium shadow-sm">
+                                <i class="bi bi-arrow-repeat"></i> Retake Quiz (<?= 3 - $question['attempts']; ?> left)
+                            </a>
+                        <?php elseif ($overall_progress === 0): ?>
+                            <button disabled
+                                    class="w-full inline-flex items-center justify-center gap-2 px-5 py-3 bg-gray-300 text-gray-500 rounded-xl cursor-not-allowed">
+                                <i class="bi bi-lock"></i> Finish the module first
+                            </button>
                         <?php else: ?>
-                            <div class="mb-5">
-                                <div class="flex justify-between items-center mb-2">
-                                    <span class="text-sm text-gray-600 font-medium">Not Started</span>
-                                    <span class="text-xs px-2.5 py-1 bg-blue-100 text-blue-700 rounded-full">New</span>
-                                </div>
-                                <div class="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
-                                    <div class="bg-blue-600 h-2.5 rounded-full" style="width: 0%"></div>
-                                </div>
-                            </div>
-                            <div id="quiz-action-btn">
-                                <?php if ($can_access_quiz): ?>
-                                    <a href="take_quiz.php?id=<?= $question['course_id']; ?>"
-                                    class="w-full inline-flex items-center justify-center gap-2 px-5 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-medium shadow-sm">
-                                        <i class="bi bi-play-fill"></i> Start Quiz
-                                    </a>
-                                <?php else: ?>
-                                    <button disabled
-                                            class="w-full inline-flex items-center justify-center gap-2 px-5 py-3 bg-gray-300 text-gray-500 rounded-xl cursor-not-allowed">
-                                        <i class="bi bi-lock"></i> Finish the module first
-                                    </button>
-                                <?php endif; ?>
-                            </div>
+                            <a href="take_quiz.php?id=<?= $question['course_id']; ?>"
+                              class="w-full inline-flex items-center justify-center gap-2 px-5 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-medium shadow-sm">
+                                <i class="bi bi-play-fill"></i> Start Quiz
+                            </a>
                         <?php endif; ?>
                     </div>
                 </div>

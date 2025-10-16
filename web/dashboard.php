@@ -14,7 +14,7 @@ $user_id = $_SESSION['user_id'];
 // Add these queries for admin dashboard statistics
 if ($is_admin) {
     // Get total users count
-    $result = $conn->query("SELECT COUNT(*) as count FROM users WHERE role = 'user'");
+    $result = $conn->query("SELECT COUNT(*) as count FROM users WHERE role IN ('user', 'admin')");
     $users_count = $result->fetch_assoc()['count'];
 
     // Get total courses count
@@ -27,7 +27,11 @@ if ($is_admin) {
     $student_count = $users_count;
     
     // Get quiz count and questions count
-    $result = $conn->query("SELECT COUNT(*) as count FROM quizzes");
+    $result = $conn->query("
+        SELECT COUNT(DISTINCT course_id) AS count 
+        FROM questions 
+        WHERE removed = 0
+    ");
     $quizzes_count = $result->fetch_assoc()['count'];
     
     $result = $conn->query("SELECT COUNT(*) as count FROM questions");
@@ -179,10 +183,6 @@ include_once 'components/dashboard_card.php';
                     </div>
                 </div>
                 <div class="text-3xl font-bold text-gray-900 mb-1"><?php echo $users_count; ?></div>
-                <div class="text-sm text-gray-500 flex items-center">
-                    <i data-lucide="trending-up" class="w-4 h-4 mr-1 text-blue-500"></i>
-                    <span><?php echo $student_count; ?> new this week</span>
-                </div>
             </div>
             
             <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200 hover:shadow-md transition-all duration-300">
@@ -194,10 +194,6 @@ include_once 'components/dashboard_card.php';
                     </div>
                 </div>
                 <div class="text-3xl font-bold text-gray-900 mb-1"><?php echo $courses_count; ?></div>
-                <div class="text-sm text-gray-500 flex items-center">
-                    <i data-lucide="check-circle" class="w-4 h-4 mr-1 text-green-500"></i>
-                    <span><?php echo $course_completions; ?> completions</span>
-                </div>
             </div>
 
             <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200 hover:shadow-md transition-all duration-300">
@@ -208,10 +204,6 @@ include_once 'components/dashboard_card.php';
                     </div>
                 </div>
                 <div class="text-3xl font-bold text-gray-900 mb-1"><?php echo $quizzes_count; ?></div>
-                <div class="text-sm text-gray-500 flex items-center">
-                    <i data-lucide="trending-up" class="w-4 h-4 mr-1 text-blue-500"></i>
-                    <span><?php echo $questions_count; ?> added recently</span>
-                </div>
             </div>
 
         </div>

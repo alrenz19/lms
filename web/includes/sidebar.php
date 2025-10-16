@@ -67,6 +67,12 @@ $base_path = $is_in_includes ? '..' : '.';
                     <span class="ml-3 text-gray-600 transition duration-75 group-hover:text-white <?php echo $current_page === 'user_progress.php' ? 'text-white' : ''; ?>">My Progress</span>
                 </a>
             </li>
+            <li>
+                <a href="user_settings.php" class="flex items-center p-2 rounded-lg hover:bg-gradient-to-r from-blue-600 to-blue-800 group <?php echo $current_page === 'user_settings.php' ? 'bg-gradient-to-r from-blue-600 to-blue-800' : ''; ?>">
+                    <i data-lucide="settings" class="w-5 h-5 text-gray-600 transition duration-75 group-hover:text-white <?php echo $current_page === 'user_settings.php' ? 'text-white' : ''; ?>"></i>
+                    <span class="ml-3 text-gray-600 transition duration-75 group-hover:text-white <?php echo $current_page === 'user_settings.php' ? 'text-white' : ''; ?>">Settings</span>
+                </a>
+            </li>
             <?php endif; ?>
             <li>
                 <a href="logout.php" class="flex items-center p-2 rounded-lg hover:bg-gradient-to-r from-blue-600 to-blue-800 group text-red-500 hover:text-white">

@@ -19,10 +19,19 @@ $query = "
         COUNT(DISTINCT cv.id) AS total_modules,
         COUNT(DISTINCT uvp.video_id) AS completed_modules,
         COALESCE((COUNT(DISTINCT uvp.video_id) * 100.0 / NULLIF(COUNT(DISTINCT cv.id), 0)), 0) AS progress
-    FROM courses c
-    LEFT JOIN course_videos cv ON c.id = cv.course_id AND cv.removed = 0
-    LEFT JOIN user_video_progress uvp ON cv.id = uvp.video_id AND uvp.user_id = ? AND uvp.removed = 0
-    WHERE c.removed = 0
+    FROM user_courses uc
+    INNER JOIN courses c 
+        ON uc.course_id = c.id
+    LEFT JOIN course_videos cv 
+        ON c.id = cv.course_id AND cv.removed = 0
+    LEFT JOIN user_video_progress uvp 
+        ON cv.id = uvp.video_id 
+        AND uvp.user_id = uc.user_id 
+        AND uvp.removed = 0
+    WHERE 
+        uc.user_id = ? 
+        AND uc.removed = 0
+        AND c.removed = 0
     GROUP BY c.id, c.title, c.description
     ORDER BY c.title
 ";
@@ -31,6 +40,56 @@ $stmt = $conn->prepare($query);
 $stmt->bind_param("i", $_SESSION['user_id']);
 $stmt->execute();
 $courses = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+
+// Check quiz existence and user quiz status for each course
+foreach ($courses as &$course) {
+    $course_id = $course['id'];
+    $user_id = $_SESSION['user_id'];
+
+    // Check if course has a quiz
+    $quiz_stmt = $conn->prepare("SELECT COUNT(*) AS quiz_count FROM questions WHERE course_id = ? AND removed = 0");
+    $quiz_stmt->bind_param("i", $course_id);
+    $quiz_stmt->execute();
+    $has_quiz = $quiz_stmt->get_result()->fetch_assoc()['quiz_count'] > 0;
+    $quiz_stmt->close();
+
+    // Check if user has taken the quiz
+    $quiz_taken = false;
+    if ($has_quiz) {
+        $progress_stmt = $conn->prepare("SELECT completed FROM user_progress WHERE user_id = ? AND course_id = ? AND removed = 0 LIMIT 1");
+        $progress_stmt->bind_param("ii", $user_id, $course_id);
+        $progress_stmt->execute();
+        $quiz_result = $progress_stmt->get_result()->fetch_assoc();
+        $quiz_taken = !empty($quiz_result) && $quiz_result['completed'] == 1;
+        $progress_stmt->close();
+    }
+
+    // Add flags to the course array
+    $course['has_quiz'] = $has_quiz;
+    $course['quiz_taken'] = $quiz_taken;
+
+    // Recalculate progress to include quiz if it exists
+    $total_modules = $course['total_modules'];
+    $completed_modules = $course['completed_modules'];
+
+    // If the course has a quiz, add it to the total count
+    if ($has_quiz) {
+        $total_modules += 1; // add quiz as one "module"
+
+        // Add quiz to completed count if user has taken it
+        if ($quiz_taken) {
+            $completed_modules += 1;
+        }
+    }
+
+    // Recalculate final progress percentage
+    if ($total_modules > 0) {
+        $course['progress'] = round(($completed_modules / $total_modules) * 100, 2);
+    } else {
+        $course['progress'] = 0;
+    }
+}
+unset($course);
 ?>
 
 <div class="p-8 sm:ml-72">
@@ -102,7 +161,11 @@ $courses = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
                                 <div class="max-md:hidden">
                                     <?php
                                         if ($course['progress'] == 100) {
-                                            echo 'Review';
+                                            if ($course['has_quiz'] && !$course['quiz_taken']) {
+                                                echo 'Continue';
+                                            } else {
+                                                echo 'Review';
+                                            }
                                         } elseif ($course['progress'] == 0) {
                                             echo 'Start';
                                         } else {

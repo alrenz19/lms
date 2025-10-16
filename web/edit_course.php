@@ -4,7 +4,7 @@ require_once __DIR__ . '/server_controller/course_update.php';
 $course_id = $_GET['id'] ?? 0;
 
 // Fetch course
-$stmt = $conn->prepare("SELECT id, title, description, has_video, department, section, division, group_id FROM courses WHERE id = ? AND removed = 0");
+$stmt = $conn->prepare("SELECT id, title, description, created_by, has_video, department, section, division, group_id FROM courses WHERE id = ? AND removed = 0");
 $stmt->bind_param("i", $course_id);
 $stmt->execute();
 $course = $stmt->get_result()->fetch_assoc();
@@ -26,6 +26,16 @@ if ($video_result->num_rows > 0) {
     }
 }
 
+// Check if current user is a collaborator
+$is_collaborator = false;
+$check_collab = $conn->prepare("SELECT 1 FROM course_collab WHERE course_id = ? AND admin_id = ?");
+$check_collab->bind_param("ii", $course_id, $_SESSION['user_id']);
+$check_collab->execute();
+$is_collaborator = $check_collab->get_result()->num_rows > 0;
+$check_collab->close();
+
+// Check if current user is the course creator
+$is_owner = ($course['created_by'] ?? 0) == $_SESSION['user_id'];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -240,7 +250,17 @@ if ($video_result->num_rows > 0) {
                                 </div>
                                 <div>
                                     <h3 class="text-sm font-medium text-gray-900">Manage Users/Division</h3>
-                                    <p class="text-xs text-gray-500">Add or edit users, manage divisions for this course</p>
+                                    <p class="text-xs text-gray-500">Assign users, division, and section for this course</p>
+                                </div>
+                            </a>
+
+                            <a href="course_collab.php?course_id=<?php echo $course_id; ?>" class="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-all group">
+                                <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center group-hover:bg-blue-200 transition-all">
+                                    <i data-lucide="help-circle" class="w-5 h-5 text-blue-600"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-sm font-medium text-gray-900">Course Collaborators</h3>
+                                    <p class="text-xs text-gray-500">Assign admins to collaborate on this course</p>
                                 </div>
                             </a>
 
@@ -276,6 +296,7 @@ if ($video_result->num_rows > 0) {
                         </div>
                     </div>
                     
+                    <?php if ($is_owner || $_SESSION['role'] === 'super_admin'): ?>
                     <!-- Danger Zone -->
                     <div class="bg-red-50 rounded-xl border border-red-200 shadow-sm overflow-hidden">
                         <div class="p-6 border-b border-red-200">
@@ -293,6 +314,7 @@ if ($video_result->num_rows > 0) {
                                 This will permanently delete the course and all associated quizzes and student progress.
                             </p>
                         </div>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>

@@ -26,7 +26,16 @@ if (!$course) {
 }
 
 // Fetch lists for dropdowns
-$users_result = $conn->query("SELECT id, full_name, username, email FROM users WHERE role = 'user' OR role = 'admin' ORDER BY full_name");
+$current_user_id = (int)$_SESSION['user_id'];
+
+$users_result = $conn->query("
+    SELECT id, full_name, username, email 
+    FROM users 
+    WHERE (role = 'user' OR role = 'admin')
+      AND id != $current_user_id
+    ORDER BY full_name
+");
+
 $all_users = $users_result ? $users_result->fetch_all(MYSQLI_ASSOC) : [];
 
 $divisions_result = $conn->query("SELECT Id AS id, name FROM division ORDER BY name");

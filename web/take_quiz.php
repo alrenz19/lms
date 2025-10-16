@@ -27,10 +27,25 @@ $stmt->bind_param("ii", $user_id, $course_id);
 $stmt->execute();
 $progress = $stmt->get_result()->fetch_assoc();
 
-if ($progress && $progress['completed']) {
-    header("Location: view_course.php?id=" . $course_id . '&&completed');
-    exit;
+if ($progress) {
+    $stmt = $conn->prepare("SELECT attempts, progress_percentage FROM user_progress WHERE user_id = ? AND course_id = ?");
+    $stmt->bind_param("ii", $user_id, $course_id);
+    $stmt->execute();
+    $quiz_data = $stmt->get_result()->fetch_assoc();
+
+    if ($quiz_data) {
+        if ($quiz_data['progress_percentage'] >= 70) {
+            // Already passed the quiz
+            header("Location: view_course.php?id={$course_id}&passed");
+            exit;
+        } elseif ($quiz_data['attempts'] >= 3) {
+            // Used all attempts
+            header("Location: view_course.php?id={$course_id}&max_attempts");
+            exit;
+        }
+    }
 }
+
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $score = 0;
@@ -40,28 +55,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $questions_id = [];
 
     if ($total_questions > 0) {
-        // Build placeholders and types for prepared statement
         $question_ids = array_keys($answers);
         $placeholders = implode(',', array_fill(0, count($question_ids), '?'));
-        $types = str_repeat('i', count($question_ids)) . 'i'; // 'iii...i' + course_id
+        $types = str_repeat('i', count($question_ids)) . 'i';
         $params = [...$question_ids, $course_id];
 
-        // Prepare dynamic SQL
         $stmt = $conn->prepare("SELECT id, correct_answer FROM questions WHERE id IN ($placeholders) AND course_id = ?");
-        
-        // Bind parameters dynamically
         $stmt->bind_param($types, ...$params);
         $stmt->execute();
         $result = $stmt->get_result();
 
-        // Map correct answers
         $correct_answers = [];
-        
         while ($row = $result->fetch_assoc()) {
             $correct_answers[$row['id']] = $row['correct_answer'];
         }
 
-        // Compare answers
         foreach ($answers as $question_id => $user_answer) {
             $submitted_answers[$question_id] = $user_answer;
             $questions_id[] = $question_id;
@@ -71,36 +79,79 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    // Compute percentage safely
     $percentage = $total_questions > 0 ? ($score / $total_questions) * 100 : 0;
     $answers_json = json_encode($submitted_answers);
-    $question_ids_json = $questions_id ? json_encode($questions_id) : null;
-    // Insert or update progress
-    $stmt = $conn->prepare("
-        INSERT INTO user_progress (user_id, course_id, score, total_score, progress_percentage, completed, user_answers) 
-        VALUES (?, ?, ?, ?, ?, TRUE, ?) 
-        ON DUPLICATE KEY UPDATE 
-            score = VALUES(score), 
-            progress_percentage = VALUES(progress_percentage),
-            completed = TRUE,
-            user_answers = VALUES(user_answers)
-    ");
 
-    $stmt->bind_param("iiddds", $user_id, $course_id, $score, $total_questions, $percentage, $answers_json);
+    // 🔹 Check existing progress for attempts
+    $stmt = $conn->prepare("SELECT id, attempts FROM user_progress WHERE user_id = ? AND course_id = ?");
+    $stmt->bind_param("ii", $user_id, $course_id);
+    $stmt->execute();
+    $existing = $stmt->get_result()->fetch_assoc();
+
+    $attempts = $existing ? $existing['attempts'] + 1 : 1;
+    $can_retake = $attempts < 3 && $percentage < 70;
+    $completed = ($percentage >= 70) || ($attempts >= 3);
+
+    if ($existing) {
+    $stmt = $conn->prepare("
+        UPDATE user_progress 
+        SET score = ?, 
+            total_score = ?, 
+            progress_percentage = ?, 
+            completed = ?, 
+            user_answers = ?, 
+            attempts = ? 
+        WHERE user_id = ? AND course_id = ?
+    ");
+    $stmt->bind_param(
+        "ddidssii", 
+        $score, 
+        $total_questions, 
+        $percentage, 
+        $completed, 
+        $answers_json, 
+        $attempts, 
+        $user_id, 
+        $course_id
+    );
+} else {
+    $stmt = $conn->prepare("
+        INSERT INTO user_progress 
+        (user_id, course_id, score, total_score, progress_percentage, completed, user_answers, attempts) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    ");
+    $stmt->bind_param(
+        "iiddissi", 
+        $user_id, 
+        $course_id, 
+        $score, 
+        $total_questions, 
+        $percentage, 
+        $completed, 
+        $answers_json, 
+        $attempts
+    );
+}
+
+
     $stmt->execute();
 
-    // Store session data for result page
+    // Save session for review
     $_SESSION['quiz_results'] = [
         'course_id' => $course_id,
         'score' => $score,
         'total' => $total_questions,
-        'answers' => $submitted_answers
+        'percentage' => $percentage,
+        'attempts' => $attempts,
+        'can_retake' => $can_retake,
+        'completed' => $completed
     ];
 
-    // Redirect to results
-    header("Location: quiz_review.php?id=" . $course_id);
+    // 🔸 Redirect to review page with query string
+    header("Location: quiz_review.php?id={$course_id}&attempts={$attempts}&score={$percentage}");
     exit;
 }
+
 
 
 $questions = $conn->query("SELECT * FROM questions WHERE course_id = $course_id ORDER BY RAND()");

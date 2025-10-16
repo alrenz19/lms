@@ -248,7 +248,6 @@ $percentage_score = $total_questions > 0 ? round(($correct_count / $total_questi
                             ?>
                             <div class="mt-6 p-5 bg-gray-50 rounded-lg border border-gray-200">
                                 <div class="mb-3">
-                                    <h4 class="font-medium text-gray-700 mb-2">Explanation</h4>
                                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div class="bg-red-50 text-red-800 p-4 rounded-lg flex items-start gap-2 border border-red-200">
                                             <i class="bi bi-x-circle-fill mt-0.5"></i>

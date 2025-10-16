@@ -10,22 +10,31 @@ if (!isset($_SESSION['user_id'])) {
 $course_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 $user_id = $_SESSION['user_id'];
 
-// Get quizzes for this course with completion status
-    $stmt = $conn->prepare("
-        SELECT 
-            c.id AS course_id, c.title, c.description,
-            COALESCE(up.completed, 0) AS is_completed,
-            COALESCE(up.score, 0) AS score,
-            COALESCE(up.total_score, 0) AS total_score,
-            COALESCE(up.progress_percentage, 0) AS progress,
-            EXISTS (
-                SELECT 1 FROM questions q WHERE q.course_id = c.id AND q.removed = 0
-            ) AS has_questions
-        FROM courses c
-        LEFT JOIN user_progress up 
-            ON c.id = up.course_id AND up.user_id = ?
-        WHERE c.id = ? AND c.removed = 0
-        LIMIT 1
+// ✅ Get quizzes for this course with completion status + attempts + percentage
+$stmt = $conn->prepare("
+    SELECT 
+        c.id AS course_id,
+        c.title,
+        c.description,
+
+        COALESCE(up.completed, 0) AS is_completed,
+        COALESCE(up.score, 0) AS score,
+        COALESCE(up.total_score, 0) AS total_score,
+        COALESCE(up.progress_percentage, 0) AS progress,
+
+        -- ✅ Add percentage and attempt tracking
+        COALESCE(up.progress_percentage, 0) AS score_percentage,
+        COALESCE(up.attempts, 0) AS attempts,
+
+        EXISTS (
+            SELECT 1 FROM questions q 
+            WHERE q.course_id = c.id AND q.removed = 0
+        ) AS has_questions
+    FROM courses c
+    LEFT JOIN user_progress up 
+        ON c.id = up.course_id AND up.user_id = ?
+    WHERE c.id = ? AND c.removed = 0
+    LIMIT 1
     ");
     $stmt->bind_param("ii", $user_id, $course_id);
     $stmt->execute();
@@ -37,7 +46,11 @@ $user_id = $_SESSION['user_id'];
         exit;
     }
 
-    // Get video information and progress
+    // ✅ Ensure no undefined warnings
+    $questions['score_percentage'] = $questions['score_percentage'] ?? 0;
+    $questions['attempts'] = $questions['attempts'] ?? 0;
+
+    // ✅ Get video information and progress
     $videos = [];
     $video_progress = [];
 
@@ -45,8 +58,11 @@ $user_id = $_SESSION['user_id'];
         SELECT cv.*, uvp.watched
         FROM course_videos cv
         LEFT JOIN user_video_progress uvp 
-            ON cv.id = uvp.video_id AND uvp.user_id = ? AND uvp.watched = 1
-        WHERE cv.course_id = ? AND cv.removed = 0
+            ON cv.id = uvp.video_id 
+            AND uvp.user_id = ? 
+            AND uvp.watched = 1
+        WHERE cv.course_id = ? 
+        AND cv.removed = 0
     ");
     $stmt->bind_param("ii", $user_id, $course_id);
     $stmt->execute();
@@ -56,7 +72,7 @@ $user_id = $_SESSION['user_id'];
         $video_id = $row['id'];
         $videos[] = $row;
 
-        // Store only if watched progress exists
+        // Store watched progress
         if (!is_null($row['watched'])) {
             $video_progress[$video_id] = [
                 'video_id' => $video_id,
@@ -69,14 +85,15 @@ $user_id = $_SESSION['user_id'];
     $completedModules = 0;
 
     foreach ($videos as $module) {
-        $video_id = $module['id'];
-        if (isset($video_progress[$video_id])) {
+        if (isset($video_progress[$module['id']])) {
             $completedModules++;
         }
     }
 
-    $overall_progress = ($totalModules > 0) ? ($completedModules / $totalModules) * 100 : 0;
+    $overall_progress = ($totalModules > 0) 
+        ? ($completedModules / $totalModules) * 100 
+        : 0;
 
-    // Calculate if user can access quizzes (only if video is watched)
-    $can_access_quiz = round($overall_progress) < 100 ? false : true;
+    // ✅ Only allow quiz if all modules completed
+    $can_access_quiz = round($overall_progress) >= 100;
 ?>

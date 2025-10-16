@@ -40,7 +40,7 @@ $query = "
     LEFT JOIN courses c ON up.course_id = c.id
     WHERE u.role = 'user'
     GROUP BY u.id
-    ORDER BY u.full_name";
+    ORDER BY last_activity DESC";
 
 $result = $conn->query($query);
 

@@ -85,20 +85,33 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // Handle edit user action
     if (isset($_POST['edit_user'])) {
         $user_id = $_POST['user_id'];
+        $user = $conn->query("SELECT * FROM users WHERE id = $user_id")->fetch_assoc();
         $username = clean_input($_POST['username']);
         $email = clean_input($_POST['email']);
-        $full_name = clean_input($_POST['full_name']);  // Add this line
+        $full_name = clean_input($_POST['full_name']);
         $role = clean_input($_POST['role']);
+
+        $division = !empty($_POST['division']) ? (int)$_POST['division'] : null;
+        $section = !empty($_POST['section']) ? (int)$_POST['section'] : null;
+        $department = !empty($_POST['department']) ? (int)$_POST['department'] : null;
         
         if (!empty($_POST['password'])) {
             // If password is provided, hash it and update all fields
             $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
-            $stmt = $conn->prepare("UPDATE users SET username = ?, email = ?, full_name = ?, password = ?, role = ? WHERE id = ?");
-            $stmt->bind_param("sssssi", $username, $email, $full_name, $password, $role, $user_id);
+            $stmt = $conn->prepare("
+                UPDATE users 
+                SET username = ?, email = ?, full_name = ?, password = ?, role = ?, division = ?, section = ?, department = ?
+                WHERE id = ?
+            ");
+            $stmt->bind_param("ssssssssi", $username, $email, $full_name, $password, $role, $division, $section, $department, $user_id);
         } else {
             // If no password provided, update other fields only
-            $stmt = $conn->prepare("UPDATE users SET username = ?, email = ?, full_name = ?, role = ? WHERE id = ?");
-            $stmt->bind_param("ssssi", $username, $email, $full_name, $role, $user_id);
+            $stmt = $conn->prepare("
+                UPDATE users 
+                SET username = ?, email = ?, full_name = ?, role = ?, division = ?, section = ?, department = ?
+                WHERE id = ?
+            ");
+            $stmt->bind_param("sssssssi", $username, $email, $full_name, $role, $division, $section, $department, $user_id);
         }
         
         if ($stmt->execute()) {
@@ -140,7 +153,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
 // Get all users for display with search functionality
 $search = $_GET['search'] ?? '';
-$query = "SELECT id, username, full_name, email, role, created_at 
+$query = "SELECT 
+            id, 
+            username, 
+            full_name, 
+            email, 
+            role, 
+            division, 
+            section, 
+            department, 
+            created_at 
           FROM users 
           WHERE (username LIKE ? OR full_name LIKE ? OR email LIKE ?)
           ORDER BY created_at DESC";
@@ -329,7 +351,17 @@ include 'includes/header.php';
                                         <div class="flex justify-center items-center space-x-2">
                                             <?php if ($_SESSION['role'] == 'super_admin'): ?>
                                                 <button class="p-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors" 
-                                                        onclick="openEditUserModal(<?php echo $user['id']; ?>, '<?php echo htmlspecialchars($user['username']); ?>', '<?php echo htmlspecialchars($user['email']); ?>', '<?php echo htmlspecialchars($user['full_name']); ?>', '<?php echo htmlspecialchars($user['role']); ?>')"
+                                                        onclick="openEditUserModal(
+                                                            <?php echo $user['id']; ?>,
+                                                            '<?php echo htmlspecialchars($user['username']); ?>',
+                                                            '<?php echo htmlspecialchars($user['email']); ?>',
+                                                            '<?php echo htmlspecialchars($user['full_name']); ?>',
+                                                            '<?php echo htmlspecialchars($user['role']); ?>',
+                                                            '<?php echo $user['division'] ?? ''; ?>',
+                                                            '<?php echo $user['section'] ?? ''; ?>',
+                                                            '<?php echo $user['department'] ?? ''; ?>'
+                                                        )"
+
                                                         title="Edit User">
                                                     <i data-lucide="pencil" class="h-4 w-4"></i>
                                                 </button>
@@ -340,7 +372,16 @@ include 'includes/header.php';
                                                 </button>
                                             <?php elseif ($user['id'] == $_SESSION['user_id']): ?>
                                                 <button class="p-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors" 
-                                                        onclick="openEditUserModal(<?php echo $user['id']; ?>, '<?php echo htmlspecialchars($user['username']); ?>', '<?php echo htmlspecialchars($user['email']); ?>', '<?php echo htmlspecialchars($user['full_name']); ?>', '<?php echo htmlspecialchars($user['role']); ?>')"
+                                                        onclick="openEditUserModal(
+                                                            <?php echo $user['id']; ?>,
+                                                            '<?php echo htmlspecialchars($user['username']); ?>',
+                                                            '<?php echo htmlspecialchars($user['email']); ?>',
+                                                            '<?php echo htmlspecialchars($user['full_name']); ?>',
+                                                            '<?php echo htmlspecialchars($user['role']); ?>',
+                                                            '<?php echo $user['division'] ?? ''; ?>',
+                                                            '<?php echo $user['section'] ?? ''; ?>',
+                                                            '<?php echo $user['department'] ?? ''; ?>'
+                                                        )"
                                                         title="Edit User">
                                                     <i data-lucide="pencil" class="h-4 w-4"></i>
                                                 </button>
@@ -562,6 +603,40 @@ include 'includes/header.php';
                                    required>
                         </div>
                     </div>
+                    
+                    <div>
+                        <label for="edit_division" class="block text-sm font-medium text-gray-700 mb-1">Division</label>
+                        <select id="edit_division" name="division"
+                                class="w-full rounded-lg border border-gray-300 px-3 py-2.5 focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition">
+                            <option value="">-- Select Division --</option>
+                            <?php foreach ($divisions as $d): ?>
+                                <option value="<?php echo (int)$d['id']; ?>"><?php echo htmlspecialchars($d['name']); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="edit_section" class="block text-sm font-medium text-gray-700 mb-1">Section</label>
+                        <select id="edit_section" name="section"
+                                class="w-full rounded-lg border border-gray-300 px-3 py-2.5 focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition">
+                            <option value="">-- Select Section --</option>
+                            <?php foreach ($sections as $s): ?>
+                                <option value="<?php echo (int)$s['id']; ?>"><?php echo htmlspecialchars($s['name']); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="edit_department" class="block text-sm font-medium text-gray-700 mb-1">Department</label>
+                        <select id="edit_department" name="department"
+                                class="w-full rounded-lg border border-gray-300 px-3 py-2.5 focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition">
+                                <option value="">-- Select Department --</option>
+                                <?php foreach ($departments as $dep): ?>
+                                    <option value="<?php echo (int)$dep['id']; ?>"><?php echo htmlspecialchars($dep['name']); ?></option>
+                                <?php endforeach; ?>
+                        </select>
+                    </div>
+
                     <div>
                         <label for="edit_password" class="block text-sm font-medium text-gray-700 mb-1">New Password</label>
                         <div class="relative">
@@ -685,13 +760,16 @@ include 'includes/header.php';
         });
         
         // Modal functions
-        function openEditUserModal(id, username, email, fullName, role) {
+        function openEditUserModal(id, username, email, fullName, role, division, section, department) {
             document.getElementById('editUserId').value = id;
             document.getElementById('edit_username').value = username;
             document.getElementById('edit_email').value = email;
             document.getElementById('edit_full_name').value = fullName;
             document.getElementById('edit_role').value = role;
-            
+            document.getElementById('edit_division').value = division && division !== '0' ? division : '';
+            document.getElementById('edit_section').value = section && section !== '0' ? section : '';
+            document.getElementById('edit_department').value = department && department !== '0' ? department : '';
+
             showModal('editUserModal');
         }
         

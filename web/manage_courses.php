@@ -23,9 +23,9 @@ if ($role === 'super_admin') {
     ";
     $stmt_all = $conn->prepare($courses_query);
 } elseif ($filter === 'my') {
-    // 🔹 My Courses — created by the user
+    // 🔹 My Courses — created by the user OR collaborated courses
     $courses_query = "
-        SELECT 
+        SELECT DISTINCT
             c.id, 
             c.title, 
             c.description, 
@@ -34,12 +34,13 @@ if ($role === 'super_admin') {
             (SELECT COUNT(*) FROM user_progress up WHERE up.course_id = c.id) AS enrollment_count,
             (SELECT COUNT(*) FROM questions q WHERE q.course_id = c.id) AS question_count
         FROM courses c
+        LEFT JOIN course_collab cc ON c.id = cc.course_id
         WHERE c.removed = 0
-          AND c.created_by = ?
+          AND (c.created_by = ? OR cc.admin_id = ?)
         ORDER BY c.created_at DESC
     ";
     $stmt_all = $conn->prepare($courses_query);
-    $stmt_all->bind_param("i", $user_id);
+    $stmt_all->bind_param("ii", $user_id, $user_id);
 
 } elseif ($filter === 'enrolled') {
     // 🔹 Enrolled Courses — only those the user is enrolled in
@@ -64,7 +65,7 @@ if ($role === 'super_admin') {
 
 
 } else {
-    // 🔹 All Courses — owned OR enrolled by user
+    // 🔹 All Courses — owned, enrolled, or collaborated by user
     $courses_query = "
         SELECT DISTINCT
             c.id, 
@@ -75,9 +76,11 @@ if ($role === 'super_admin') {
             (SELECT COUNT(*) FROM user_progress up WHERE up.course_id = c.id) AS enrollment_count,
             (SELECT COUNT(*) FROM questions q WHERE q.course_id = c.id) AS question_count
         FROM courses c
+        LEFT JOIN course_collab cc ON c.id = cc.course_id
         WHERE c.removed = 0
           AND (
               c.created_by = ?
+              OR cc.admin_id = ?
               OR c.id IN (
                   SELECT course_id FROM user_courses 
                   WHERE user_id = ? AND removed = 0
@@ -86,8 +89,9 @@ if ($role === 'super_admin') {
         ORDER BY c.created_at DESC
     ";
     $stmt_all = $conn->prepare($courses_query);
-    $stmt_all->bind_param("ii", $user_id, $user_id);
+    $stmt_all->bind_param("iii", $user_id, $user_id, $user_id);
 }
+
 
 $stmt_all->execute();
 $course_result = $stmt_all->get_result();
@@ -134,7 +138,6 @@ $total_modules = isset($progress_data['total_module']) && $progress_data['total_
     : 1;
 
 // Final computed percentages
-$course_progress = round(($completed_course / $total_modules) * 100);
 $quiz_completion = round(($score_obtained / $score_possible) * 100);
 
 ?>
@@ -363,7 +366,78 @@ $quiz_completion = round(($score_obtained / $score_possible) * 100);
                             </button>
                         </div>
                         <?php else: ?>
-                            <?php while ($course = $course_result->fetch_assoc()): ?>
+                            <?php while ($course = $course_result->fetch_assoc()): 
+                                $course_id = $course['id'];
+
+                                // Course module progress ---
+                                $progress_query = "
+                                    SELECT 
+                                        COUNT(DISTINCT cv.id) AS total_modules,
+                                        COUNT(DISTINCT uvp.video_id) AS completed_modules
+                                    FROM course_videos cv
+                                    LEFT JOIN user_video_progress uvp 
+                                        ON cv.id = uvp.video_id 
+                                        AND uvp.user_id = ? 
+                                        AND uvp.removed = 0
+                                    WHERE cv.course_id = ? AND cv.removed = 0
+                                ";
+                                $stmt_progress = $conn->prepare($progress_query);
+                                $stmt_progress->bind_param("ii", $user_id, $course_id);
+                                $stmt_progress->execute();
+                                $progress_result = $stmt_progress->get_result()->fetch_assoc();
+
+                                $completed = (int)$progress_result['completed_modules'];
+                                $total = max((int)$progress_result['total_modules'], 1); // prevent divide by 0
+                                $course_progress = round(($completed / $total) * 100);
+
+                                // Check if this course has quiz questions ---
+                                $quiz_query = $conn->prepare("
+                                    SELECT COUNT(*) AS total_questions
+                                    FROM questions
+                                    WHERE course_id = ? AND removed = 0
+                                ");
+                                $quiz_query->bind_param("i", $course_id);
+                                $quiz_query->execute();
+                                $quiz_has = $quiz_query->get_result()->fetch_assoc()['total_questions'] > 0;
+
+                                // Check if the user has already taken the quiz ---
+                                $quiz_taken_query = $conn->prepare("
+                                    SELECT COUNT(*) AS taken
+                                    FROM user_progress
+                                    WHERE user_id = ? AND course_id = ? AND removed = 0
+                                ");
+                                $quiz_taken_query->bind_param("ii", $user_id, $course_id);
+                                $quiz_taken_query->execute();
+                                $quiz_taken = $quiz_taken_query->get_result()->fetch_assoc()['taken'] > 0;
+
+                                // Determine which button to show ---
+                                if ($course_progress == 0) {
+                                    $btn_class = "bg-blue-100 text-blue-700 hover:bg-blue-200";
+                                    $btn_icon = "play";
+                                    $btn_label = "Start Course";
+                                } elseif ($course_progress == 100 && (!$quiz_has || $quiz_taken)) {
+                                    // All videos done and either no quiz or quiz completed
+                                    $btn_class = "bg-green-100 text-green-700 hover:bg-green-200";
+                                    $btn_icon = "rotate-ccw";
+                                    $btn_label = "Review Course";
+                                } else {
+                                    // Either videos incomplete OR quiz not taken
+                                    $btn_class = "bg-amber-100 text-amber-700 hover:bg-amber-200";
+                                    $btn_icon = "arrow-right";
+                                    $btn_label = "Continue Course";
+                                }
+                                $collab_check = $conn->prepare("
+                                    SELECT 1 
+                                    FROM course_collab 
+                                    WHERE course_id = ? 
+                                    AND admin_id = ? 
+                                    LIMIT 1
+                                ");
+                                $collab_check->bind_param("ii", $course_id, $_SESSION['user_id']);
+                                $collab_check->execute();
+                                $is_collaborator = $collab_check->get_result()->num_rows > 0;
+                                $collab_check->close();
+                            ?>
                             <div class="course-card bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300"
                                 data-id="<?php echo $course['id']; ?>"
                                 data-title="<?php echo strtolower(htmlspecialchars($course['title'])); ?>">
@@ -407,31 +481,25 @@ $quiz_completion = round(($score_obtained / $score_possible) * 100);
                                                     <i data-lucide="trash-2" class="w-5 h-5"></i>
                                                 </button>
                                             </div>
-                                        <?php elseif ($course['created_by'] == $_SESSION['user_id']): ?>
+
+                                            <?php elseif ($course['created_by'] == $_SESSION['user_id'] || $is_collaborator): ?>
                                             <div class="flex space-x-2">
                                                 <a href="edit_course.php?id=<?php echo $course['id']; ?>" 
                                                 class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
                                                     <i data-lucide="edit-3" class="w-5 h-5"></i>
                                                 </a>
+                                                <?php if ($course['created_by'] == $_SESSION['user_id']): ?>
                                                 <button class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors" 
                                                         onclick="confirmDeleteCourse(<?php echo $course['id']; ?>, '<?php echo htmlspecialchars(addslashes($course['title'])); ?>')">
                                                     <i data-lucide="trash-2" class="w-5 h-5"></i>
                                                 </button>
+                                                <?php endif; ?>
                                             </div>
                                         <?php else: ?>
-                                            <a href="view_course.php?id=<?php echo $course['id']; ?>" 
-                                            class="w-full inline-flex items-center justify-center px-4 py-2 bg-blue-100 text-blue-700 
-                                            rounded-lg hover:bg-blue-200 transition-colors text-sm font-medium">
-                                                <?php if ($course_progress == 0): ?>
-                                                <i data-lucide="play" class="w-4 h-4 mr-2"></i>
-                                                Start Course
-                                                <?php elseif ($course_progress == 100): ?>
-                                                <i data-lucide="rotate-ccw" class="w-4 h-4 mr-2"></i>
-                                                Review Course
-                                                <?php else: ?>
-                                                <i data-lucide="arrow-right" class="w-4 h-4 mr-2"></i>
-                                                Continue Course
-                                                <?php endif; ?>
+                                            <a href="view_course.php?id=<?php echo $course_id; ?>" 
+                                            class="w-full inline-flex items-center justify-center px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm <?php echo $btn_class; ?>">
+                                                <i data-lucide="<?php echo $btn_icon; ?>" class="w-4 h-4 mr-2"></i>
+                                                <?php echo $btn_label; ?>
                                             </a>
                                         <?php endif; ?>
                                     </div>
