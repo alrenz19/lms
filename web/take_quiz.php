@@ -287,7 +287,7 @@ $questions = $conn->query("SELECT * FROM questions WHERE course_id = $course_id 
                                                  alt="Question Image" 
                                                  class="max-w-full h-auto rounded-lg border border-gray-200 max-h-64">
                                         <?php else: ?>
-                                            <img src="..<?php echo htmlspecialchars($question['question_image']); ?>" 
+                                            <img src="../uploads/question_images/<?php echo htmlspecialchars($question['question_image']); ?>" 
                                                  alt="Question Image" 
                                                  class="max-w-full h-auto rounded-lg border border-gray-200 max-h-64">
                                         <?php endif; ?>

@@ -170,7 +170,7 @@ $percentage_score = $total_questions > 0 ? round(($correct_count / $total_questi
                                     <?php 
                                         echo !$has_question_image 
                                         ? htmlspecialchars($question['question_text']) 
-                                        : '<img src="../' . htmlspecialchars($question['question_image']) . 
+                                        : '<img src="../uploads/question_images/' . htmlspecialchars($question['question_image']) . 
                                             '" alt="Option ' . htmlspecialchars($question['question_text']) . ' Image" class="max-w-full h-auto rounded-lg border border-gray-100 max-h-48">';
                                     ?>
                                     
@@ -232,7 +232,7 @@ $percentage_score = $total_questions > 0 ? round(($correct_count / $total_questi
                                         <?php 
                                             echo !$has_image 
                                             ? htmlspecialchars($option) 
-                                            : '<img src="../' . htmlspecialchars($question[$option_image_field]) . 
+                                            : '<img src="../uploads/question_images/' . htmlspecialchars($question[$option_image_field]) . 
                                                 '" alt="Option ' . htmlspecialchars($letter) . ' Image" class="max-w-full h-auto rounded-lg border border-gray-100 max-h-48">';
                                         ?>
                                     </span>
@@ -258,7 +258,7 @@ $percentage_score = $total_questions > 0 ? round(($correct_count / $total_questi
                                                     <?php 
                                                     echo $options[$user_answer]
                                                     ? htmlspecialchars($options[$user_answer])
-                                                    : '<img src="../' . htmlspecialchars($question[$option_field.strtolower($user_answer).$option_image]) . 
+                                                    : '<img src="../uploads/question_images/' . htmlspecialchars($question[$option_field.strtolower($user_answer).$option_image]) . 
                                                         '" alt="Option ' . htmlspecialchars($user_answer) . ' Image" class="max-w-full h-auto rounded-lg border border-gray-100 max-h-48">';
                                                     ?>
                                                 </p>
@@ -272,7 +272,7 @@ $percentage_score = $total_questions > 0 ? round(($correct_count / $total_questi
                                                     <?php 
                                                         echo $options[$correct_answer] 
                                                         ? htmlspecialchars($options[$correct_answer]) 
-                                                        : '<img src="../' . htmlspecialchars($question[$option_field.strtolower($correct_answer).$option_image]) . 
+                                                        : '<img src="../uploads/question_images/' . htmlspecialchars($question[$option_field.strtolower($correct_answer).$option_image]) . 
                                                             '" alt="Option ' . htmlspecialchars($user_answer) . ' Image" class="max-w-full h-auto rounded-lg border border-gray-100 max-h-48">';
                                                     ?></p>
                                             </div>

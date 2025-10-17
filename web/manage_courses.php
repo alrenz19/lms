@@ -566,6 +566,7 @@ $quiz_completion = round(($score_obtained / $score_possible) * 100);
                     </div>
 
                     <!-- Drag & Drop Area -->
+                    <span class="absolute right-7 text-sm text-gray-500">PDF or MP4 files only</span>
                     <div id="dropArea" 
                         class="w-full p-4 border-2 border-dashed border-gray-300 rounded text-center cursor-pointer hover:border-blue-400 transition-colors"
                         ondragover="event.preventDefault()" 

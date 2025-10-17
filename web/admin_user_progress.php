@@ -2,7 +2,7 @@
 session_start();
 require_once '../config.php';
 
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] === 'user') {
     header("Location: index.php");
     exit;
 }
@@ -10,37 +10,57 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
 // Updated query without referencing the quizzes table
 $query = "
     SELECT 
-        u.id as user_id,
+        u.id AS user_id,
         u.username,
         u.full_name,
         u.email,
-        COUNT(DISTINCT c.id) as total_enrolled_courses,
+
+        -- ✅ Count total enrolled courses from user_courses
+        (
+            SELECT COUNT(DISTINCT uc.course_id)
+            FROM user_courses uc
+            WHERE uc.user_id = u.id
+              AND (uc.removed = 0 OR uc.removed IS NULL)
+        ) AS total_enrolled_courses,
+
+        -- ✅ Get enrolled course titles
+        (
+            SELECT GROUP_CONCAT(DISTINCT c3.title SEPARATOR ', ')
+            FROM courses c3
+            INNER JOIN user_courses uc3 ON c3.id = uc3.course_id
+            WHERE uc3.user_id = u.id
+              AND (uc3.removed = 0 OR uc3.removed IS NULL)
+              AND c3.removed = 0
+        ) AS enrolled_courses,
+
+        -- ✅ Get completed course titles
         (
             SELECT GROUP_CONCAT(DISTINCT c2.title SEPARATOR ', ')
             FROM courses c2
-            JOIN user_progress up2 ON c2.id = up2.course_id
+            INNER JOIN user_progress up2 ON c2.id = up2.course_id
             WHERE up2.user_id = u.id
               AND up2.completed = 1
-        ) as completed_courses,
+              AND c2.removed = 0
+        ) AS completed_courses,
+
+        -- ✅ Total correct answers
         (
             SELECT COUNT(*)
             FROM user_progress up3
             WHERE up3.user_id = u.id
-            AND up3.score > 0
-        ) as total_correct_answers,
-        (
-            SELECT COUNT(*)
-            FROM questions qs
-            WHERE qs.course_id = c.id
-            AND qs.removed = 0
-        ) as total_questions,
-        MAX(up.updated_at) as last_activity
+              AND up3.score > 0
+        ) AS total_correct_answers,
+
+        MAX(up.updated_at) AS last_activity
+
     FROM users u
     LEFT JOIN user_progress up ON u.id = up.user_id
-    LEFT JOIN courses c ON up.course_id = c.id
-    WHERE u.role = 'user'
+    WHERE u.role IN ('user', 'admin')
     GROUP BY u.id
-    ORDER BY last_activity DESC";
+    ORDER BY last_activity DESC
+";
+
+
 
 $result = $conn->query($query);
 
@@ -54,13 +74,24 @@ $total_correct_answers = 0;
 $active_users_last_week = 0;
 $current_time = time();
 
+$rows = []; // make sure this is defined before the loop
+
 while ($row = $result->fetch_assoc()) {
-    // Count how many completed courses (if any)
+    // ✅ Completed course count
     $completed_count = 0;
     if (!empty($row['completed_courses'])) {
-        $completed_count = count(explode(',', $row['completed_courses']));
+        $completed_count = count(array_filter(array_map('trim', explode(',', $row['completed_courses']))));
     }
+    $row['completed_courses_count'] = $completed_count;
 
+    // ✅ Enrolled course count
+    $enrolled_count = 0;
+    if (!empty($row['enrolled_courses'])) {
+        $enrolled_count = count(array_filter(array_map('trim', explode(',', $row['enrolled_courses']))));
+    }
+    $row['enrolled_courses_count'] = $enrolled_count;
+
+    // ✅ Track totals
     $total_completed_courses += $completed_count;
     $total_correct_answers += $row['total_correct_answers'];
 
@@ -68,10 +99,10 @@ while ($row = $result->fetch_assoc()) {
         $active_users_last_week++;
     }
 
-    // Save the count for later use in the table (optional)
-    $row['completed_courses_count'] = $completed_count;
+    // ✅ push after all processing
     $rows[] = $row;
 }
+
 
 
 $result->data_seek(0); // Reset result pointer
@@ -102,7 +133,7 @@ include_once 'components/dashboard_card.php';
         </div>
 
         <!-- Platform Stats -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
             <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200 hover:shadow-md transition-all duration-300">
                 <div class="flex items-center justify-between mb-4">
                     <h3 class="text-gray-700 font-medium">Active Users</h3>
@@ -131,7 +162,7 @@ include_once 'components/dashboard_card.php';
                 </div>
             </div>
             
-            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200 hover:shadow-md transition-all duration-300">
+            <!-- <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200 hover:shadow-md transition-all duration-300">
                 <div class="flex items-center justify-between mb-4">
                     <h3 class="text-gray-700 font-medium">Correct Answers</h3>
                     <div class="bg-green-100 text-green-800 p-2 rounded-lg">
@@ -143,7 +174,7 @@ include_once 'components/dashboard_card.php';
                     <i data-lucide="globe" class="w-4 h-4 mr-1 text-blue-500"></i>
                     <span>Platform-wide</span>
                 </div>
-            </div>
+            </div> -->
             
             <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200 hover:shadow-md transition-all duration-300">
                 <div class="flex items-center justify-between mb-4">
@@ -193,8 +224,9 @@ include_once 'components/dashboard_card.php';
                         <tr class="bg-gray-50">
                             <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
                             <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                            <!-- <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Course Progress</th> -->
+                            <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Enrolled Courses</th>
                             <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Completed Courses</th>
+                            <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Progress</th>
                             <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Activity</th>
                         </tr>
                     </thead>
@@ -234,7 +266,45 @@ include_once 'components/dashboard_card.php';
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                     <?php echo htmlspecialchars($row['email']); ?>
                                 </td>
-                                <!-- <td class="px-6 py-4 whitespace-nowrap">
+
+                                <td class="px-10 py-4 whitespace-nowrap align-top">
+                                    <div class="text-sm font-medium text-blue-600 flex items-center mb-1">
+                                        <i data-lucide="book-open" class="w-4 h-4 mr-1 <?php echo !empty($row['enrolled_courses']) ? 'text-blue-500' : 'text-gray-300'; ?>"></i>
+                                        <?php echo $row['enrolled_courses_count'] ?? 0; ?>
+                                    </div>
+
+                                    <?php if (!empty($row['enrolled_courses'])): ?>
+                                        <?php 
+                                            $enrolled_list = array_map('trim', explode(',', $row['enrolled_courses']));
+                                        ?>
+                                        <ul class="[list-style-type:'▹'] list-inside text-xs text-gray-600 space-y-0.5">
+                                            <?php foreach ($enrolled_list as $course): ?>
+                                                <li><?php echo htmlspecialchars($course); ?></li>
+                                            <?php endforeach; ?>
+                                        </ul>
+                                    <?php endif; ?>
+                                </td>
+
+                                <td class="px-10 py-4 whitespace-nowrap align-top">
+                                    <div class="text-sm font-medium text-emerald-600 flex items-center mb-1">
+                                        <i data-lucide="check-circle" class="w-4 h-4 mr-1 <?php echo !empty($row['completed_courses']) ? 'text-emerald-500' : 'text-gray-300'; ?>"></i>
+                                        <?php echo $row['completed_courses_count'] ?? 0; ?>
+                                    </div>
+
+                                    <?php if (!empty($row['completed_courses'])): ?>
+                                        <?php 
+                                            // Split the string into course names
+                                            $courses_list = array_map('trim', explode(',', $row['completed_courses']));
+                                        ?>
+                                        <ul class="[list-style-type:'▹'] list-inside text-xs text-gray-600 space-y-0.5">
+                                            <?php foreach ($courses_list as $course): ?>
+                                                <li><?php echo htmlspecialchars($course); ?></li>
+                                            <?php endforeach; ?>
+                                        </ul>
+                                    <?php endif; ?>
+                                </td>
+
+                                <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="w-full bg-gray-200 rounded-full h-2.5 mb-2">
                                         <div class="bg-blue-600 h-2.5 rounded-full" 
                                              style="width: <?php echo round($completion_rate); ?>%" 
@@ -258,25 +328,8 @@ include_once 'components/dashboard_card.php';
                                             </span>
                                         <?php endif; ?>
                                     </div>
-                                </td> -->
-                                <td class="px-10 py-4 whitespace-nowrap align-top">
-                                    <div class="text-sm font-medium text-emerald-600 flex items-center mb-1">
-                                        <i data-lucide="check-circle" class="w-4 h-4 mr-1 <?php echo !empty($row['completed_courses']) ? 'text-emerald-500' : 'text-gray-300'; ?>"></i>
-                                        <?php echo $row['completed_courses_count'] ?? 0; ?>
-                                    </div>
-
-                                    <?php if (!empty($row['completed_courses'])): ?>
-                                        <?php 
-                                            // Split the string into course names
-                                            $courses_list = array_map('trim', explode(',', $row['completed_courses']));
-                                        ?>
-                                        <ul class="[list-style-type:'▹'] list-inside text-xs text-gray-600 space-y-0.5">
-                                            <?php foreach ($courses_list as $course): ?>
-                                                <li><?php echo htmlspecialchars($course); ?></li>
-                                            <?php endforeach; ?>
-                                        </ul>
-                                    <?php endif; ?>
                                 </td>
+
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <?php if ($row['last_activity']): ?>
                                         <span class="text-sm text-gray-500 flex items-center">
@@ -316,50 +369,57 @@ include_once 'components/dashboard_card.php';
 
 <script>
     function downloadCSV() {
-        // Get table data
         const rows = document.querySelectorAll('#progressTableBody tr:not(.hidden)');
         let csvContent = "data:text/csv;charset=utf-8,";
-        
-        // Add headers
-        const headers = ["User", "Username", "Email", "Enrolled Courses", "Completed Courses", "Progress", "Last Activity"];
-        csvContent += headers.join(",") + "\r\n";
-        
-        // Add rows
-        rows.forEach(row => {
-            if (row.getAttribute('colspan')) return; // Skip the "no data" row
-            
-            const name = row.querySelector('.text-gray-900')?.textContent.trim() || '';
-            const username = row.querySelector('.text-gray-500')?.textContent.trim().replace('@', '') || '';
-            const email = row.querySelectorAll('td')[1]?.textContent.trim() || '';
-            const enrolled = row.querySelectorAll('td')[3]?.textContent.trim().split(' / ')[1] || '0';
-            const completed = row.querySelectorAll('td')[3]?.textContent.trim().split(' / ')[0] || '0';
-            const progress = row.querySelector('.myProgress')?.textContent.trim() || '0%';
-            const lastActivity = row.querySelectorAll('td')[4]?.textContent.trim() || 'No activity';
-            
-            const rowData = [
-                `"${name}"`,
-                `"${username}"`,
-                `"${email}"`,
-                enrolled,
-                completed,
-                progress,
-                `"${lastActivity}"`
-            ];
-            
-            csvContent += rowData.join(",") + "\r\n";
-        });
-        
-        // Create download link
+
+        const headers = ["Full Name", "Username", "Email", "Enrolled Courses Count", "Enrolled Courses", "Completed Courses Count", "Completed Courses", "Last Activity"];
+csvContent += headers.join(",") + "\r\n";
+
+rows.forEach(row => {
+    if (row.querySelector('td[colspan]')) return;
+
+    const name = row.querySelector('.text-gray-900')?.textContent.trim() || "";
+    const username = row.querySelector('.text-xs.text-gray-500')?.textContent.trim().replace('@', '') || "";
+    const email = row.querySelectorAll('td')[1]?.textContent.trim() || "";
+
+    // Enrolled
+    const enrolledCount = row.querySelector('.text-sm.font-medium.text-blue-600')?.textContent.trim() || "0";
+    const enrolledList = Array.from(row.querySelectorAll('td:nth-child(3) ul li'))
+        .map(li => li.textContent.trim().replace(/,/g, ''))
+        .join('; ');
+
+    // Completed
+    const completedCount = row.querySelector('.text-sm.font-medium.text-emerald-600')?.textContent.trim() || "0";
+    const completedList = Array.from(row.querySelectorAll('td:nth-child(4) ul li'))
+        .map(li => li.textContent.trim().replace(/,/g, ''))
+        .join('; ');
+
+    const lastActivity = row.querySelectorAll('td:last-child')?.[0]?.textContent.trim() || "No activity";
+
+    const rowData = [
+        `"${name}"`,
+        `"${username}"`,
+        `"${email}"`,
+        `"${enrolledCount}"`,
+        `"${enrolledList}"`,
+        `"${completedCount}"`,
+        `"${completedList}"`,
+        `"${lastActivity}"`
+    ];
+    csvContent += rowData.join(",") + "\r\n";
+});
+
+
+        // ✅ Create CSV file and trigger download
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
         link.setAttribute("href", encodedUri);
         link.setAttribute("download", "user_progress_report.csv");
         document.body.appendChild(link);
-        
-        // Trigger download
         link.click();
         document.body.removeChild(link);
     }
+
     document.addEventListener('DOMContentLoaded', function() {
         // Initialize Lucide icons
         lucide.createIcons();

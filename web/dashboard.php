@@ -418,6 +418,7 @@ include_once 'components/dashboard_card.php';
                 <!-- Progress by Course Type -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div class="bg-blue-50 rounded-lg p-4">
+                        <?php var_dump($completed_course); var_dump($total_modules); ?>
                         <div class="flex justify-between items-center mb-2">
                             <h3 class="text-sm font-medium text-gray-700">Module Progress</h3>
                             <span class="text-sm font-medium text-blue-600"><?php echo $course_progress; ?>%</span>

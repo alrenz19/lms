@@ -59,14 +59,66 @@ if (
 
 // -------------------- Dashboard Summary Queries --------------------
 
-function getCount($conn, $query) {
-    $result = $conn->query($query);
-    return $result ? $result->fetch_assoc()['count'] : 0;
+// -------------------- Dashboard Summary Queries --------------------
+
+$user_id = $_SESSION['user_id'];
+
+// Helper function for safer single-count queries
+function getCount($conn, $query, $params = [], $types = "")
+{
+    $stmt = $conn->prepare($query);
+    if (!$stmt) return 0;
+
+    if (!empty($params)) {
+        $stmt->bind_param($types, ...$params);
+    }
+
+    $stmt->execute();
+    $res = $stmt->get_result();
+    $row = $res ? $res->fetch_assoc() : ['count' => 0];
+    $stmt->close();
+    return (int)($row['count'] ?? 0);
 }
 
-$courses_count = getCount($conn, "SELECT COUNT(*) as count FROM courses WHERE removed = 0");
-$total_enrollments = getCount($conn, "SELECT COUNT(*) as count FROM user_progress WHERE removed = 0");
-$course_completions = getCount($conn, "SELECT COUNT(*) as count FROM user_progress WHERE score = 100 AND removed = 0");
+/**
+ * ✅ 1. Total Courses
+ * Count all courses that the user either:
+ *   - created (courses.created_by)
+ *   - is a collaborator (course_collab.admin_id)
+ *   - is enrolled in (user_courses.user_id)
+ */
+$courses_count = getCount($conn, "
+    SELECT COUNT(DISTINCT c.id) AS count
+    FROM courses c
+    LEFT JOIN course_collab cc ON cc.course_id = c.id
+    LEFT JOIN user_courses uc ON uc.course_id = c.id
+    WHERE c.removed = 0
+      AND (c.created_by = ? OR cc.admin_id = ? OR uc.user_id = ?)
+", [$user_id, $user_id, $user_id], "iii");
+
+
+/**
+ * ✅ 2. Total Enrollments
+ * The number of courses the user is enrolled in (user_courses table)
+ */
+$total_enrollments = getCount($conn, "
+    SELECT COUNT(DISTINCT course_id) AS count
+    FROM user_courses
+    WHERE user_id = ? AND removed = 0
+", [$user_id], "i");
+
+
+/**
+ * ✅ 3. Course Completions
+ * The number of courses where the user has completed progress.
+ * A course is considered completed if `user_progress.completed = 1`
+ */
+$course_completions = getCount($conn, "
+    SELECT COUNT(DISTINCT course_id) AS count
+    FROM user_progress
+    WHERE user_id = ? AND completed = 1 AND removed = 0
+", [$user_id], "i");
+
 
 // -------------------- Fetch Courses --------------------
 
@@ -253,7 +305,7 @@ function handleQuizAdd($conn) {
         $course_id = $_POST['course_id'];
 
         $upload_dir = __DIR__ . '/../../uploads/question_images';
-        $upload_url_path = '/uploads/question_images';
+        $upload_url_path = '/';
 
         if (!is_dir($upload_dir)) {
             mkdir($upload_dir, 0777, true);
