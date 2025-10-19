@@ -95,7 +95,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($existing) {
     $stmt = $conn->prepare("
         UPDATE user_progress 
-        SET score = ?, 
+        SET question_id = ?, 
+            score = ?, 
             total_score = ?, 
             progress_percentage = ?, 
             completed = ?, 
@@ -104,7 +105,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         WHERE user_id = ? AND course_id = ?
     ");
     $stmt->bind_param(
-        "ddidssii", 
+        "iddidssii", 
+        $question_id,      // we'll define this below
         $score, 
         $total_questions, 
         $percentage, 
@@ -115,15 +117,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $course_id
     );
 } else {
+    $question_id = !empty($questions_id[0]) ? $questions_id[0] : null; // ✅ pick the first question_id
     $stmt = $conn->prepare("
         INSERT INTO user_progress 
-        (user_id, course_id, score, total_score, progress_percentage, completed, user_answers, attempts) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        (user_id, course_id, question_id, score, total_score, progress_percentage, completed, user_answers, attempts) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     ");
     $stmt->bind_param(
-        "iiddissi", 
+        "iiiiddssi", 
         $user_id, 
         $course_id, 
+        $question_id, 
         $score, 
         $total_questions, 
         $percentage, 
@@ -132,6 +136,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $attempts
     );
 }
+
 
 
     $stmt->execute();

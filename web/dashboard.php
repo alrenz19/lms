@@ -126,12 +126,32 @@ if (!$is_admin) {
     ");
     $quiz_data = $result->fetch_assoc();
 
-    // Fetch course/module progress data
-    $result = $conn->query("SELECT 
-        (SELECT COUNT(*) FROM user_video_progress WHERE user_id = $user_id AND removed = 0) AS completed_course,
-        (SELECT COUNT(*) FROM course_videos WHERE removed = 0) AS total_module
+    // ✅ Fetch module progress only for assigned courses
+    $result = $conn->query("
+        SELECT 
+            (
+                SELECT COUNT(*) 
+                FROM user_video_progress uvp
+                INNER JOIN course_videos cv ON uvp.video_id = cv.id
+                INNER JOIN user_courses uc ON cv.course_id = uc.course_id
+                WHERE uvp.user_id = $user_id
+                AND uc.user_id = $user_id
+                AND (uc.removed = 0 OR uc.removed IS NULL)
+                AND (cv.removed = 0 OR cv.removed IS NULL)
+                AND (uvp.removed = 0 OR uvp.removed IS NULL)
+            ) AS completed_course,
+
+            (
+                SELECT COUNT(*) 
+                FROM course_videos cv
+                INNER JOIN user_courses uc ON cv.course_id = uc.course_id
+                WHERE uc.user_id = $user_id
+                AND (uc.removed = 0 OR uc.removed IS NULL)
+                AND (cv.removed = 0 OR cv.removed IS NULL)
+            ) AS total_module
     ");
     $progress_data = $result->fetch_assoc();
+
 
     // Sanitize and prevent division by zero
     $score_obtained = isset($quiz_data['quiz_taken']) ? (int)$quiz_data['quiz_taken'] : 0;
@@ -418,7 +438,6 @@ include_once 'components/dashboard_card.php';
                 <!-- Progress by Course Type -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div class="bg-blue-50 rounded-lg p-4">
-                        <?php var_dump($completed_course); var_dump($total_modules); ?>
                         <div class="flex justify-between items-center mb-2">
                             <h3 class="text-sm font-medium text-gray-700">Module Progress</h3>
                             <span class="text-sm font-medium text-blue-600"><?php echo $course_progress; ?>%</span>

@@ -59,8 +59,6 @@ if (
 
 // -------------------- Dashboard Summary Queries --------------------
 
-// -------------------- Dashboard Summary Queries --------------------
-
 $user_id = $_SESSION['user_id'];
 
 // Helper function for safer single-count queries
@@ -242,6 +240,8 @@ function handleCourseAdd($conn) {
 }
 
 function handleCourseDelete($conn) {
+    header('Content-Type: application/json');
+
     if (empty($_POST['course_id'])) {
         echo json_encode(['success' => false, 'message' => "Missing course ID"]);
         return;
@@ -282,10 +282,12 @@ function handleCourseDelete($conn) {
 
         $conn->commit();
         echo json_encode(['success' => true, 'message' => "Course successfully removed.", 'course_id' => $course_id]);
+        exit;
 
     } catch (Exception $e) {
         $conn->rollback();
         echo json_encode(['success' => false, 'message' => "Deletion failed.", 'error' => $e->getMessage()]);
+        exit;
     }
 }
 

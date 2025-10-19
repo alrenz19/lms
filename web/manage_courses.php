@@ -938,6 +938,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // === DELETE COURSE FORM ===
     handleFormSubmission('deleteCourseForm', (form, result) => {
+        if (!result) return;
         hideModal('deleteCourseModal');
         const deletedCard = document.querySelector(`.course-card[data-id="${result.course_id}"]`);
         if (deletedCard) deletedCard.remove();

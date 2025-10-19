@@ -289,8 +289,8 @@ include_once 'components/dashboard_card.php';
                                     <div class="text-sm font-medium text-emerald-600 flex items-center mb-1">
                                         <i data-lucide="check-circle" class="w-4 h-4 mr-1 <?php echo !empty($row['completed_courses']) ? 'text-emerald-500' : 'text-gray-300'; ?>"></i>
                                         <?php echo $row['completed_courses_count'] ?? 0; ?>
-                                    </div>
-
+                                   </div>
+<?php var_dump($row['completed_courses']) ?>
                                     <?php if (!empty($row['completed_courses'])): ?>
                                         <?php 
                                             // Split the string into course names
