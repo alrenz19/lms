@@ -29,11 +29,23 @@ if (!$course) {
 $current_user_id = (int)$_SESSION['user_id'];
 
 $users_result = $conn->query("
-    SELECT id, full_name, username, email 
-    FROM users 
-    WHERE (role = 'user' OR role = 'admin')
-      AND id != $current_user_id
-    ORDER BY full_name
+    SELECT u.id, u.full_name, u.username, u.email
+    FROM users u
+    WHERE (u.role = 'user' OR u.role = 'admin')
+      AND u.id != $current_user_id
+      AND u.id NOT IN (
+          SELECT cc.admin_id 
+          FROM course_collab cc 
+          WHERE cc.course_id = $course_id 
+            AND cc.removed = 0
+      )
+    AND u.id NOT IN (
+        SELECT uc.user_id
+        FROM user_courses uc
+        WHERE uc.course_id = $course_id
+        AND uc.removed = 0
+    )
+    ORDER BY u.full_name
 ");
 
 $all_users = $users_result ? $users_result->fetch_all(MYSQLI_ASSOC) : [];

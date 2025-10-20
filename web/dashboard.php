@@ -351,6 +351,7 @@ include_once 'components/dashboard_card.php';
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                     <?php 
+                                        date_default_timezone_set('Asia/Manila');
                                         $activity_date = new DateTime($activity['timestamp']);
                                         $now = new DateTime();
                                         $interval = $activity_date->diff($now);
