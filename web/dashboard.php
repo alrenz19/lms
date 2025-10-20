@@ -47,6 +47,26 @@ if ($is_admin) {
     
     // Get recent activity
     $activity_query = "
+    (
+        -- 🟦 Course Started (first watched module)
+        SELECT 
+            u.username,
+            u.full_name,
+            'course_started' AS activity_type,
+            c.title AS course_title,
+            MIN(uvp.updated_at) AS timestamp
+        FROM user_video_progress uvp
+        JOIN course_videos cv ON uvp.video_id = cv.id
+        JOIN users u ON u.id = uvp.user_id
+        JOIN courses c ON c.id = cv.course_id
+        WHERE (uvp.removed = 0 OR uvp.removed IS NULL)
+        AND (cv.removed = 0 OR cv.removed IS NULL)
+        AND uvp.watched = 1
+        GROUP BY uvp.user_id, cv.course_id
+    )
+    UNION ALL
+    (
+        -- Quiz Completed (from user_progress)
         SELECT 
             u.username,
             u.full_name,
@@ -56,10 +76,11 @@ if ($is_admin) {
         FROM user_progress up
         JOIN users u ON u.id = up.user_id
         JOIN courses c ON c.id = up.course_id
-        WHERE up.completed = 1 AND up.removed = 0
-        ORDER BY up.updated_at DESC
+        WHERE up.completed = 1 
+          AND up.removed = 0
+    )
+        ORDER BY timestamp DESC
         LIMIT 10;
-
     ";
     $recent_activity = $conn->query($activity_query);
 }
