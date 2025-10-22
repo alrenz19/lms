@@ -57,6 +57,12 @@ if ($course_id > 0) {
         
         // 🔹 Delete course videos
         $conn->query("DELETE FROM course_videos WHERE course_id = $course_id");
+
+        // 🔹 Delete course collab
+        $conn->query("DELETE FROM course_collab WHERE course_id = $course_id");
+
+        // 🔹 Delete user courses
+        $conn->query("DELETE FROM user_courses WHERE course_id = $course_id");
         
         // 🔹 Finally delete the course
         $conn->query("DELETE FROM courses WHERE id = $course_id");

@@ -259,6 +259,23 @@ function handleCourseDelete($conn) {
              SET up.removed = 1 
              WHERE q.course_id = ?",
 
+            // Soft delete user video progress
+            "UPDATE user_video_progress 
+             SET removed = 1 
+             WHERE video_id IN (
+                 SELECT id FROM course_videos WHERE course_id = ?
+             )",
+
+            // Soft delete user-course enrollments
+            "UPDATE user_courses 
+             SET removed = 1 
+             WHERE course_id = ?",
+
+            // Soft delete course_collab
+            "UPDATE course_collab 
+             SET removed = 1 
+             WHERE course_id = ?",
+
             // Soft delete questions
             "UPDATE questions
              SET removed = 1 

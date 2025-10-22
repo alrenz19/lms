@@ -35,13 +35,42 @@ $query = "
 
         -- ✅ Get completed course titles
         (
-            SELECT GROUP_CONCAT(DISTINCT c2.title SEPARATOR ', ')
-            FROM courses c2
-            INNER JOIN user_progress up2 ON c2.id = up2.course_id
-            WHERE up2.user_id = u.id
-              AND up2.completed = 1
-              AND c2.removed = 0
-        ) AS completed_courses,
+    SELECT GROUP_CONCAT(DISTINCT c2.title SEPARATOR ', ')
+    FROM courses c2
+    LEFT JOIN user_progress up2 
+        ON c2.id = up2.course_id 
+        AND up2.user_id = u.id
+    LEFT JOIN questions q 
+        ON c2.id = q.course_id 
+        AND q.removed = 0
+    INNER JOIN user_courses uc 
+        ON c2.id = uc.course_id 
+        AND uc.user_id = u.id 
+        AND (uc.removed = 0 OR uc.removed IS NULL)
+    WHERE c2.removed = 0
+      AND (
+          -- ✅ Case 1: Quiz completed
+          up2.completed = 1 
+          OR 
+          -- ✅ Case 2: No quiz but all modules watched
+          (
+              q.course_id IS NULL 
+              AND NOT EXISTS (
+                  SELECT 1
+                  FROM course_videos cv
+                  LEFT JOIN user_video_progress uvp 
+                      ON uvp.video_id = cv.id 
+                      AND uvp.user_id = u.id
+                      AND (uvp.removed = 0 OR uvp.removed IS NULL)
+                  WHERE cv.course_id = c2.id
+                    AND (cv.removed = 0 OR cv.removed IS NULL)
+                    AND uvp.id IS NULL -- user hasn't watched this module
+              )
+          )
+      )
+) AS completed_courses,
+
+
 
         -- ✅ Total correct answers
         (
@@ -51,7 +80,20 @@ $query = "
               AND up3.score > 0
         ) AS total_correct_answers,
 
-        MAX(up.updated_at) AS last_activity
+        NULLIF(
+    GREATEST(
+        IFNULL(
+            (SELECT MAX(up4.updated_at) FROM user_progress up4 WHERE up4.user_id = u.id),
+            '0000-00-00 00:00:00'
+        ),
+        IFNULL(
+            (SELECT MAX(uvp.updated_at) FROM user_video_progress uvp WHERE uvp.user_id = u.id),
+            '0000-00-00 00:00:00'
+        )
+    ),
+    '0000-00-00 00:00:00'
+) AS last_activity
+
 
     FROM users u
     LEFT JOIN user_progress up ON u.id = up.user_id
@@ -330,7 +372,11 @@ include_once 'components/dashboard_card.php';
                                 </td>
 
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <?php if ($row['last_activity']): ?>
+                                    <?php if (
+                                        !empty($row['last_activity']) && 
+                                        $row['last_activity'] !== '0000-00-00 00:00:00' &&
+                                        strtotime($row['last_activity']) !== false
+                                    ): ?>
                                         <span class="text-sm text-gray-500 flex items-center">
                                             <i data-lucide="clock" class="w-4 h-4 mr-1 text-blue-500"></i>
                                             <?php 
@@ -346,6 +392,7 @@ include_once 'components/dashboard_card.php';
                                         <span class="text-sm text-gray-400 italic">No activity</span>
                                     <?php endif; ?>
                                 </td>
+
                             </tr>
                             <?php endforeach; ?>
                         <?php endif; ?>

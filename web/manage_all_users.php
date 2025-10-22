@@ -137,9 +137,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $filter_section = $_POST['filter_section'] !== '' ? (int)$_POST['filter_section'] : null;
         $filter_department = $_POST['filter_department'] !== '' ? (int)$_POST['filter_department'] : null;
 
-        $sql = "SELECT id FROM users WHERE (role = 'user' OR role = 'admin')";
-        $params = [];
-        $types = '';
+        $sql = "SELECT id FROM users WHERE (role = 'user' OR role = 'admin') AND id != ?";
+        $params = [$current_user_id];
+        $types = 'i';
 
         if ($filter_division !== null) { $sql .= " AND division = ?"; $params[] = $filter_division; $types .= 'i'; }
         if ($filter_section !== null)  { $sql .= " AND section = ?";  $params[] = $filter_section;  $types .= 'i'; }
